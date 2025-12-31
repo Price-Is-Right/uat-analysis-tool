@@ -77,8 +77,9 @@ import time                                             # Performance timing and
 
 # Custom module imports for specialized functionality
 from retirement_checker import RetirementChecker        # Service retirement database integration
-from intelligent_context_analyzer import IntelligentContextAnalyzer, IssueCategory, IntentType
-# ↑ AI-powered context analysis with transparent reasoning
+from hybrid_context_analyzer import HybridContextAnalyzer, ContextAnalysis
+from intelligent_context_analyzer import IssueCategory, IntentType
+# ↑ AI-powered hybrid context analysis with LLM and pattern matching
 
 # =============================================================================
 # SYSTEM INTEGRATION ARCHITECTURE
@@ -1702,7 +1703,7 @@ class EnhancedMatcher:
         self.ai_analyzer = AIAnalyzer()
         self.ado_searcher = AzureDevOpsSearcher()
         self.retirement_checker = RetirementChecker()
-        self.context_analyzer = IntelligentContextAnalyzer()
+        self.context_analyzer = HybridContextAnalyzer()
     
     def start_matching_process(self, wizard_data: Dict) -> Dict:
         """

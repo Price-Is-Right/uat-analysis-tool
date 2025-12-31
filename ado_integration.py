@@ -132,7 +132,9 @@ class AzureDevOpsClient:
                 'Accept': 'application/json'
             }
         except Exception as e:
-            print(f\"\u274c Failed to get Azure DevOps token: {e}\")\n            print(\"\ud83d\udcdd Run 'az login' to authenticate with Azure CLI\")\n            raise
+            print(f"❌ Failed to get Azure DevOps token: {e}")
+            print("📝 Run 'az login' to authenticate with Azure CLI")
+            raise
     
     def test_connection(self) -> Dict:
         """

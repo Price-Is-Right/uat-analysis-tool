@@ -132,7 +132,14 @@ class HybridContextAnalyzer:
         
         # Extract category if available
         if hasattr(pattern_result, 'category'):
-            # Get category scores from reasoning if available
+            # Add the pattern category with its confidence
+            category_str = str(pattern_result.category)
+            if hasattr(pattern_result, 'confidence'):
+                features["category_scores"][category_str] = pattern_result.confidence
+            else:
+                features["category_scores"][category_str] = 0.5
+            
+            # Get additional category scores from reasoning if available
             if hasattr(pattern_result, 'reasoning') and isinstance(pattern_result.reasoning, dict):
                 reasoning = pattern_result.reasoning
                 
@@ -140,9 +147,8 @@ class HybridContextAnalyzer:
                 if "confidence_factors" in reasoning:
                     for factor in reasoning["confidence_factors"]:
                         if "Category confidence" in factor:
-                            category = pattern_result.category
                             confidence = float(factor.split(":")[-1].strip())
-                            features["category_scores"][category] = confidence
+                            features["category_scores"][category_str] = confidence
                 
                 # Extract Microsoft products
                 if "microsoft_products_detected" in reasoning:
