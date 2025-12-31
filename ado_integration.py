@@ -5,9 +5,17 @@ Azure DevOps Integration Module
 This module provides comprehensive integration with Azure DevOps REST APIs for work item
 management, specifically designed for the Enhanced Issue Tracker System.
 
+⚠️ PRODUCTION DEPLOYMENT NOTE:
+   Currently using Azure CLI authentication for development.
+   Before production deployment, switch to Service Principal authentication:
+   - Create Azure AD App Registration
+   - Grant appropriate Azure DevOps permissions
+   - Use client_id/client_secret instead of CLI credentials
+   - Update AzureDevOpsConfig to use Service Principal
+
 Key Features:
 - Work item creation with custom fields and formatting
-- Authentication using Personal Access Tokens (PAT)
+- Authentication using Azure CLI credentials (dev) / Service Principal (prod)
 - Error handling and validation for API operations
 - Support for custom work item types (Action items)
 - Project and organization management
@@ -17,15 +25,16 @@ Classes:
     AzureDevOpsClient: Main client for Azure DevOps REST API operations
 
 Author: Enhanced Issue Tracker System
-Version: 2.0
-Last Updated: September 2025
+Version: 2.1
+Last Updated: December 2025
 """
 
 import requests
 import json
-import base64
+import os
 from typing import Dict, List, Optional
 from urllib.parse import quote
+from azure.identity import AzureCliCredential, DefaultAzureCredential
 
 
 class AzureDevOpsConfig:
@@ -49,13 +58,39 @@ class AzureDevOpsConfig:
     API_VERSION = "7.0"
     WORK_ITEM_TYPE = "Action"  # Custom work item type
     
-    # Personal Access Token for UAT creation (should be moved to environment variable in production)
-    PAT = os.environ.get('ADO_PAT', '')  # Set ADO_PAT environment variable
+    # Azure DevOps scope for authentication
+    ADO_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"  # Azure DevOps scope
+    
+    @staticmethod
+    def get_credential():
+        """
+        Get Azure credential for authentication.
+        
+        Development: Uses Azure CLI credential (requires 'az login')
+        Production: TODO - Switch to Service Principal with client_id/client_secret
+        
+        Returns:
+            Azure credential object
+        """
+        try:
+            # Try Azure CLI credential first (development)
+            credential = AzureCliCredential()
+            # Test the credential
+            credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
+            return credential
+        except Exception as e:
+            # Fallback to default credential chain (includes managed identity for production)
+            print(f"⚠️  Azure CLI credential failed: {e}")
+            print("📝 Make sure you're logged in: az login")
+            return DefaultAzureCredential()
 
 
 class AzureDevOpsClient:
     """
     Client for Azure DevOps REST API operations.
+    
+    Uses Azure CLI authentication for development. For production deployment,
+    update to use Service Principal authentication.
     
     Provides a comprehensive interface for interacting with Azure DevOps work items,
     including creation, testing connectivity, and error handling. Designed specifically
@@ -74,27 +109,30 @@ class AzureDevOpsClient:
         from the AzureDevOpsConfig class.
         """
         self.config = AzureDevOpsConfig()
+        self.credential = self.config.get_credential()
         self.headers = self._get_headers()
     
     def _get_headers(self) -> Dict[str, str]:
         """
         Generate authentication headers for Azure DevOps API calls.
         
-        Creates proper HTTP headers including Basic authentication using the
-        configured Personal Access Token (PAT) and appropriate content types
-        for JSON patch operations.
+        Uses Azure credential (CLI or Service Principal) to obtain an access token
+        for Azure DevOps REST API authentication.
         
         Returns:
             Dict[str, str]: HTTP headers including Authorization, Content-Type, and Accept
         """
-        # Encode PAT for basic authentication
-        credentials = base64.b64encode(f':{self.config.PAT}'.encode()).decode()
-        
-        return {
-            'Content-Type': 'application/json-patch+json',
-            'Authorization': f'Basic {credentials}',
-            'Accept': 'application/json'
-        }
+        try:
+            # Get access token from credential
+            token = self.credential.get_token(self.config.ADO_SCOPE)
+            
+            return {
+                'Content-Type': 'application/json-patch+json',
+                'Authorization': f'Bearer {token.token}',
+                'Accept': 'application/json'
+            }
+        except Exception as e:
+            print(f\"\u274c Failed to get Azure DevOps token: {e}\")\n            print(\"\ud83d\udcdd Run 'az login' to authenticate with Azure CLI\")\n            raise
     
     def test_connection(self) -> Dict:
         """

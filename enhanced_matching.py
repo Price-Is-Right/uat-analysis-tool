@@ -6,6 +6,14 @@ ENHANCED MATCHING SYSTEM v3.0 - AI-Powered Issue Analysis and Matching
 COMPREHENSIVE ISSUE MATCHING WITH INTELLIGENT CONTEXT ANALYSIS
 =============================================================================
 
+⚠️ PRODUCTION DEPLOYMENT NOTE:
+   Currently using Azure CLI authentication for Azure DevOps searches.
+   Before production deployment:
+   - Switch to Service Principal authentication
+   - Create Azure AD App Registration with Azure DevOps permissions
+   - Update EnhancedMatchingConfig to use Service Principal credentials
+   - Remove dependency on 'az login'
+
 This module serves as the central orchestrator for intelligent issue matching,
 combining AI-powered context analysis with multi-source knowledge base searches
 and enterprise Azure DevOps integration.
@@ -135,9 +143,32 @@ class EnhancedMatchingConfig:
     
     API_VERSION = "7.0"
     
-    # Personal Access Token for Azure DevOps API access (for searching)
-    # Note: Should be moved to environment variable for production security
-    SEARCH_PAT = os.environ.get('ADO_SEARCH_PAT', '')  # Set ADO_SEARCH_PAT environment variable
+    # Azure DevOps scope for authentication
+    ADO_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
+    
+    @staticmethod
+    def get_ado_credential():
+        """
+        Get Azure credential for Azure DevOps API access.
+        
+        Development: Uses Azure CLI credential (requires 'az login')
+        Production: TODO - Switch to Service Principal authentication
+        
+        Returns:
+            Tuple of (credential, token) for Azure DevOps authentication
+        """
+        from azure.identity import AzureCliCredential, DefaultAzureCredential
+        
+        try:
+            credential = AzureCliCredential()
+            token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+            return credential, token.token
+        except Exception as e:
+            print(f"⚠️  Azure CLI credential failed: {e}")
+            print("📝 Make sure you're logged in: az login")
+            credential = DefaultAzureCredential()
+            token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+            return credential, token.token
     
     # AI Analysis Configuration Parameters
     MIN_DESCRIPTION_WORDS = 5      # Minimum words required in description
@@ -578,6 +609,8 @@ class AzureDevOpsSearcher:
         work items within the configured lookback period.
         """
         self.config = EnhancedMatchingConfig()
+        # Get Azure credential and token
+        self.credential, self.token = self.config.get_ado_credential()
         self.headers = self._get_headers()
         self.cutoff_date = datetime.now() - timedelta(days=30 * self.config.LOOKBACK_MONTHS)
     
@@ -585,17 +618,19 @@ class AzureDevOpsSearcher:
         """
         Generate authentication headers for Azure DevOps API calls.
         
-        Creates Basic authentication headers using the configured PAT token,
-        following Azure DevOps API authentication requirements.
+        Uses Azure credential (CLI or Service Principal) to obtain access token
+        for Azure DevOps REST API authentication.
         
         Returns:
             Dict[str, str]: HTTP headers including Authorization, Content-Type, and Accept
         """
-        credentials = base64.b64encode(f':{self.config.SEARCH_PAT}'.encode()).decode()
-        
-        return {
+        # Refresh token if needed
+        try:
+            _, self.token = self.config.get_ado_credential()
+        except Exception as e:
+            print(f\"\u274c Token refresh failed: {e}\")\n        \n        return {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {credentials}',
+            'Authorization': f'Bearer {self.token}',
             'Accept': 'application/json'
         }
     
