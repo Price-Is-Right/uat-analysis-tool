@@ -1,0 +1,178 @@
+{
+  "timestamp": "2025-12-29T15:54:46.312481",
+  "data": {
+    "regions_to_services": {
+      "east us": [
+        "cognitiveservices/accounts",
+        "cognitiveservices/accounts/projects",
+        "eventgrid/systemtopics",
+        "managedidentity/userassignedidentities",
+        "search/searchservices",
+        "storage/storageaccounts",
+        "databricks/workspaces",
+        "keyvault/vaults",
+        "network/networksecuritygroups",
+        "network/publicipaddresses",
+        "network/virtualnetworks",
+        "operationalinsights/workspaces",
+        "operationsmanagement/solutions",
+        "insights/components",
+        "machinelearningservices/workspaces",
+        "network/networkwatchers"
+      ],
+      "west us 2": [
+        "eventgrid/systemtopics",
+        "storage/storageaccounts",
+        "synapse/workspaces",
+        "databricks/workspaces",
+        "managedidentity/userassignedidentities",
+        "network/networksecuritygroups",
+        "network/virtualnetworks",
+        "operationalinsights/workspaces",
+        "network/networkwatchers",
+        "sql/servers",
+        "sql/servers/databases"
+      ],
+      "north central us": [
+        "cognitiveservices/accounts",
+        "cognitiveservices/accounts/projects",
+        "search/searchservices"
+      ],
+      "west us": [
+        "eventgrid/systemtopics",
+        "storage/storageaccounts"
+      ],
+      "global": [
+        "network/privatednszones",
+        "network/privatednszones/virtualnetworklinks",
+        "alertsmanagement/smartdetectoralertrules",
+        "insights/actiongroups"
+      ],
+      "canada central": [
+        "operationalinsights/workspaces",
+        "network/networkwatchers",
+        "cognitiveservices/accounts",
+        "cognitiveservices/accounts/projects"
+      ],
+      "east us 2": [
+        "operationalinsights/workspaces",
+        "web/staticsites",
+        "cognitiveservices/accounts",
+        "cognitiveservices/accounts/projects",
+        "storage/storageaccounts"
+      ],
+      "central us": [
+        "web/serverfarms",
+        "web/sites",
+        "search/searchservices"
+      ],
+      "swedencentral": [
+        "network/networkwatchers"
+      ]
+    },
+    "services_to_regions": {
+      "cognitiveservices/accounts": [
+        "east us",
+        "north central us",
+        "canada central",
+        "east us 2"
+      ],
+      "cognitiveservices/accounts/projects": [
+        "east us",
+        "north central us",
+        "canada central",
+        "east us 2"
+      ],
+      "eventgrid/systemtopics": [
+        "west us 2",
+        "east us",
+        "west us"
+      ],
+      "managedidentity/userassignedidentities": [
+        "east us",
+        "west us 2"
+      ],
+      "search/searchservices": [
+        "east us",
+        "north central us",
+        "central us"
+      ],
+      "storage/storageaccounts": [
+        "west us 2",
+        "east us",
+        "west us",
+        "east us 2"
+      ],
+      "synapse/workspaces": [
+        "west us 2"
+      ],
+      "databricks/workspaces": [
+        "west us 2",
+        "east us"
+      ],
+      "keyvault/vaults": [
+        "east us"
+      ],
+      "network/networksecuritygroups": [
+        "east us",
+        "west us 2"
+      ],
+      "network/privatednszones": [
+        "global"
+      ],
+      "network/privatednszones/virtualnetworklinks": [
+        "global"
+      ],
+      "network/publicipaddresses": [
+        "east us"
+      ],
+      "network/virtualnetworks": [
+        "east us",
+        "west us 2"
+      ],
+      "operationalinsights/workspaces": [
+        "east us",
+        "canada central",
+        "east us 2",
+        "west us 2"
+      ],
+      "operationsmanagement/solutions": [
+        "east us"
+      ],
+      "alertsmanagement/smartdetectoralertrules": [
+        "global"
+      ],
+      "insights/components": [
+        "east us"
+      ],
+      "machinelearningservices/workspaces": [
+        "east us"
+      ],
+      "insights/actiongroups": [
+        "global"
+      ],
+      "network/networkwatchers": [
+        "east us",
+        "west us 2",
+        "canada central",
+        "swedencentral"
+      ],
+      "web/staticsites": [
+        "east us 2"
+      ],
+      "web/serverfarms": [
+        "central us"
+      ],
+      "web/sites": [
+        "central us"
+      ],
+      "sql/servers": [
+        "west us 2"
+      ],
+      "sql/servers/databases": [
+        "west us 2"
+      ]
+    },
+    "last_updated": "2025-12-29T15:54:46.311848"
+  }
+}

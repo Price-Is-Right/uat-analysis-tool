@@ -1,0 +1,1554 @@
+{
+  "last_updated": "2025-10-13T11:23:19.316202",
+  "total_retirements": 90,
+  "retirements": [
+    {
+      "id": "583",
+      "service_name": "Azure Synapse",
+      "retiring_feature": "Runtime for Apache Spark 3.2",
+      "retirement_date": "2024-07-08T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-synapse-runtime-for-apache-spark-32-end-of-support/",
+      "searchable_text": "azure synapse runtime for apache spark 3.2",
+      "key_terms": [
+        "runtime",
+        "runtime for apache spark 3.2",
+        "spark",
+        "azure synapse",
+        "apache",
+        "synapse"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "7",
+      "service_name": "Storage Account",
+      "retiring_feature": "Classic",
+      "retirement_date": "2024-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/classic-azure-storage-accounts-will-be-retired-on-31-august-2024/",
+      "searchable_text": "storage account classic",
+      "key_terms": [
+        "account",
+        "storage account",
+        "classic",
+        "storage"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "38",
+      "service_name": "Cloud service (classic)",
+      "retiring_feature": "Classic",
+      "retirement_date": "2024-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/cloud-services-retirement-announcement/",
+      "searchable_text": "cloud service (classic) classic",
+      "key_terms": [
+        "cloud",
+        "service",
+        "classic",
+        "cloud service (classic)"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "60",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Av1-series",
+      "retirement_date": "2024-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/action-required-migrate-your-azure-workloads-to-av2series-vms-before-31-august-2024/",
+      "searchable_text": "virtual machines av1-series",
+      "key_terms": [
+        "av1",
+        "av1-series",
+        "series",
+        "machines",
+        "virtual",
+        "virtual machines"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "62",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "HB-series",
+      "retirement_date": "2024-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/hbseries-azure-virtual-machines-will-be-retired-by-31-august-2024/",
+      "searchable_text": "virtual machines hb-series",
+      "key_terms": [
+        "hb-series",
+        "series",
+        "machines",
+        "virtual",
+        "virtual machines"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "8801",
+      "service_name": "Network Security Group",
+      "retiring_feature": "Classic",
+      "retirement_date": "2024-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/five-azure-classic-networking-services-will-be-retired-on-31-august-2024/",
+      "searchable_text": "network security group classic",
+      "key_terms": [
+        "security",
+        "classic",
+        "group",
+        "network security group",
+        "network"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "8802",
+      "service_name": "Reserved IPs",
+      "retiring_feature": "Classic",
+      "retirement_date": "2024-08-31T00:00:00",
+      "link": "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-upgrade-classic",
+      "searchable_text": "reserved ips classic",
+      "key_terms": [
+        "ips",
+        "classic",
+        "reserved ips",
+        "reserved"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "669",
+      "service_name": "Event Grid",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2025-02-28T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/TLS-changes-for-Azure-Event-Grid",
+      "searchable_text": "event grid support for tls 1.0 and 1.1",
+      "key_terms": [
+        "support",
+        "event grid",
+        "grid",
+        "tls",
+        "event",
+        "support for tls 1.0 and 1.1"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "703",
+      "service_name": "Azure Cosmos DB",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2025-08-31T00:00:00",
+      "link": "https://learn.microsoft.com/azure/cosmos-db/self-serve-minimum-tls-enforcement",
+      "searchable_text": "azure cosmos db support for tls 1.0 and 1.1",
+      "key_terms": [
+        "support",
+        "azure cosmos db",
+        "cosmos",
+        "tls",
+        "support for tls 1.0 and 1.1"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "582",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Standard_NC24rs_v3",
+      "retirement_date": "2025-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/standardnc24rsv3-virtual-machines-will-be-retired-on-march-31st-2025/",
+      "searchable_text": "virtual machines standard_nc24rs_v3",
+      "key_terms": [
+        "standard",
+        "nc24rs",
+        "standard_nc24rs_v3",
+        "machines",
+        "virtual",
+        "virtual machines"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "531",
+      "service_name": "App Service",
+      "retiring_feature": "Node 18 LTS",
+      "retirement_date": "2025-04-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/action-required-upgrade-your-app-service-apps-to-node-20-lts-by-30-april-2025/",
+      "searchable_text": "app service node 18 lts",
+      "key_terms": [
+        "node",
+        "lts",
+        "app",
+        "service",
+        "node 18 lts",
+        "app service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "398",
+      "service_name": "Azure Database for MariaDB",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2025-09-19T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-database-for-mariadb-will-be-retired-on-19-september-2025-migrate-to-azure-database-for-mysql-flexible-server/",
+      "searchable_text": "azure database for mariadb entire service",
+      "key_terms": [
+        "database",
+        "azure database for mariadb",
+        "entire service",
+        "mariadb",
+        "entire",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "660",
+      "service_name": "Azure Remote Rendering",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/azure-remote-rendering-retirement",
+      "searchable_text": "azure remote rendering entire service",
+      "key_terms": [
+        "azure remote rendering",
+        "entire service",
+        "rendering",
+        "entire",
+        "remote",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "94",
+      "service_name": "Azure Load Balancer",
+      "retiring_feature": "Basic Load Balancer",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-basic-load-balancer-will-be-retired-on-30-september-2025-upgrade-to-standard-load-balancer/",
+      "searchable_text": "azure load balancer basic load balancer",
+      "key_terms": [
+        "azure load balancer",
+        "load",
+        "balancer",
+        "basic",
+        "basic load balancer"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "213",
+      "service_name": "Azure Service Map",
+      "retiring_feature": "Entire Service",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/migrate-to-azure-monitor-vm-insights-by-30-september-2025-when-service-map-will-be-retired/",
+      "searchable_text": "azure service map entire service",
+      "key_terms": [
+        "map",
+        "entire service",
+        "azure service map",
+        "entire",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "220",
+      "service_name": "Public IP address",
+      "retiring_feature": "Basic Sku",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/upgrade-to-standard-sku-public-ip-addresses-in-azure-by-30-september-2025-basic-sku-will-be-retired/",
+      "searchable_text": "public ip address basic sku",
+      "key_terms": [
+        "sku",
+        "basic",
+        "public",
+        "public ip address",
+        "basic sku",
+        "address"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "481",
+      "service_name": "VPN Gateway",
+      "retiring_feature": "Standard and High-Performance SKUs",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/standard-and-highperformance-vpn-gateway-skus-will-be-retired-on-30-september-2025/",
+      "searchable_text": "vpn gateway standard and high-performance skus",
+      "key_terms": [
+        "standard",
+        "skus",
+        "vpn gateway",
+        "high",
+        "gateway",
+        "standard and high-performance skus",
+        "performance",
+        "vpn"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "514",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Standard_NC6s_v3, Standard_NC12s_v3, and Standard_NC24s_v3",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/standardnc6sv3-standardnc12sv3-and-standardnc24sv3-azure-virtual-machines-will-be-retired-on-september-30-2025/",
+      "searchable_text": "virtual machines standard_nc6s_v3, standard_nc12s_v3, and standard_nc24s_v3",
+      "key_terms": [
+        "standard",
+        "nc12s",
+        "machines",
+        "virtual",
+        "nc24s",
+        "nc6s",
+        "virtual machines",
+        "standard_nc6s_v3, standard_nc12s_v3, and standard_nc24s_v3"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "500",
+      "service_name": "Azure HPC Cache",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/hpccacheretirement/",
+      "searchable_text": "azure hpc cache entire service",
+      "key_terms": [
+        "entire service",
+        "cache",
+        "entire",
+        "azure hpc cache",
+        "hpc",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "84",
+      "service_name": "Azure Disks",
+      "retiring_feature": "Unmanaged Disks",
+      "retirement_date": "2025-09-30T00:00:00",
+      "link": "https://learn.microsoft.com/azure/virtual-machines/unmanaged-disks-deprecation",
+      "searchable_text": "azure disks unmanaged disks",
+      "key_terms": [
+        "unmanaged",
+        "disks",
+        "azure disks",
+        "unmanaged disks"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "160",
+      "service_name": "Cognitive Services",
+      "retiring_feature": "Language Understanding (LUIS)",
+      "retirement_date": "2025-10-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/language-understanding-retirement/",
+      "searchable_text": "cognitive services language understanding (luis)",
+      "key_terms": [
+        "cognitive",
+        "language",
+        "understanding",
+        "cognitive services",
+        "language understanding (luis)",
+        "luis",
+        "services"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "665",
+      "service_name": "App Service",
+      "retiring_feature": "Python 3.9",
+      "retirement_date": "2025-10-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates?id=python-39-app-svc",
+      "searchable_text": "app service python 3.9",
+      "key_terms": [
+        "app",
+        "service",
+        "python 3.9",
+        "app service",
+        "python"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "249",
+      "service_name": "Azure Database for PostgreSQL",
+      "retiring_feature": "FlexibleServers- Version 11",
+      "retirement_date": "2025-11-09T00:00:00",
+      "link": "https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-version-policy#postgresql-11-support",
+      "searchable_text": "azure database for postgresql flexibleservers- version 11",
+      "key_terms": [
+        "flexibleservers",
+        "database",
+        "version",
+        "postgresql",
+        "flexibleservers- version 11",
+        "azure database for postgresql"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "664",
+      "service_name": "App Service",
+      "retiring_feature": "PHP 8.2",
+      "retirement_date": "2026-12-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/php-82-app-svc",
+      "searchable_text": "app service php 8.2",
+      "key_terms": [
+        "app",
+        "service",
+        "php 8.2",
+        "php",
+        "app service"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "459",
+      "service_name": "App Service",
+      "retiring_feature": "PHP 8.1",
+      "retirement_date": "2025-12-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Php-81-extension",
+      "searchable_text": "app service php 8.1",
+      "key_terms": [
+        "app",
+        "service",
+        "php",
+        "app service",
+        "php 8.1"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "298",
+      "service_name": "Azure Application Gateway",
+      "retiring_feature": "V1",
+      "retirement_date": "2026-04-28T00:00:00",
+      "link": "https://azure.microsoft.com/updates/application-gateway-v1-will-be-retired-on-28-april-2026-transition-to-application-gateway-v2/",
+      "searchable_text": "azure application gateway v1",
+      "key_terms": [
+        "application",
+        "gateway",
+        "azure application gateway",
+        "v1"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "465",
+      "service_name": "Azure Maps",
+      "retiring_feature": "Gen1 price tier",
+      "retirement_date": "2026-09-15T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-maps-gen1-price-tier-retirement/",
+      "searchable_text": "azure maps gen1 price tier",
+      "key_terms": [
+        "gen1",
+        "azure maps",
+        "tier",
+        "gen1 price tier",
+        "price",
+        "maps"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "387",
+      "service_name": "Azure Health Data Services",
+      "retiring_feature": "SMART on FHIR proxy",
+      "retirement_date": "2026-09-21T00:00:00",
+      "link": "https://azure.microsoft.com/updates/smart-on-fhir-proxy-feature-in-azure-health-data-services-will-be-retired-on-21st-september-2026-transition-to-smart-on-fhir/",
+      "searchable_text": "azure health data services smart on fhir proxy",
+      "key_terms": [
+        "fhir",
+        "health",
+        "smart",
+        "data",
+        "proxy",
+        "azure health data services",
+        "smart on fhir proxy",
+        "services"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "354",
+      "service_name": "Azure API for FHIR",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2026-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-api-for-fhir-retirement/",
+      "searchable_text": "azure api for fhir entire service",
+      "key_terms": [
+        "fhir",
+        "entire service",
+        "api",
+        "entire",
+        "azure api for fhir",
+        "service"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "154",
+      "service_name": "Application Insights",
+      "retiring_feature": "Single URL Ping Test",
+      "retirement_date": "2026-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/transition-to-using-standard-tests-for-singlestep-availability-testing-in-azure-monitor-application-insights-by-30-september/",
+      "searchable_text": "application insights single url ping test",
+      "key_terms": [
+        "single",
+        "application insights",
+        "insights",
+        "url",
+        "ping",
+        "application",
+        "single url ping test",
+        "test"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "405",
+      "service_name": "Azure Anomaly Detector",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2026-10-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/ai-services-anomaly-detector-will-be-retired-on-1-october-2026/",
+      "searchable_text": "azure anomaly detector entire service",
+      "key_terms": [
+        "anomaly",
+        "azure anomaly detector",
+        "entire service",
+        "entire",
+        "detector",
+        "service"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "408",
+      "service_name": "Azure Personalizer",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2026-10-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/ai-services-personalizer-will-be-retired-on-1-october-2026/",
+      "searchable_text": "azure personalizer entire service",
+      "key_terms": [
+        "azure personalizer",
+        "entire service",
+        "personalizer",
+        "entire",
+        "service"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "407",
+      "service_name": "Azure Metrics Advisor",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2026-10-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/ai-services-metrics-advisor-will-be-retired-on-1-october-2026/",
+      "searchable_text": "azure metrics advisor entire service",
+      "key_terms": [
+        "entire service",
+        "metrics",
+        "azure metrics advisor",
+        "entire",
+        "advisor",
+        "service"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "611",
+      "service_name": "VPN Gateway",
+      "retiring_feature": "Non-AZ VPNs",
+      "retirement_date": "2026-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/vpngw1-5-non-az-skus-will-be-retired-on-30-september-2026",
+      "searchable_text": "vpn gateway non-az vpns",
+      "key_terms": [
+        "vpn gateway",
+        "non",
+        "non-az vpns",
+        "gateway",
+        "vpn",
+        "vpns"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "561",
+      "service_name": "Azure AI Content Moderator",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2027-03-15T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-content-moderator-retirement/",
+      "searchable_text": "azure ai content moderator entire service",
+      "key_terms": [
+        "moderator",
+        "entire service",
+        "content",
+        "azure ai content moderator",
+        "entire",
+        "service"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "519",
+      "service_name": "Application Gateway",
+      "retiring_feature": "WAF v2 Config",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/retirement-support-for-application-gateway-web-application-firewall-v2-configuration-is-ending/",
+      "searchable_text": "application gateway waf v2 config",
+      "key_terms": [
+        "waf v2 config",
+        "config",
+        "application",
+        "gateway",
+        "waf",
+        "application gateway"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "498",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Standard_M192idms_v2",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/support-for-standardm192idmsv2-will-be-retired-on-31-march-2027/",
+      "searchable_text": "virtual machines standard_m192idms_v2",
+      "key_terms": [
+        "standard",
+        "standard_m192idms_v2",
+        "m192idms",
+        "machines",
+        "virtual",
+        "virtual machines"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "497",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Standard_M192ids_v2",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/community-support-for-standardm192idsv2-is-ending-on-31-march-2027/",
+      "searchable_text": "virtual machines standard_m192ids_v2",
+      "key_terms": [
+        "standard",
+        "standard_m192ids_v2",
+        "machines",
+        "virtual",
+        "m192ids",
+        "virtual machines"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "496",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Standard_M192ims_v2",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/community-support-for-standardm192imsv2-is-ending-on-31-march-2027/",
+      "searchable_text": "virtual machines standard_m192ims_v2",
+      "key_terms": [
+        "standard",
+        "standard_m192ims_v2",
+        "m192ims",
+        "machines",
+        "virtual",
+        "virtual machines"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "495",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "Standard_M192is_v2",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/community-support-for-standardm192isv2-is-ending-on-31-march-2027/",
+      "searchable_text": "virtual machines standard_m192is_v2",
+      "key_terms": [
+        "standard",
+        "m192is",
+        "machines",
+        "virtual",
+        "standard_m192is_v2",
+        "virtual machines"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "624",
+      "service_name": "Azure Lab Services",
+      "retiring_feature": "V1 and V2",
+      "retirement_date": "2027-06-28T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Azure-Lab-Services-is-being-retired",
+      "searchable_text": "azure lab services v1 and v2",
+      "key_terms": [
+        "lab",
+        "services",
+        "azure lab services",
+        "v1 and v2"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "619",
+      "service_name": "Azure CDN",
+      "retiring_feature": "Standard from Microsoft (classic)",
+      "retirement_date": "2027-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Azure-CDN-Standard-from-Microsoft-classic-will-be-retired-on-30-September-2027",
+      "searchable_text": "azure cdn standard from microsoft (classic)",
+      "key_terms": [
+        "standard",
+        "classic",
+        "azure cdn",
+        "standard from microsoft (classic)",
+        "cdn"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "666",
+      "service_name": "Azure Load Balancer",
+      "retiring_feature": "Inbound NAT rule V1",
+      "retirement_date": "2027-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Retirement-notice-Azure-Load-Balancer-Inbound-NAT-rule-V1-for-Azure-VMs-and-Azure-VMSS-will-be-retired",
+      "searchable_text": "azure load balancer inbound nat rule v1",
+      "key_terms": [
+        "load",
+        "azure load balancer",
+        "balancer",
+        "nat",
+        "inbound nat rule v1",
+        "inbound",
+        "rule"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "18",
+      "service_name": "Azure Data Lake Analytics",
+      "retiring_feature": "Entire Service",
+      "retirement_date": "2024-02-29T00:00:00",
+      "link": "https://azure.microsoft.com/updates/migrate-to-azure-synapse-analytics/",
+      "searchable_text": "azure data lake analytics entire service",
+      "key_terms": [
+        "entire service",
+        "azure data lake analytics",
+        "service",
+        "data",
+        "analytics",
+        "entire",
+        "lake"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "31",
+      "service_name": "Azure Time Series Insights",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2024-07-07T00:00:00",
+      "link": "https://azure.microsoft.com/updates/we-re-retiring-azure-time-series-insights-on-7-july-2024-transition-to-azure-data-explorer/",
+      "searchable_text": "azure time series insights entire service",
+      "key_terms": [
+        "insights",
+        "time",
+        "entire service",
+        "azure time series insights",
+        "entire",
+        "series",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "143",
+      "service_name": "Application Insights",
+      "retiring_feature": "Trouble Shooting Guides Retirement",
+      "retirement_date": "2024-03-31T00:00:00",
+      "link": "https://github.com/microsoft/Application-Insights-Workbooks/blob/master/Documentation/LegacyAI/TroubleshootingGuidesDeprecation.md",
+      "searchable_text": "application insights trouble shooting guides retirement",
+      "key_terms": [
+        "application insights",
+        "trouble",
+        "insights",
+        "guides",
+        "application",
+        "retirement",
+        "shooting",
+        "trouble shooting guides retirement"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "153",
+      "service_name": "Azure Stack Edge",
+      "retiring_feature": "The 'managed' IoT Edge solution",
+      "retirement_date": "2024-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/the-managed-iot-edge-solution-on-azure-stack-edge-will-be-retired-on-march-31-2024-transition-your-iot-edge-workloads-to-an-i/",
+      "searchable_text": "azure stack edge the 'managed' iot edge solution",
+      "key_terms": [
+        "solution",
+        "stack",
+        "the 'managed' iot edge solution",
+        "edge",
+        "managed",
+        "iot",
+        "azure stack edge"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "181",
+      "service_name": "Application Insights",
+      "retiring_feature": "Classic",
+      "retirement_date": "2024-02-29T00:00:00",
+      "link": "https://azure.microsoft.com/updates/we-re-retiring-classic-application-insights-on-29-february-2024/",
+      "searchable_text": "application insights classic",
+      "key_terms": [
+        "application",
+        "insights",
+        "classic",
+        "application insights"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "182",
+      "service_name": "Azure Data Lake Storage",
+      "retiring_feature": "Gen 1",
+      "retirement_date": "2024-02-29T00:00:00",
+      "link": "https://azure.microsoft.com/updates/action-required-switch-to-azure-data-lake-storage-gen2-by-29-february-2024/",
+      "searchable_text": "azure data lake storage gen 1",
+      "key_terms": [
+        "azure data lake storage",
+        "storage",
+        "gen 1",
+        "data",
+        "lake",
+        "gen"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "187",
+      "service_name": "Azure Migrate",
+      "retiring_feature": "Classic",
+      "retirement_date": "2024-02-29T00:00:00",
+      "link": "https://azure.microsoft.com/updates/we-are-retiring-classic-azure-migrate-on-29-february-2024/",
+      "searchable_text": "azure migrate classic",
+      "key_terms": [
+        "migrate",
+        "azure migrate",
+        "classic"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "200",
+      "service_name": "Azure Monitor",
+      "retiring_feature": "Classic alerts for Azure Gov cloud and Azure China 21Vianet",
+      "retirement_date": "2024-02-29T00:00:00",
+      "link": "https://azure.microsoft.com/updates/start-using-new-alerts-in-azure-monitor-for-azure-government-cloud/",
+      "searchable_text": "azure monitor classic alerts for azure gov cloud and azure china 21vianet",
+      "key_terms": [
+        "gov",
+        "classic",
+        "monitor",
+        "alerts",
+        "cloud",
+        "azure monitor",
+        "china",
+        "classic alerts for azure gov cloud and azure china 21vianet",
+        "21vianet"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "325",
+      "service_name": "Azure Synapse",
+      "retiring_feature": "Runtime for Apache Spark 3.1",
+      "retirement_date": "2024-01-26T00:00:00",
+      "link": "https://learn.microsoft.com/azure/synapse-analytics/spark/apache-spark-3-runtime",
+      "searchable_text": "azure synapse runtime for apache spark 3.1",
+      "key_terms": [
+        "runtime",
+        "spark",
+        "azure synapse",
+        "apache",
+        "runtime for apache spark 3.1",
+        "synapse"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "328",
+      "service_name": "Azure Synapse",
+      "retiring_feature": "Runtime for Apache Spark 2.4",
+      "retirement_date": "2023-09-29T00:00:00",
+      "link": "https://learn.microsoft.com/azure/synapse-analytics/spark/apache-spark-24-runtime",
+      "searchable_text": "azure synapse runtime for apache spark 2.4",
+      "key_terms": [
+        "runtime",
+        "runtime for apache spark 2.4",
+        "spark",
+        "azure synapse",
+        "apache",
+        "synapse"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "394",
+      "service_name": "Azure Media Services",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2024-06-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/retirement-notice-azure-media-services-is-being-retired-on-30-june-2024/",
+      "searchable_text": "azure media services entire service",
+      "key_terms": [
+        "entire service",
+        "media",
+        "azure media services",
+        "entire",
+        "services",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "524",
+      "service_name": "Network Watcher",
+      "retiring_feature": "NSG Flow Logs",
+      "retirement_date": "2027-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Azure-NSG-flow-logs-Retirement",
+      "searchable_text": "network watcher nsg flow logs",
+      "key_terms": [
+        "logs",
+        "nsg",
+        "network watcher",
+        "nsg flow logs",
+        "flow",
+        "watcher",
+        "network"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "714",
+      "service_name": "Application Gateway",
+      "retiring_feature": "Support for TLS 1.0 and 1.1 (enlists resources with older TLS policies)",
+      "retirement_date": "2025-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Azure-Application-Gateway-support-for-TLS-10-and-TLS-11-will-end-by-31-August-2025",
+      "searchable_text": "application gateway support for tls 1.0 and 1.1 (enlists resources with older tls policies)",
+      "key_terms": [
+        "support",
+        "support for tls 1.0 and 1.1 (enlists resources with older tls policies)",
+        "enlists",
+        "application",
+        "policies",
+        "tls",
+        "gateway",
+        "resources",
+        "older",
+        "application gateway"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "43503",
+      "service_name": "Azure SQL DB",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2025-08-31T00:00:00",
+      "link": "https://learn.microsoft.com/azure/azure-sql/database/connectivity-settings?view=azuresql&tabs=azure-portal#upcoming-retirement-changes",
+      "searchable_text": "azure sql db support for tls 1.0 and 1.1",
+      "key_terms": [
+        "support",
+        "sql",
+        "tls",
+        "azure sql db",
+        "support for tls 1.0 and 1.1"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "43507",
+      "service_name": "Storage Account",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2025-11-01T00:00:00",
+      "link": "https://techcommunity.microsoft.com/blog/azurestorageblog/tls-1-0-and-1-1-support-will-be-removed-for-new--existing-azure-storage-accounts/4026181",
+      "searchable_text": "storage account support for tls 1.0 and 1.1",
+      "key_terms": [
+        "support",
+        "storage",
+        "account",
+        "tls",
+        "support for tls 1.0 and 1.1",
+        "storage account"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "560",
+      "service_name": "Azure Kubernetes Service",
+      "retiring_feature": "Windows Server 2022",
+      "retirement_date": "2027-03-15T00:00:00",
+      "link": "https://azure.microsoft.com/updates/ws2022-retirement-aks/",
+      "searchable_text": "azure kubernetes service windows server 2022",
+      "key_terms": [
+        "server",
+        "2022",
+        "azure kubernetes service",
+        "windows",
+        "kubernetes",
+        "service",
+        "windows server 2022"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "284",
+      "service_name": "Azure Kubernetes Service",
+      "retiring_feature": "Windows Server 2019",
+      "retirement_date": "2026-03-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/aks-will-stop-support-for-windows-server-2019-on-march-1-2026/",
+      "searchable_text": "azure kubernetes service windows server 2019",
+      "key_terms": [
+        "server",
+        "2019",
+        "windows server 2019",
+        "azure kubernetes service",
+        "windows",
+        "kubernetes",
+        "service"
+      ],
+      "criticality": "high"
+    },
+    {
+      "id": "43508",
+      "service_name": "Azure SQL MI",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2025-08-31T00:00:00",
+      "link": "https://learn.microsoft.com/azure/azure-sql/managed-instance/minimal-tls-version-configure?view=azuresql",
+      "searchable_text": "azure sql mi support for tls 1.0 and 1.1",
+      "key_terms": [
+        "support",
+        "azure sql mi",
+        "sql",
+        "tls",
+        "support for tls 1.0 and 1.1"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "622",
+      "service_name": "Azure Automanage",
+      "retiring_feature": "Best Practices",
+      "retirement_date": "2027-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/v2/Azure-Automanage-Best-Practices-Retirement-Migrate-to-Azure-Policy",
+      "searchable_text": "azure automanage best practices",
+      "key_terms": [
+        "azure automanage",
+        "automanage",
+        "best",
+        "best practices",
+        "practices"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "43501",
+      "service_name": "API Management",
+      "retiring_feature": "TLS 1.0/1.1 Retirement",
+      "retirement_date": "2024-10-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/azure-support-tls-will-end-by-31-october-2024-2/",
+      "searchable_text": "api management tls 1.0/1.1 retirement",
+      "key_terms": [
+        "1011",
+        "management",
+        "api",
+        "tls 1.0/1.1 retirement",
+        "tls",
+        "api management",
+        "retirement"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "570",
+      "service_name": "App Service",
+      "retiring_feature": "Support for Node 20 LTS",
+      "retirement_date": "2026-04-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485072",
+      "searchable_text": "app service support for node 20 lts",
+      "key_terms": [
+        "support",
+        "node",
+        "lts",
+        "support for node 20 lts",
+        "app",
+        "app service",
+        "service"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "173",
+      "service_name": "Azure App Service",
+      "retiring_feature": "Docker Compose",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485167",
+      "searchable_text": "azure app service docker compose",
+      "key_terms": [
+        "compose",
+        "app",
+        "docker",
+        "docker compose",
+        "service",
+        "azure app service"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "600",
+      "service_name": "Azure Container Registry",
+      "retiring_feature": "Support for Docker Content Trust",
+      "retirement_date": "2028-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485241",
+      "searchable_text": "azure container registry support for docker content trust",
+      "key_terms": [
+        "support",
+        "registry",
+        "support for docker content trust",
+        "content",
+        "trust",
+        "azure container registry",
+        "container",
+        "docker"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "657",
+      "service_name": "Azure Kubernetes Service",
+      "retiring_feature": "Kubenet",
+      "retirement_date": "2028-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485172",
+      "searchable_text": "azure kubernetes service kubenet",
+      "key_terms": [
+        "kubenet",
+        "kubernetes",
+        "service",
+        "azure kubernetes service"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "679",
+      "service_name": "Azure Kubernetes Service enabled by Azure Arc",
+      "retiring_feature": "Windows Server 2019 and Windows Server 2022",
+      "retirement_date": "2028-03-27T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485893",
+      "searchable_text": "azure kubernetes service enabled by azure arc windows server 2019 and windows server 2022",
+      "key_terms": [
+        "server",
+        "2022",
+        "windows server 2019 and windows server 2022",
+        "2019",
+        "azure kubernetes service enabled by azure arc",
+        "windows",
+        "enabled",
+        "arc",
+        "kubernetes",
+        "service"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "810",
+      "service_name": "Azure Spring Apps",
+      "retiring_feature": "Entire service",
+      "retirement_date": "2028-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485865",
+      "searchable_text": "azure spring apps entire service",
+      "key_terms": [
+        "entire service",
+        "apps",
+        "entire",
+        "spring",
+        "azure spring apps",
+        "service"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "644",
+      "service_name": "Azure Synapse Analytics",
+      "retiring_feature": "Data Explorer (Kusto) pools",
+      "retirement_date": "2025-10-07T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=484968",
+      "searchable_text": "azure synapse analytics data explorer (kusto) pools",
+      "key_terms": [
+        "explorer",
+        "pools",
+        "azure synapse analytics",
+        "kusto",
+        "data",
+        "analytics",
+        "data explorer (kusto) pools",
+        "synapse"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "950",
+      "service_name": "Cloud Services",
+      "retiring_feature": "Extended Support",
+      "retirement_date": "2027-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=486344",
+      "searchable_text": "cloud services extended support",
+      "key_terms": [
+        "support",
+        "cloud",
+        "extended",
+        "cloud services",
+        "services",
+        "extended support"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "43513",
+      "service_name": "Entra Domain Services",
+      "retiring_feature": "Support for TLS 1.0/1.1",
+      "retirement_date": "2025-08-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=487247",
+      "searchable_text": "entra domain services support for tls 1.0/1.1",
+      "key_terms": [
+        "support for tls 1.0/1.1",
+        "1011",
+        "support",
+        "domain",
+        "entra domain services",
+        "tls",
+        "entra",
+        "services"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "604",
+      "service_name": "Microsoft Entra Id",
+      "retiring_feature": "VPN Gateway with Third-party App",
+      "retirement_date": "2028-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485535",
+      "searchable_text": "microsoft entra id vpn gateway with third-party app",
+      "key_terms": [
+        "app",
+        "third",
+        "vpn gateway with third-party app",
+        "party",
+        "gateway",
+        "entra",
+        "microsoft entra id",
+        "vpn"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "494",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "D, Ds, Dv2, Dsv2 and Ls series",
+      "retirement_date": "2028-05-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485569",
+      "searchable_text": "virtual machines d, ds, dv2, dsv2 and ls series",
+      "key_terms": [
+        "dsv2",
+        "machines",
+        "virtual",
+        "dv2",
+        "series",
+        "virtual machines",
+        "d, ds, dv2, dsv2 and ls series"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "337",
+      "service_name": "Azure Functions",
+      "retiring_feature": "Support for Python 3.9",
+      "retirement_date": "2025-10-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=489428",
+      "searchable_text": "azure functions support for python 3.9",
+      "key_terms": [
+        "support",
+        "support for python 3.9",
+        "functions",
+        "azure functions",
+        "python"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "850",
+      "service_name": "Windows Virtual Machines",
+      "retiring_feature": "Desired State Configuration extension",
+      "retirement_date": "2028-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485828",
+      "searchable_text": "windows virtual machines desired state configuration extension",
+      "key_terms": [
+        "state",
+        "windows virtual machines",
+        "desired state configuration extension",
+        "windows",
+        "machines",
+        "desired",
+        "virtual",
+        "configuration",
+        "extension"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "43512",
+      "service_name": "Azure Monitor",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2026-03-01T00:00:00",
+      "link": "https://learn.microsoft.com/azure/azure-monitor/fundamentals/best-practices-security#send-data-to-your-workspace-using-transport-layer-security-tls-12-or-higher",
+      "searchable_text": "azure monitor support for tls 1.0 and 1.1",
+      "key_terms": [
+        "support",
+        "monitor",
+        "azure monitor",
+        "tls",
+        "support for tls 1.0 and 1.1"
+      ],
+      "criticality": "high"
+    },
+    {
+      "id": "910",
+      "service_name": "Azure Database for MySQL Flexible Server",
+      "retiring_feature": "Support for TLS 1.0 and 1.1",
+      "retirement_date": "2025-08-31T00:00:00",
+      "link": "https://learn.microsoft.com/azure/mysql/flexible-server/how-to-connect-tls-ssl",
+      "searchable_text": "azure database for mysql flexible server support for tls 1.0 and 1.1",
+      "key_terms": [
+        "server",
+        "support",
+        "database",
+        "azure database for mysql flexible server",
+        "flexible",
+        "tls",
+        "support for tls 1.0 and 1.1",
+        "mysql"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "15",
+      "service_name": "Azure Static Web Apps",
+      "retiring_feature": "Dedicated plan",
+      "retirement_date": "2025-10-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=492371",
+      "searchable_text": "azure static web apps dedicated plan",
+      "key_terms": [
+        "dedicated plan",
+        "plan",
+        "azure static web apps",
+        "static",
+        "apps",
+        "dedicated",
+        "web"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "14",
+      "service_name": "App Service",
+      "retiring_feature": ".NET 9 (STS)",
+      "retirement_date": "2026-05-12T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485077",
+      "searchable_text": "app service .net 9 (sts)",
+      "key_terms": [
+        "sts",
+        ".net 9 (sts)",
+        "app",
+        "service",
+        "app service",
+        "net"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "499",
+      "service_name": "Virtual Machines",
+      "retiring_feature": "DCsv2-series",
+      "retirement_date": "2026-06-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=496104",
+      "searchable_text": "virtual machines dcsv2-series",
+      "key_terms": [
+        "dcsv2-series",
+        "series",
+        "machines",
+        "virtual",
+        "virtual machines",
+        "dcsv2"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "341",
+      "service_name": "Azure Kubernetes Service",
+      "retiring_feature": "VMware (preview)",
+      "retirement_date": "2026-03-16T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=500294",
+      "searchable_text": "azure kubernetes service vmware (preview)",
+      "key_terms": [
+        "vmware (preview)",
+        "azure kubernetes service",
+        "vmware",
+        "preview",
+        "kubernetes",
+        "service"
+      ],
+      "criticality": "high"
+    },
+    {
+      "id": "676",
+      "service_name": "Azure Kubernetes Service",
+      "retiring_feature": "Support for Ubuntu 18.04",
+      "retirement_date": "2025-06-17T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485790",
+      "searchable_text": "azure kubernetes service support for ubuntu 18.04",
+      "key_terms": [
+        "support",
+        "1804",
+        "azure kubernetes service",
+        "ubuntu",
+        "support for ubuntu 18.04",
+        "kubernetes",
+        "service"
+      ],
+      "criticality": "critical"
+    },
+    {
+      "id": "677",
+      "service_name": "Azure Kubernetes Service",
+      "retiring_feature": "Support for Ubuntu 20.04",
+      "retirement_date": "2027-03-17T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485795",
+      "searchable_text": "azure kubernetes service support for ubuntu 20.04",
+      "key_terms": [
+        "support",
+        "2004",
+        "azure kubernetes service",
+        "ubuntu",
+        "kubernetes",
+        "service",
+        "support for ubuntu 20.04"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "667",
+      "service_name": "Azure Maps",
+      "retiring_feature": "Traffic v1 APIs",
+      "retirement_date": "2028-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=485810",
+      "searchable_text": "azure maps traffic v1 apis",
+      "key_terms": [
+        "maps",
+        "traffic",
+        "azure maps",
+        "apis",
+        "traffic v1 apis"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "83",
+      "service_name": "Azure Disks",
+      "retiring_feature": "Operating System (OS) Disks on Standard HDD",
+      "retirement_date": "2028-09-08T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=500157",
+      "searchable_text": "azure disks operating system (os) disks on standard hdd",
+      "key_terms": [
+        "system",
+        "disks",
+        "standard",
+        "azure disks",
+        "operating system (os) disks on standard hdd",
+        "hdd",
+        "operating"
+      ],
+      "criticality": "low"
+    },
+    {
+      "id": "170",
+      "service_name": "Azure App Service",
+      "retiring_feature": "Arc-enabled Kubernetes",
+      "retirement_date": "2026-03-31T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=500016",
+      "searchable_text": "azure app service arc-enabled kubernetes",
+      "key_terms": [
+        "arc-enabled kubernetes",
+        "app",
+        "enabled",
+        "arc",
+        "kubernetes",
+        "service",
+        "azure app service"
+      ],
+      "criticality": "high"
+    },
+    {
+      "id": "365",
+      "service_name": "Azure Databricks",
+      "retiring_feature": "Standard tier workspaces",
+      "retirement_date": "2026-10-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=502623",
+      "searchable_text": "azure databricks standard tier workspaces",
+      "key_terms": [
+        "standard",
+        "azure databricks",
+        "workspaces",
+        "standard tier workspaces",
+        "tier",
+        "databricks"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "416",
+      "service_name": "Azure Storage Accounts",
+      "retiring_feature": "Blob and General-Purpose v1 Storage Accounts",
+      "retirement_date": "2026-09-01T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=496964",
+      "searchable_text": "azure storage accounts blob and general-purpose v1 storage accounts",
+      "key_terms": [
+        "azure storage accounts",
+        "storage",
+        "accounts",
+        "blob",
+        "general",
+        "blob and general-purpose v1 storage accounts",
+        "purpose"
+      ],
+      "criticality": "medium"
+    },
+    {
+      "id": "50",
+      "service_name": "Azure Monitor SCOM Managed Instance",
+      "retiring_feature": "LSv2-Series",
+      "retirement_date": "2026-09-30T00:00:00",
+      "link": "https://azure.microsoft.com/updates/?id=501673",
+      "searchable_text": "azure monitor scom managed instance lsv2-series",
+      "key_terms": [
+        "scom",
+        "monitor",
+        "instance",
+        "azure monitor scom managed instance",
+        "managed",
+        "lsv2",
+        "series",
+        "lsv2-series"
+      ],
+      "criticality": "medium"
+    }
+  ]
+}

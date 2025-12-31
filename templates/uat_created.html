@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}UAT Created - Issue Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow border-success">
+            <div class="card-header bg-success text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2"></i>UAT Ticket Created Successfully!
+                </h2>
+            </div>
+            <div class="card-body text-center">
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">
+                        <i class="fas fa-ticket-alt me-2"></i>Ticket Submitted
+                    </h4>
+                    <p class="mb-0">
+                        Your User Acceptance Test (UAT) request has been successfully submitted to our technical team.
+                    </p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-hashtag me-2"></i>Ticket Details
+                                </h5>
+                                <p><strong>Ticket ID:</strong> UAT-{{ current_date }}-{{ ticket_number }}</p>
+                                <p><strong>Created:</strong> {{ current_datetime }}</p>
+                                <p><strong>Priority:</strong> Normal</p>
+                                <p class="mb-0"><strong>Status:</strong> <span class="badge bg-warning">Pending Review</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        {% if ado_success %}
+                        <div class="card bg-success bg-opacity-10 mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">
+                                    <i class="fab fa-microsoft me-2"></i>Azure DevOps Work Item
+                                </h5>
+                                <p><strong>Work Item ID:</strong> <a href="{{ work_item_url }}" target="_blank" class="text-decoration-none">#{{ work_item_id }}</a></p>
+                                <p><strong>Title:</strong> {{ work_item_title }}</p>
+                                <p><strong>State:</strong> <span class="badge bg-success">{{ work_item_state }}</span></p>
+                                <p><strong>Assigned To:</strong> {{ assigned_to }}</p>
+                                <p class="mb-0"><strong>Type:</strong> Action</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="card bg-warning bg-opacity-10 mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title text-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Azure DevOps
+                                </h5>
+                                <p class="mb-0"><small>Work item creation failed: {{ ado_error }}</small></p>
+                                <p class="mb-0"><small>Manual work item creation may be required.</small></p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if ado_success %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card bg-info bg-opacity-10 mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title text-info">
+                                    <i class="fas fa-cogs me-2"></i>Custom Field Configuration
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Assigned To:</strong> ACR Accelerate Blockers Help</p>
+                                        <p><strong>Corp Assignment:</strong> <span class="badge bg-success">Active</span></p>
+                                        <p><strong>Status Update:</strong> WizardAuto</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if opportunity_id %}
+                                        <p><strong>Opportunity ID:</strong> {{ opportunity_id }}</p>
+                                        {% endif %}
+                                        {% if milestone_id %}
+                                        <p><strong>Milestone ID:</strong> {{ milestone_id }}</p>
+                                        {% endif %}
+                                        <p><strong>Source:</strong> Enhanced Issue Tracker</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-clock me-2"></i>What's Next?
+                                </h5>
+                                <ul class="text-start mb-0">
+                                    <li>Email confirmation sent</li>
+                                    {% if ado_success %}
+                                    <li>Work item created in Azure DevOps for tracking</li>
+                                    {% endif %}
+                                    <li>Technical review within 1-2 days</li>
+                                    <li>Solution development begins</li>
+                                    <li>Progress updates via email</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Your Issue Summary:</h5>
+                    </div>
+                    <div class="card-body text-start">
+                        <p class="card-text">{{ issue }}</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-envelope me-2"></i>Keep This Information
+                    </h6>
+                    <p class="mb-0">
+                        Please save your ticket ID for future reference. You'll receive email updates at your registered address.
+                    </p>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Submit Another Issue
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i>Print Confirmation
+                    </button>
+                </div>
+
+                <div class="mt-4">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Need Immediate Help?
+                            </h6>
+                            <p class="mb-0">
+                                If this is an urgent issue affecting business operations, 
+                                please call our emergency support line: <strong>(555) 911-TECH</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-clear local storage draft since issue was submitted
+localStorage.removeItem('issue_draft');
+
+// Optional: Add confetti or celebration animation
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple celebration animation
+    const card = document.querySelector('.card.border-success');
+    if (card) {
+        card.style.transform = 'scale(0.95)';
+        card.style.transition = 'transform 0.3s ease';
+        setTimeout(() => {
+            card.style.transform = 'scale(1)';
+        }, 100);
+    }
+});
+</script>
+{% endblock %}

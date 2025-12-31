@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-12-29T15:54:39.893816",
+  "data": {
+    "security": [
+      "networksecuritygroups",
+      "vaults"
+    ],
+    "compute": [],
+    "storage": [
+      "storageaccounts"
+    ],
+    "networking": [
+      "networkwatchers",
+      "privatednszones",
+      "publicipaddresses",
+      "virtualnetworklinks",
+      "virtualnetworks"
+    ],
+    "database": [
+      "databases",
+      "servers",
+      "workspaces"
+    ],
+    "ai_ml": [
+      "accounts",
+      "projects",
+      "workspaces"
+    ],
+    "analytics": [
+      "workspaces"
+    ],
+    "integration": [],
+    "monitoring": [
+      "actiongroups",
+      "components",
+      "smartdetectoralertrules",
+      "workspaces"
+    ],
+    "governance": [
+      "searchservices",
+      "solutions",
+      "systemtopics",
+      "userassignedidentities"
+    ],
+    "web": [
+      "serverfarms",
+      "sites",
+      "staticsites"
+    ],
+    "mobile": [],
+    "iot": [],
+    "media": [],
+    "migration": [],
+    "modern_work": []
+  }
+}
