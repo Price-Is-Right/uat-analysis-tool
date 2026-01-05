@@ -1,7 +1,27 @@
 {
   "last_updated": "2025-10-13T11:23:19.316202",
-  "total_retirements": 90,
+  "total_retirements": 91,
   "retirements": [
+    {
+      "id": "9001",
+      "service_name": "Microsoft Defender XDR",
+      "retiring_feature": "Deception Capability",
+      "retirement_date": "2025-10-31T00:00:00",
+      "link": "https://learn.microsoft.com/microsoft-365/security/defender/",
+      "searchable_text": "microsoft defender xdr deception capability",
+      "key_terms": [
+        "defender",
+        "xdr",
+        "deception",
+        "microsoft defender xdr",
+        "deception capability",
+        "security"
+      ],
+      "criticality": "high",
+      "replacement_service": "Microsoft Sentinel Deception",
+      "migration_guide_url": "https://learn.microsoft.com/microsoft-365/security/defender/",
+      "extension_available": false
+    },
     {
       "id": "583",
       "service_name": "Azure Synapse",

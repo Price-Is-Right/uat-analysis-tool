@@ -87,21 +87,32 @@ python app.py --debug
 ## 🔎 Enhanced Matching Results (30 seconds)
 
 ### Search Process
-- **Local Database**: Searches evaluating retirements and solutions
-- **UAT Organization**: Queries Azure DevOps UAT
-- **Technical Feedback**: Searches TFT organization
-- **Real-time Updates**: Progress bar shows search status
+- **AI-Powered Query Generation**: Azure OpenAI creates intelligent 3-5 word search queries
+- **Microsoft Learn Documentation**: Smart search with optimized queries
+- **Retirement Information**: Multi-source checking (local JSON + Microsoft Learn + Azure Updates)
+- **Similar Products**: Alternative Azure service suggestions
+- **Regional Options**: Availability by region for specified services
+- **Real-time Progress**: Animated progress bar through 5 search stages
+
+### Retirement Information Display
+- **Collapsible Sections**: Click to expand/collapse retirement details (collapsed by default)
+- **Scrollable Lists**: Max 400px height prevents buttons from being pushed off-screen
+- **Count Badges**: Shows number of relevant retirements found
+- **Smart Filtering**: Word boundary matching ensures only relevant services shown
+- **Online Search Fallback**: If local database empty, searches Microsoft Learn automatically
 
 ### Result Types
-1. **Exact Matches**: High similarity scores (>70%)
-2. **Similar Issues**: Moderate similarity (30-70%)
-3. **Related Topics**: Partial matches (<30%)
-4. **No Matches**: Offers to create new UAT work item
+1. **Microsoft Learn Docs**: Official documentation links with relevance scores
+2. **Similar Products**: Alternative Azure services with descriptions
+3. **Regional Options**: Availability information for different Azure regions  
+4. **Capacity Guidance**: Quota and limit information if relevant
+5. **Retirement Info**: Service/feature retirement announcements with migration guidance
 
 ### Available Actions
-- **View Recommended Actions**: See step-by-step solutions
-- **Create UAT**: If no matches found, create new work item
-- **Start New Search**: Submit another issue
+- **Cancel**: Return to home (centered button with proper alignment)
+- **Do Deep Search**: More comprehensive search (may take longer)
+- **Continue and Create UAT**: Proceed to UAT creation after reviewing resources
+- **Back to Summary**: Return to context summary page
 
 ## 🛠 Common Tasks
 

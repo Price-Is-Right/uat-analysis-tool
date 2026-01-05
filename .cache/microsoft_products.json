@@ -1,0 +1,139 @@
+{
+  "timestamp": "2026-01-04T15:28:55.726893",
+  "data": {
+    "kusto query language (kql) overview - kusto": {
+      "title": "Kusto Query Language (KQL) overview - Kusto",
+      "description": "...ectors. data ingested from external sources into user-defined custom tables, using custom-created data connectors and some types of out-of-the-box connectors. data created by Microsoft Sentinel itself, resulting from the analyses it creates and performs - for example, alerts, incidents, and UEBA-related information. data uploaded to Microsoft.",
+      "category": "security",
+      "url": "https://learn.microsoft.com/en-us/kusto/query/",
+      "aliases": []
+    },
+    "intune documentation - microsoft intune": {
+      "title": "Microsoft Intune documentation - Microsoft Intune",
+      "description": "Microsoft Intune documentation Learn more about Microsoft Intune's unified endpoint management and security solutions. Microsoft Defender for Endpoint Microsoft Defender for Endpoint delivers preventative protection, post-breach detection, automated investigation, and response. Intune community resources Microsoft Q & A - Microsoft Intune The home.",
+      "category": "security",
+      "url": "https://learn.microsoft.com/en-us/intune/intune-service/",
+      "aliases": [
+        "intune documentation - intune"
+      ]
+    },
+    "entra id documentation - microsoft entra id": {
+      "title": "Microsoft Entra ID documentation - Microsoft Entra ID",
+      "description": "Microsoft Entra ID documentation Use Microsoft Entra ID to manage user identities and control access to your apps, data, and resources. Managed identities for Azure resources Create an application identity that can connect to resources using Microsoft Entra authentication. Azure Active Directory B2C Business to consumers identity and access.",
+      "category": "security",
+      "url": "https://learn.microsoft.com/en-us/entra/identity/",
+      "aliases": [
+        "entra id documentation - entra id"
+      ]
+    },
+    "purview": {
+      "title": "Microsoft Purview",
+      "description": "Microsoft Purview Microsoft Purview is a comprehensive portfolio of products spanning data governance, data security, and data compliance solutions. Overview Learn about Microsoft Purview Get started Set up data governance solutions Get started Set up data security solutions Get started Set up data compliance solutions Quickstart Try th....",
+      "category": "compliance",
+      "url": "https://learn.microsoft.com/en-us/purview/",
+      "aliases": []
+    },
+    "fabric documentation - microsoft fabric": {
+      "title": "Microsoft Fabric documentation - Microsoft Fabric",
+      "description": "Microsoft Fabric documentation Microsoft Fabric is a unified platform that can meet your organization's data and analytics needs. Overview What is Microsoft Fabric. Fabric Data Science Unlock powerful insights us... Fabric Data Warehouse Analyze data in a secure SQL warehouse for greater scale and performance in an open data format. Microsoft.",
+      "category": "analytics",
+      "url": "https://learn.microsoft.com/en-us/fabric/",
+      "aliases": [
+        "fabric documentation - fabric"
+      ]
+    },
+    "what is azure synapse analytics? - azure synapse analytics": {
+      "title": "What is Azure Synapse Analytics? - Azure Synapse Analytics",
+      "description": "Azure Synapse brings together the best of SQL technologies used in enterprise data warehousing, Spark technologies used for big data, Data Explorer for log and time series analytics, Pipelines for data integration and ETL/ELT, and deep integration with other Azure services such as Power BI, CosmosDB, and AzureML.  ...using machine learning models.",
+      "category": "analytics",
+      "url": "https://learn.microsoft.com/en-us/azure/synapse-analytics/overview-what-is",
+      "aliases": [
+        "what is synapse analytics? - synapse analytics"
+      ]
+    },
+    "graph": {
+      "title": "Microsoft Graph documentation",
+      "description": "Microsoft Graph documentation Microsoft Graph is the gateway to data and intelligence in Microsoft 365. Use Microsoft Graph to build intelligent apps, derive insights and analytics, and extend Microsoft 365 experiences. Security Con... Microsoft Teams teamwork and communications Explore chat-based collaboration, meetings, calling, and enterprise.",
+      "category": "collaboration",
+      "url": "https://learn.microsoft.com/en-us/graph/",
+      "aliases": []
+    },
+    "introduction to sharepoint and onedrive in microsoft 365 for administrators - sharepoint in microsoft 365": {
+      "title": "Introduction to SharePoint and OneDrive in Microsoft 365 for administrators - SharePoint in Microsoft 365",
+      "description": "If you're looking for this information: Go to this resource: Learn about secure collaboration in Microsoft 365 Set up secure collaboration with Microsoft 365 Learn about file collaboration and how to plan your implementation Intro to file collaboration in Microsoft 365File collaboration in SharePoint with Microsoft 365 Learn about collaborating.",
+      "category": "collaboration",
+      "url": "https://learn.microsoft.com/en-us/sharepoint/introduction",
+      "aliases": [
+        "introduction to sharepoint and onedrive in 365 for administrators - sharepoint in 365"
+      ]
+    },
+    "what is power automate? - power automate": {
+      "title": "What is Power Automate? - Power Automate",
+      "description": "Types of flows Power Automate provides three types of flows to meet different automation needs. Select one of the following types for an overview of what it can do: Cloud flows: Create a cloud flow when you want your automation to be triggered either automatically, instantly, or via a schedule. Desktop flows: Use desktop flows to automate tasks on.",
+      "category": "automation",
+      "url": "https://learn.microsoft.com/en-us/power-automate/flow-types",
+      "aliases": []
+    },
+    "certified: dynamics 365 business central functional consultant associate - certifications": {
+      "title": "Microsoft Certified: Dynamics 365 Business Central Functional Consultant Associate - Certifications",
+      "description": "Certification Microsoft Certified: Dynamics 365 Business Central Functional Consultant Associate As a functional consultant, you implement core application setup processes for small and medium businesses. At a glance Level Intermediate Product Dynamics 365 Business Central Microsoft Power Platform Role Functional Consultant Subject Business.",
+      "category": "business_apps",
+      "url": "https://learn.microsoft.com/en-us/credentials/certifications/d365-business-central-functional-consultant-associate/",
+      "aliases": []
+    },
+    "azure monitor overview - azure monitor": {
+      "title": "Azure Monitor overview - Azure Monitor",
+      "description": "Azure Logic Apps is also an option. These Azure services work with Azure Monitor to provide integration capabilities. Azure Logic Apps Azure Logic Apps is a service you can use to automate tasks and business processes by using workflows that integrate with different systems and services with little or no code. You can use Logic Apps to customize.",
+      "category": "integration",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/fundamentals/overview",
+      "aliases": [
+        "monitor overview - monitor"
+      ]
+    },
+    "365 admin center help": {
+      "title": "Microsoft 365 admin center help",
+      "description": "Microsoft 365 admin center help Explore resources for working in the Microsoft 365 admin center. How-To Guide Stay o... YouTube - Microsoft 365 help for small businesses Learn how to set up and manage Microsoft 365 for your business with short videos. Overview of the Microsoft 365 admin center Learn about admin roles, how to stay on top of.",
+      "category": "productivity",
+      "url": "https://learn.microsoft.com/en-us/microsoft-365/admin/",
+      "aliases": []
+    },
+    "add github accounts to your keychain - visual studio (windows)": {
+      "title": "Add GitHub accounts to your keychain - Visual Studio (Windows)",
+      "description": "Add your GitHub accounts to your Visual Studio keychain In this article, you learn how to add your public GitHub or GitHub Enterprise account to your Visual Studio keychain. After you add your account, you can use GitHub Copilot and track your code changes in GitHub repositories, right from Visual Studio. Adding public GitHub accounts You can add.",
+      "category": "developer",
+      "url": "https://learn.microsoft.com/en-us/visualstudio/ide/work-with-github-accounts",
+      "aliases": []
+    },
+    "sentinel": {
+      "title": "Microsoft Sentinel",
+      "description": "Cloud-native security information and event management (SIEM) and security orchestration, automation, and response (SOAR) solution",
+      "category": "security",
+      "url": "https://learn.microsoft.com/azure/sentinel/",
+      "aliases": [
+        "azure sentinel"
+      ]
+    },
+    "defender": {
+      "title": "Microsoft Defender",
+      "description": "Comprehensive security solution protecting endpoints, identities, cloud apps, and Office 365",
+      "category": "security",
+      "url": "https://learn.microsoft.com/microsoft-365/security/",
+      "aliases": [
+        "microsoft defender for endpoint",
+        "defender for cloud",
+        "defender for office 365"
+      ]
+    },
+    "entra": {
+      "title": "Microsoft Entra",
+      "description": "Identity and access management service (formerly Azure Active Directory)",
+      "category": "security",
+      "url": "https://learn.microsoft.com/entra/",
+      "aliases": [
+        "azure ad",
+        "azure active directory",
+        "entra id"
+      ]
+    }
+  }
+}

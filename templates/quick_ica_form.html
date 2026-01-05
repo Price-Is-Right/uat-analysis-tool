@@ -18,7 +18,7 @@
                         <strong>Quick ICA Testing:</strong> Enter your Title, Description, and Impact data below to immediately test the Intelligent Context Analysis capabilities. This form bypasses the wizard screens and goes directly to the ICA review.
                     </div>
 
-                    <form method="POST" action="{{ url_for('quick_ica') }}" class="needs-validation" novalidate>
+                    <form method="POST" action="{{ url_for('quick_ica') }}" class="needs-validation" id="quickICAForm" novalidate>
                         <div class="mb-4">
                             <label for="title" class="form-label">
                                 <strong>Issue Title</strong> <span class="text-danger">*</span>
@@ -73,11 +73,36 @@
                             <a href="{{ url_for('wizard.wizard_start') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-magic me-2"></i>Use Full Wizard
                             </a>
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                                 <i class="fas fa-brain me-2"></i>Run ICA Analysis
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Loading Overlay (outside form so it stays visible) -->
+            <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+                <div style="text-align: center; color: white;">
+                    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; margin-bottom: 1rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h4>Analyzing with AI...</h4>
+                    <p>This may take a few seconds</p>
+                </div>
+            </div>
+            
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('quickICAForm').addEventListener('submit', function(e) {
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    // Disable submit button to prevent multiple clicks
+                    document.getElementById('submitBtn').disabled = true;
+                    // Let form submit normally - don't prevent default
+                });
+            });
+            </script>
                 </div>
             </div>
 

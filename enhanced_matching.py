@@ -77,7 +77,7 @@ import time                                             # Performance timing and
 
 # Custom module imports for specialized functionality
 from retirement_checker import RetirementChecker        # Service retirement database integration
-from hybrid_context_analyzer import HybridContextAnalyzer, ContextAnalysis
+from hybrid_context_analyzer import HybridContextAnalyzer
 from intelligent_context_analyzer import IssueCategory, IntentType
 # ↑ AI-powered hybrid context analysis with LLM and pattern matching
 
@@ -165,8 +165,8 @@ class EnhancedMatchingConfig:
             token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
             return credential, token.token
         except Exception as e:
-            print(f"⚠️  Azure CLI credential failed: {e}")
-            print("📝 Make sure you're logged in: az login")
+            print(f"[WARNING] Azure CLI credential failed: {e}")
+            print("[INFO] Make sure you're logged in: az login")
             credential = DefaultAzureCredential()
             token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
             return credential, token.token
@@ -368,7 +368,9 @@ class AIAnalyzer:
             suggestions.append("To help our AI provide the best assistance, please include more context: What Microsoft or Azure service are you working with? What are you trying to accomplish? This helps us understand your situation better.")
         
         # Dynamic impact suggestions
-        if 'impact_insufficient' in issues or 'impact_garbage' in issues:
+        if 'impact_optional_recommended' in issues:
+            suggestions.append("📋 No impact statement provided. While optional, adding an impact statement helps us prioritize and understand how this affects your business. Consider including: Who is affected? What are the consequences? What's the urgency?")
+        elif 'impact_insufficient' in issues or 'impact_garbage' in issues:
             if impact_analysis['is_garbage']:
                 suggestions.append(f"Your impact statement '{impact}' doesn't describe the business effect. Please explain how this problem affects users, productivity, or business operations.")
             elif len((impact or "").split()) < 3:
@@ -410,14 +412,17 @@ class AIAnalyzer:
         # Analyze each field for garbage content first
         title_analysis = AIAnalyzer._analyze_text_quality(title or "")
         desc_analysis = AIAnalyzer._analyze_text_quality(description or "")
-        impact_analysis = AIAnalyzer._analyze_text_quality(impact or "")
+        # Impact is optional - only analyze if provided
+        impact_analysis = AIAnalyzer._analyze_text_quality(impact or "") if impact and impact.strip() else {'is_garbage': False, 'reason': 'empty_optional', 'confidence': 0.0}
         
         # Check for garbage input (this is critical and heavily penalized)
         if title_analysis['is_garbage']:
             issues.append("title_garbage")
         if desc_analysis['is_garbage']:
             issues.append("description_garbage")
-        if impact_analysis['is_garbage']:
+        # Only flag impact as garbage if it has content but that content is garbage
+        # Empty impact is acceptable since it's optional
+        if impact and impact.strip() and impact_analysis['is_garbage']:
             issues.append("impact_garbage")
         
         # Traditional quality checks (only if not garbage)
@@ -459,7 +464,7 @@ class AIAnalyzer:
         if not impact_analysis['is_garbage']:
             impact_words = len(impact.split()) if impact else 0
             if impact_words < EnhancedMatchingConfig.MIN_IMPACT_WORDS:
-                issues.append("impact_insufficient")
+                issues.append("impact_optional_recommended")  # Changed to indicate it's optional
             elif impact and re.search(r'^\s*(bad|not good|problem|issue)\s*\.?\s*$', impact.lower()):
                 issues.append("impact_too_vague")
             
@@ -477,6 +482,8 @@ class AIAnalyzer:
                 base_score -= 40  # Heavy penalty for garbage input
             elif 'insufficient' in issue:
                 base_score -= 25  # Major penalty for insufficient content
+            elif 'impact_optional_recommended' in issue:
+                base_score -= 5  # Minor penalty - impact is optional but recommended
             elif 'lacks_context' in issue or 'lacks_detail' in issue:
                 base_score -= 20  # Significant penalty for insufficient information for AI understanding
             elif 'missing_specificity' in issue or 'vague_timing' in issue or 'generic_terms' in issue:
@@ -629,7 +636,9 @@ class AzureDevOpsSearcher:
         try:
             _, self.token = self.config.get_ado_credential()
         except Exception as e:
-            print(f\"\u274c Token refresh failed: {e}\")\n        \n        return {
+            print(f"[ERROR] Token refresh failed: {e}")
+        
+        return {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.token}',
             'Accept': 'application/json'
@@ -651,11 +660,11 @@ class AzureDevOpsSearcher:
             List[Dict]: List of similar work items with metadata
         """
         try:
-            print("🚀 Starting FAST UAT search (max 30 seconds)...")
+            print("[SEARCH] Starting FAST UAT search (max 30 seconds)...")
             start_time = time.time()
             
-            # ⚡ SIMPLE FAST SEARCH - limit to recent items only for speed
-            print("🔍 Using simple recent items search for speed...")
+            # SIMPLE FAST SEARCH - limit to recent items only for speed
+            print("[SEARCH] Using simple recent items search for speed...")
             recent_matches = self._search_recent_items(title, description, days=90)
             if recent_matches:
                 elapsed = time.time() - start_time
@@ -663,7 +672,7 @@ class AzureDevOpsSearcher:
                 return recent_matches
             
             # Fallback: Try key terms but with timeout protection
-            print("🔍 Trying key terms search with timeout protection...")
+            print("[SEARCH] Trying key terms search with timeout protection...")
             try:
                 key_term_matches = self._search_by_key_terms(title, description)
                 if key_term_matches:
@@ -671,10 +680,10 @@ class AzureDevOpsSearcher:
                     print(f"✅ Key terms search completed in {elapsed:.1f}s - Found {len(key_term_matches)} matches")
                     return key_term_matches
             except Exception as key_error:
-                print(f"⚠️ Key terms search failed: {key_error}")
+                print(f"[WARNING] Key terms search failed: {key_error}")
             
             # Final fallback: Basic keyword search
-            print("🔍 Final fallback: Basic keyword search...")
+            print("[SEARCH] Final fallback: Basic keyword search...")
             keyword_matches = self._search_by_keywords(title, description)
             
             elapsed = time.time() - start_time
@@ -747,7 +756,7 @@ class AzureDevOpsSearcher:
                 if work_items:
                     # ⚡ PERFORMANCE OPTIMIZATION: Limit candidates for fast response
                     max_candidates = min(200, len(work_items))  # Process max 200 for speed
-                    print(f"🚀 Fast search: Processing top {max_candidates} of {len(work_items)} candidates...")
+                    print(f"[SEARCH] Fast search: Processing top {max_candidates} of {len(work_items)} candidates...")
                     return self._get_work_item_details_with_semantic_scoring(work_items[:max_candidates], title, title_analysis, description)
             
             return []
@@ -1444,7 +1453,7 @@ class AzureDevOpsSearcher:
                             description or title, work_item_description
                         )
                         
-                        # ⚡ PERFORMANCE: Use higher threshold and early exit
+                        # PERFORMANCE: Use higher threshold and early exit
                         if semantic_score['combined_score'] > 0.6:  # Higher threshold for quality
                             similar_items.append({
                                 'id': work_item_id,
@@ -1463,7 +1472,7 @@ class AzureDevOpsSearcher:
                             
                             # ⚡ PERFORMANCE: Early exit when we have enough quality matches
                             if len(similar_items) >= 30 and semantic_score['combined_score'] > 0.8:
-                                print(f"⚡ Early exit: Found {len(similar_items)} high-quality matches")
+                                print(f"[PERF] Early exit: Found {len(similar_items)} high-quality matches")
                                 break
                             
                     except Exception as item_error:
@@ -1471,7 +1480,7 @@ class AzureDevOpsSearcher:
                 
                 # ⚡ Early exit at batch level too
                 if len(similar_items) >= 50:
-                    print(f"⚡ Batch early exit: Found {len(similar_items)} matches")
+                    print(f"[PERF] Batch early exit: Found {len(similar_items)} matches")
                     break
             
             # Sort by semantic similarity and return top matches
@@ -1774,11 +1783,26 @@ class EnhancedMatcher:
     
     def analyze_context_for_evaluation(self, title: str, description: str, impact: str = "") -> Dict:
         """
-        Perform context analysis and return results for human evaluation
+        Perform context analysis and return results for human evaluation.
+        
+        🆕 v3.1: Fixed blank fields bug by including ALL context analysis fields
         
         This method performs only the context analysis phase without proceeding 
         to search operations. Results are returned for human validation before
         continuing with the intelligent search process.
+        
+        PREVIOUS BUG:
+        The evaluation data was only passing a subset of context analysis fields:
+        - category, intent, confidence, business_impact (✓ included)
+        - reasoning, pattern_features, source (✓ included)
+        - technical_complexity, urgency_level (✗ MISSING - showed "Not Available")
+        - key_concepts, semantic_keywords (✗ MISSING - showed "Not available")
+        - domain_entities, recommended_search_strategy (✗ MISSING)
+        - context_summary (✗ MISSING)
+        
+        FIX:
+        Now includes ALL fields from the ContextAnalysis object, ensuring the UI
+        displays complete information in the Final Decision Summary section.
         
         Args:
             title (str): Issue title
@@ -1786,12 +1810,39 @@ class EnhancedMatcher:
             impact (str): Business impact statement
             
         Returns:
-            Dict: Context analysis results for evaluation
+            Dict: Complete context analysis results for evaluation with structure:
+            {
+                'original_issue': {
+                    'title': str,
+                    'description': str,
+                    'impact': str
+                },
+                'context_analysis': {
+                    'category': str (enum value),
+                    'intent': str (enum value),
+                    'confidence': float (0.0-1.0),
+                    'business_impact': str (low/medium/high),
+                    'technical_complexity': str (low/medium/high),  # 🆕 v3.1
+                    'urgency_level': str (low/medium/high),         # 🆕 v3.1
+                    'key_concepts': List[str],                      # 🆕 v3.1
+                    'semantic_keywords': List[str],                 # 🆕 v3.1
+                    'domain_entities': Dict[str, List[str]],        # 🆕 v3.1
+                    'recommended_search_strategy': Dict[str, bool], # 🆕 v3.1
+                    'context_summary': str,                         # 🆕 v3.1
+                    'reasoning': str or Dict,
+                    'pattern_features': Dict,
+                    'source': str (ai/pattern/hybrid)
+                },
+                'timestamp': str (ISO format)
+            }
         """
         # Perform intelligent context analysis
-        context_analysis = self.context_analyzer.analyze_context(title, description, impact)
+        context_analysis = self.context_analyzer.analyze(title, description, impact)
         
-        # Format context analysis for evaluation
+        # Format context analysis for evaluation - NOW WITH ALL FIELDS
+        category_value = context_analysis.category.value if hasattr(context_analysis.category, 'value') else str(context_analysis.category).split('.')[-1].lower()
+        intent_value = context_analysis.intent.value if hasattr(context_analysis.intent, 'value') else str(context_analysis.intent).split('.')[-1].lower()
+        
         evaluation_data = {
             'original_issue': {
                 'title': title,
@@ -1799,24 +1850,51 @@ class EnhancedMatcher:
                 'impact': impact
             },
             'context_analysis': {
-                'category': context_analysis.category.value,
-                'intent': context_analysis.intent.value,
+                # Core classification
+                'category': category_value,
+                'intent': intent_value,
                 'confidence': context_analysis.confidence,
+                
+                # Business context
                 'business_impact': context_analysis.business_impact,
+                
+                # 🆕 v3.1: Previously missing fields that caused "Not Available" display
                 'technical_complexity': context_analysis.technical_complexity,
                 'urgency_level': context_analysis.urgency_level,
-                'context_summary': context_analysis.context_summary,
                 'key_concepts': context_analysis.key_concepts,
                 'semantic_keywords': context_analysis.semantic_keywords,
                 'domain_entities': context_analysis.domain_entities,
-                'reasoning': context_analysis.reasoning
+                'recommended_search_strategy': context_analysis.recommended_search_strategy,
+                'context_summary': context_analysis.context_summary,
+                
+                # Analysis details
+                'reasoning': context_analysis.reasoning,
+                'pattern_features': context_analysis.pattern_features,
+                'pattern_reasoning': context_analysis.pattern_reasoning if hasattr(context_analysis, 'pattern_reasoning') else None,
+                'source': context_analysis.source,
+                
+                # AI status tracking (for diagnostic display)
+                # These fields enable templates to show success indicators and error messages
+                'ai_available': context_analysis.ai_available,
+                'ai_error': context_analysis.ai_error,
+                
+                # Display-friendly field mappings
+                'category_display': category_value.replace('_', ' ').title(),
+                'intent_display': intent_value.replace('_', ' ').title(),
+                'business_impact_display': context_analysis.business_impact.replace('_', ' ').title() if context_analysis.business_impact else 'Not Assessed'
             },
-            'recommended_strategy': context_analysis.recommended_search_strategy,
             'timestamp': datetime.now().isoformat()
         }
         
-        print(f"CONTEXT ANALYSIS FOR EVALUATION: {context_analysis.context_summary}")
-        print(f"Category: {context_analysis.category.value}, Intent: {context_analysis.intent.value}")
+        # Handle reasoning display - could be dict or string
+        reasoning_preview = context_analysis.reasoning
+        if isinstance(reasoning_preview, dict):
+            reasoning_preview = f"Pattern matching only (AI {'disabled' if not hasattr(context_analysis, 'source') else 'unavailable'})"
+        elif isinstance(reasoning_preview, str):
+            reasoning_preview = reasoning_preview[:100]
+        
+        print(f"CONTEXT ANALYSIS FOR EVALUATION: {reasoning_preview}...")
+        print(f"Category: {context_analysis.category}, Intent: {context_analysis.intent}")
         print(f"Confidence: {context_analysis.confidence:.2f}")
         
         return evaluation_data
@@ -1851,29 +1929,25 @@ class EnhancedMatcher:
         if progress_callback:
             progress_callback(1, 6, 15, "Analyzing Context - Understanding issue domain and intent")
         
-        context_analysis = self.context_analyzer.analyze_context(title, description, impact)
+        context_analysis = self.context_analyzer.analyze(title, description, impact)
         results['context_analysis'] = {
-            'category': context_analysis.category.value,
-            'intent': context_analysis.intent.value,
+            'category': context_analysis.category,
+            'intent': context_analysis.intent,
             'confidence': context_analysis.confidence,
             'business_impact': context_analysis.business_impact,
-            'technical_complexity': context_analysis.technical_complexity,
-            'urgency_level': context_analysis.urgency_level,
-            'context_summary': context_analysis.context_summary,
-            'key_concepts': context_analysis.key_concepts,
             'reasoning': context_analysis.reasoning,
-            'semantic_keywords': context_analysis.semantic_keywords
+            'pattern_features': context_analysis.pattern_features,
+            'source': context_analysis.source
         }
         
-        print(f"CONTEXT ANALYSIS: {context_analysis.context_summary}")
-        print(f"Category: {context_analysis.category.value}, Intent: {context_analysis.intent.value}")
-        print(f"Search Strategy: {context_analysis.recommended_search_strategy}")
+        print(f"CONTEXT ANALYSIS: Category={context_analysis.category}, Intent={context_analysis.intent}")
         
-        # Step 2: Smart Retirement Checking (only if recommended)
+        # Step 2: Smart Retirement Checking (always check)
         if progress_callback:
             progress_callback(2, 6, 30, "Smart Retirement Analysis - Context-aware retirement checking")
         
-        strategy = context_analysis.recommended_search_strategy
+        # Use comprehensive search strategy
+        strategy = {'search_retirements': True, 'search_ado': True}
         results['search_strategy_used'] = strategy
         
         if strategy.get('search_retirements', False):
@@ -2249,11 +2323,11 @@ class EnhancedMatcher:
         approved_context = evaluation_data['context_analysis']
         approved_strategy = evaluation_data['recommended_strategy']
         
-        print(f"🚀 APPROVED SEARCH METHOD CALLED - continue_intelligent_search_after_approval")
+        print(f"[SEARCH] APPROVED SEARCH METHOD CALLED - continue_intelligent_search_after_approval")
         print(f"CONTINUING SEARCH WITH APPROVED CONTEXT:")
         print(f"Category: {approved_context['category']}, Intent: {approved_context['intent']}")
         print(f"Strategy: {approved_strategy}")
-        print(f"🔍 RETIREMENT SEARCH SETTING: {approved_strategy.get('search_retirements', 'NOT_SET')}")
+        print(f"[SEARCH] RETIREMENT SEARCH SETTING: {approved_strategy.get('search_retirements', 'NOT_SET')}")
         
         results = {
             'evaluating_retirements': [],
@@ -2295,13 +2369,13 @@ class EnhancedMatcher:
         
         try:
             if approved_strategy.get('prioritize_uats', True):
-                print("🎯 APPROVED ROUTING: Prioritizing UAT search (user confirmed user issue context)")
-                print(f"🔍 Searching with enhanced terms: {enhanced_search_terms[:100]}...")
+                print("[ROUTING] APPROVED ROUTING: Prioritizing UAT search (user confirmed user issue context)")
+                print(f"[SEARCH] Searching with enhanced terms: {enhanced_search_terms[:100]}...")
                 uat_items = self.ado_searcher.search_uat_items(title, enhanced_search_terms)
                 print(f"✅ UAT search returned {len(uat_items)} items")
                 results['uat_items'] = uat_items
             else:
-                print("🔍 APPROVED ROUTING: Standard UAT search")
+                print("[SEARCH] APPROVED ROUTING: Standard UAT search")
                 uat_items = self.ado_searcher.search_uat_items(title, description)
                 print(f"✅ UAT search returned {len(uat_items)} items")
                 results['uat_items'] = uat_items

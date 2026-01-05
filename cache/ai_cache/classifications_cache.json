@@ -1,0 +1,338 @@
+{
+  "84fd952f87c069b55bba57f1e10caa12116cdb04c3302897830eccf2600a2a8f": {
+    "data": {
+      "category": "migration",
+      "intent": "migration_planning",
+      "business_impact": "critical",
+      "confidence": 1.0,
+      "reasoning": "The customer is experiencing trouble connecting SCVMM to Azure Migrate, which directly impacts their migration process. While technical problem indicators are present, the primary focus is on migration planning and execution, as the issue is blocking their migration efforts."
+    },
+    "created_at": "2025-12-30T18:09:13.738303",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "023934c643728e48e5208ca79aa3583db19a7312bcae852140b51de62cb5428e": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is asking about the availability of SQL Managed Instance with Azure SQL Database Hyperscale in the West Europe region, explicitly stating that the service is required in that region. This aligns with service_availability and regional_availability. The stated impact is critical for production deployment, which sets the business impact to critical."
+    },
+    "created_at": "2025-12-30T18:09:14.856780",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "9040e91c563148959d11f76929bc05672a8d9d4dced8c388f87d66ece3c73d25": {
+    "data": {
+      "category": "seeking_guidance",
+      "intent": "architecture_advice",
+      "business_impact": "low",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting a demo to understand how the Planner & Roadmap feature works, which aligns with seeking guidance and architecture advice. There is no indication of technical issues or urgency, and the stated impact is evaluation, suggesting low business impact."
+    },
+    "created_at": "2025-12-30T18:09:16.021596",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "c1d6fbcd73cdcb4d5396b6cb15a3fb8526ce0dd7f0ca180b1c9214a264c248a0": {
+    "data": {
+      "category": "migration",
+      "intent": "migration_planning",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry is focused on migrating workloads from SCVMM to Azure Migrate, and the customer is encountering issues connecting the services. This indicates migration planning as the intent. The stated impact of blocking migration elevates the business impact to critical."
+    },
+    "created_at": "2025-12-30T18:10:04.903186",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "a523112ef0778794c41f76b5efb9f81a473147f2d97db39736fa3be43865b8d8": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is asking about the availability of SQL Managed Instance with Azure SQL Database Hyperscale in the West Europe region, explicitly stating it is required there. This aligns with service_availability and regional_availability intent. The stated impact is critical for production deployment, which increases the confidence in classification."
+    },
+    "created_at": "2025-12-30T18:10:05.946183",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "3e677d35d5f8ce9700138ee7a84d55a65b416b23f4199b2d77fe42b9a2d9efc4": {
+    "data": {
+      "category": "seeking_guidance",
+      "intent": "architecture_advice",
+      "business_impact": "low",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting a demo to understand how the Planner & Roadmap feature works, which aligns with seeking_guidance and architecture_advice. There is no indication of technical issues, migration, or roadmap inquiries. The stated impact suggests evaluation rather than urgency, making the business impact low."
+    },
+    "created_at": "2025-12-30T18:10:07.195495",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "89f8e2aac877b84548118424f889f7dd89649cfe520c7ec286256b0b17d054fd": {
+    "data": {
+      "category": "migration",
+      "intent": "migration_planning",
+      "business_impact": "critical",
+      "confidence": 0.85,
+      "reasoning": "The customer is asking about migrating workloads from SCVMM to Azure Migrate and is encountering trouble connecting the services, which is blocking their migration. This aligns with migration + migration_planning due to the focus on migration feasibility and planning. The stated impact is critical as it is blocking their migration process."
+    },
+    "created_at": "2025-12-30T18:12:52.052169",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "070ad8f1e2508af0258e1af8a7641e5d5053930f17ec3fae77b99df30fd68b7c": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.85,
+      "reasoning": "The customer is asking about the availability of SQL Managed Instance with Azure SQL Database Hyperscale in the West Europe region, explicitly stating it is required for production deployment. This aligns with service_availability and regional_availability intent due to the focus on region-specific availability."
+    },
+    "created_at": "2025-12-30T18:12:53.248508",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "81213a39b4a36eff3f9049bfa07f72cebc2d354ef87ffdfca29586c46a055dea": {
+    "data": {
+      "category": "training_documentation",
+      "intent": "seeking_documentation",
+      "business_impact": "low",
+      "confidence": 0.85,
+      "reasoning": "The customer is requesting a demo to understand how the Planner & Roadmap feature works, which aligns with seeking documentation or training. The stated impact is evaluation, indicating low business urgency."
+    },
+    "created_at": "2025-12-30T18:12:54.197314",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "db83470e02b45381452746e2939d89c75bcfd5cbe908083387809b9de7c4d4d1": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The user is asking about the availability of Azure SQL Managed Instance in a specific region (West Europe) for their production workload. This aligns with service_availability and regional_availability intent. The stated impact is critical, as it blocks production deployment."
+    },
+    "created_at": "2025-12-31T10:38:10.467329",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "4d82c25e931ca179705230112f97129f55598347712ebe17f4b8fc27991fb303": {
+    "data": {
+      "category": "technical_support",
+      "intent": "deployment_issue",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry describes multiple technical regressions and performance issues after upgrading from Document Intelligence v3.1 to v4.0, including latency increases, OCR misinterpretations, and SDK vs Studio inconsistencies. These are clear technical problems requiring investigation and remediation. The business impact is critical due to operational delays, data quality errors, and potential loss of customers to competitors, with ~$45K/month ACR at risk."
+    },
+    "created_at": "2026-01-02T16:28:12.179972",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "ee5c793e79c94ba0ce5ea205cd4869369466389d68a972a2e3e86ac26fd22e79": {
+    "data": {
+      "category": "technical_support",
+      "intent": "reporting_issue",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry describes multiple technical regressions in Document Intelligence v4.0 impacting Greek banks, including latency, OCR errors, and DPI sensitivity. These issues are causing operational delays, data corruption, increased costs, and customer dissatisfaction, with ~$45K/month ACR at risk. The request focuses on reproducing, diagnosing, and resolving these technical problems, which aligns with technical_support and reporting_issue. The stated urgency and financial impact justify a critical business impact classification."
+    },
+    "created_at": "2026-01-02T16:40:59.379462",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "1a1d28dcd4522891ac27c891b513581b24f47926f171671bda105c2bb441264f": {
+    "data": {
+      "category": "capacity_limits",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry revolves around the lack of Zonal Redundancy for Microsoft Fabric Data Warehouse in the North Europe region, which is attributed to capacity issues. The customer is requesting the restoration of Zonal Redundancy in this region, making it a capacity_limits issue with regional_availability intent. The business impact is critical due to the project's blockage, the significant financial implications, and the strategic importance of the migration project."
+    },
+    "created_at": "2026-01-02T16:57:59.106928",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "20b57b2e4c81f6f51284957f4295bc735e963ebce2ddc322848b7cd249089181": {
+    "data": {
+      "category": "technical_support",
+      "intent": "deployment_issue",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry describes multiple technical blockers related to Azure Recovery Services Vault and VM restore functionality, which are critical for the customer's disaster recovery strategy. The issues directly impact the migration and compliance of a business-critical application, making it a deployment issue under technical_support. The stated urgency and criticality of the migration further elevate the business impact."
+    },
+    "created_at": "2026-01-04T11:06:16.391920",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "a9a17e84af02cfe31e1159ec94c38134ccd16754d4266a201e2739304f1c844b": {
+    "data": {
+      "category": "capacity_limits",
+      "intent": "roadmap_inquiry",
+      "business_impact": "medium",
+      "confidence": 0.92,
+      "reasoning": "The inquiry focuses on limitations and blockers related to Azure Recovery Services Vault and associated features, particularly around VM restore and encryption support. The customer is asking about future plans to address these issues, which aligns with roadmap_inquiry. The stated impact is medium due to the migration project and DR strategy requirements."
+    },
+    "created_at": "2026-01-02T19:23:49.147801",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "f0e34d823fafc904d28ae92d1e030fae043696552c569db3b1365cb77d3547bc": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry focuses on the availability of specific speech-to-text models in Europe, which aligns with service_availability and regional_availability. The stated impact of \u20ac5M ACR loss and customer confidence issues indicate critical business impact."
+    },
+    "created_at": "2026-01-04T10:07:07.618352",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "430b6e83a29fcf6dca46e8e88dc3793bae40c7aedcb6880a7e9a0de829283010": {
+    "data": {
+      "category": "roadmap",
+      "intent": "roadmap_inquiry",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting an updated and committed release roadmap for specific features in Purview, indicating a roadmap inquiry. The stated impact highlights significant limitations affecting enterprise data governance initiatives, which elevates the business impact to high. The inquiry is focused on future feature availability rather than immediate technical issues or migration concerns."
+    },
+    "created_at": "2026-01-02T20:15:07.001766",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "d62cc0e33e6b57cebd994c995d1a079346869c593d67638498377e5823758d72": {
+    "data": {
+      "category": "roadmap",
+      "intent": "roadmap_inquiry",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is asking for expected timelines (Public Preview and GA) for Zone Redundant High Availability in Azure SQL Managed Instance, which aligns with roadmap_inquiry. The stated impact indicates a critical business dependency on this feature for migration, making the business impact critical."
+    },
+    "created_at": "2026-01-02T21:22:07.088901",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "6fa7d48eb760d43e55bc524b819418c0e9cb16795ce24d138532afcc8524a642": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is inquiring about the availability of Speech-to-Text models in Europe due to data residency requirements and GDPR compliance. This aligns with service_availability and regional_availability. The stated business impact is critical due to potential revenue loss and customer confidence issues."
+    },
+    "created_at": "2026-01-04T10:00:43.500812",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "4abf88a9478a35ea7e0f21628fc29a96c6fdc9bd13fcf1fea44378b785c25411": {
+    "data": {
+      "category": "technical_support",
+      "intent": "deployment_issue",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting support for Snowflake Dynamic Stored Procedures lineage in Purview, which is a technical feature. The stated impact indicates this is critical for their business operations and could influence their decision to continue using Purview. The mention of competitors further emphasizes the urgency and importance of resolving this issue."
+    },
+    "created_at": "2026-01-04T11:07:05.821964",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "b03e38da260fb75831273b2929603da774b4ae8ec6e73ce0b48c519ba6eb1c26": {
+    "data": {
+      "category": "technical_support",
+      "intent": "reporting_issue",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry highlights a significant technical limitation (Outbound Access Protection in Microsoft Fabric) causing governance and security risks, which directly impacts 100K users and major projects. The urgency and scale of the issue classify it as technical_support with reporting_issue intent, and the business impact is critical due to the pause in usage and potential financial implications."
+    },
+    "created_at": "2026-01-04T11:19:38.975510",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "b70032a9d77cf03d1eade59a9cfd071398c6eb86ef1fc246a79d7578d43afcc0": {
+    "data": {
+      "category": "service_availability",
+      "intent": "regional_availability",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The inquiry is focused on the availability of a specific SKU (AV64 - Gen 2) in the Germany West Central region, which is critical for the customer's migration plans. The mention of strict deadlines and financial implications further emphasizes the critical business impact. The reasoning aligns with the classification rules for regional availability under service_availability."
+    },
+    "created_at": "2026-01-04T11:21:42.535840",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "7fbc6a37602b2e56a7796caad775836d150346aaf9475f422584220de9b9750d": {
+    "data": {
+      "category": "roadmap",
+      "intent": "roadmap_inquiry",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting a discussion about missing features and roadmap updates for Microsoft Fabric, including potential workarounds. The inquiry explicitly mentions features that are not yet available and their impact on the customer's operations. The stated risk of losing a high-value customer and damage to Microsoft's reputation in the healthcare sector elevates the business impact to critical."
+    },
+    "created_at": "2026-01-04T11:22:51.972637",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "0219d3f36b2671bad68065d370cf9095a1186c1c2428464a1caa2de191e1b8f5": {
+    "data": {
+      "category": "capacity_limits",
+      "intent": "regional_availability",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The inquiry highlights a limitation in regional capacity due to Azure's paired region concept for Fabric BCDR. The customer is seeking a solution to overcome this restriction, which directly impacts their ability to use Fabric effectively in their desired regions. The stated impact indicates a significant risk to their strategy, making the business impact high."
+    },
+    "created_at": "2026-01-04T12:40:37.410247",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "68f7531a66328f2c6f3abf63c04d0c2b7ff38d36231692840f4e7dd4053235cb": {
+    "data": {
+      "category": "roadmap",
+      "intent": "roadmap_inquiry",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting specific enhancements and capabilities for Defender for Containers related to SOC and Incident Response, comparing it with competitors like Wiz. This indicates a roadmap inquiry as they are seeking future improvements and features. The stated impact of discontinuation and potential RFP issuance makes the business impact critical."
+    },
+    "created_at": "2026-01-04T12:50:31.189650",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "09f6fbb709562db0fa2985962b3641381d865e79abde3c99f54cd7d29fb74d66": {
+    "data": {
+      "category": "roadmap",
+      "intent": "roadmap_inquiry",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer explicitly asks for a roadmap and ETA for a specific feature (3rd party applications patching via Azure Update Manager). This aligns with the roadmap_inquiry intent. The stated impact is high due to potential blocking of multiple initiatives and risk of switching to an alternative platform, which justifies the business impact classification."
+    },
+    "created_at": "2026-01-04T12:58:45.083803",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "ba826ced239b4b287b12fa06b8cf6490c2b55101aa0f5d74ee16468670982cda": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting the addition of support for the Spark connector in Cosmos DB's Throughput Bucket mechanism, which is a specific capability they need. The stated impact highlights the potential loss of business if this feature is not implemented, making it a critical issue. The timeline mentioned does not indicate a roadmap inquiry but rather urgency for the feature to be available sooner."
+    },
+    "created_at": "2026-01-04T15:29:08.879263",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "a59e4217034f153d7af678685ab4d6593fb42f106e8bf0c92f2ea25e8e946792": {
+    "data": {
+      "category": "service_retirement",
+      "intent": "seeking_guidance",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The inquiry is focused on the retirement of the Deception Capability in Microsoft Defender XDR and its impact on the customer's security strategy. The customer is seeking guidance on alternative solutions to maintain their security posture, which aligns with the intent of seeking_guidance. The stated impact on renewal discussions and the perceived gap in security posture elevate the business impact to high."
+    },
+    "created_at": "2026-01-04T16:08:03.525846",
+    "ttl_days": 7,
+    "hits": 1
+  }
+}

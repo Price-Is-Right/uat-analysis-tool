@@ -151,24 +151,43 @@ Final Classification Result
 - Domain entities (dict)
 - Reasoning (dict)
 
-### Phase 2: Feature Extraction (Bridge Layer)
+**Corrections Integration:**
+- Loads corrections.json (user feedback history)
+- Applies confidence boost for matching patterns
+- Enhances pattern matching accuracy
+
+### Phase 2: Feature Extraction + Corrections Matching
 
 **File:** `hybrid_context_analyzer.py`  
-**Method:** `_extract_pattern_features()`
+**Methods:** `_extract_pattern_features()`, `_find_relevant_corrections()`
 
 **What it does:**
-1. Extracts category from pattern result
-2. Pulls confidence score
-3. Gathers detected products/services
-4. Identifies technical indicators
-5. Structures data for AI consumption
+1. **Extracts Pattern Features**
+   - Extracts category from pattern result
+   - Pulls confidence score
+   - Gathers detected products/services
+   - Identifies technical indicators
+   - Structures data for AI consumption
+
+2. **Finds Relevant Corrections** ✅ NEW
+   - Loads corrections.json (user feedback history)
+   - Computes word overlap with current issue (Jaccard similarity)
+   - Identifies similar past misclassifications (>20% threshold)
+   - Returns top 3 most relevant corrections
 
 **Output:** Feature dictionary containing:
 ```python
 {
     "category_scores": {"migration": 0.60},
     "detected_products": ["SCVMM", "Azure Migrate"],
-    "technical_indicators": ["trouble", "connecting"]
+    "technical_indicators": ["trouble", "connecting"],
+    "relevant_corrections": [  # NEW
+        {
+            "original_category": "training_documentation",
+            "corrected_category": "service_availability",
+            "correction_notes": "User asking about regional service availability"
+        }
+    ]
 }
 ```
 
@@ -185,7 +204,8 @@ Final Classification Result
 
 2. **AI Processing:**
    - GPT-4o analyzes semantic meaning
-   - Considers pattern matcher suggestions as context
+   - Considers pattern features as context hints
+   - **Reviews relevant corrections from past feedback** ✅ NEW
    - Makes independent classification decision
    - Generates detailed reasoning
 
@@ -200,6 +220,15 @@ Final Classification Result
 - Confidence (float)
 - Reasoning (string)
 - Source ("cache" or "api")
+
+**LLM Prompt Structure:**
+- User text (title + description + impact)
+- Pattern analysis features
+- **⚠️ Learn from Previous Corrections section** ✅ NEW
+  - Shows similar past misclassifications
+  - Format: "Was classified as X but should be Y"
+  - Includes correction reasoning
+- Classification instructions with valid categories/intents
 
 ### Phase 4: Result Integration
 
@@ -447,21 +476,81 @@ See `hybrid_context_analyzer.py` main block for example test cases:
 **Cause:** Cache not expiring  
 **Solution:** Enable API-first or reduce cache TTL
 
+**Issue:** Corrections not improving accuracy  
+**Cause:** Word overlap threshold too strict  
+**Solution:** Adjust Jaccard similarity threshold in `_find_relevant_corrections()` (default: 0.2)
+
+---
+
+## Corrections System ✅ IMPLEMENTED
+
+### Overview
+
+The corrections system allows the AI to learn from user feedback without expensive fine-tuning. When users provide corrections through the feedback UI, these are stored in `corrections.json` and used to improve future classifications.
+
+### How It Works
+
+1. **User Provides Correction**
+   - Via feedback UI: marks classification as incorrect
+   - Provides correct category/intent
+   - Optionally adds notes explaining why
+
+2. **Correction Storage**
+   - Saved to `corrections.json`
+   - Format: original text, pattern, categories, notes, timestamp
+   - Pattern matcher applies confidence boost on matches
+
+3. **Correction Matching (Phase 1 ✅)**
+   - Hybrid analyzer loads corrections on startup
+   - For each new issue: computes word overlap (Jaccard similarity)
+   - Finds similar past corrections (>20% threshold)
+   - Returns top 3 most relevant corrections
+
+4. **LLM Learning (Phase 1 ✅)**
+   - Corrections passed as features to LLM
+   - Prompt includes "⚠️ Learn from Previous Corrections" section
+   - Shows: "Was classified as X but should be Y - Reason: ..."
+   - LLM adjusts reasoning based on past mistakes
+
+### Benefits
+
+- **No fine-tuning costs** - In-context learning only
+- **Immediate effect** - Corrections active on next restart
+- **Transparent** - LLM reasoning shows how corrections influenced decision
+- **Accumulative** - More corrections = better accuracy
+
+### Verified Performance
+
+- Test Case: SQL MI availability query
+- Original misclassification: `training_documentation`
+- Correction applied: `service_availability`
+- New classification: `service_availability` (95% confidence)
+- Source: LLM with corrections context
+
+### Files
+
+- `corrections.json` - User feedback storage
+- `hybrid_context_analyzer.py` - Correction matching logic
+- `llm_classifier.py` - Prompt integration
+- `intelligent_context_analyzer.py` - Pattern matcher boost
+
 ---
 
 ## Future Enhancements
 
 ### Planned Features
 
-1. **🚧 Fine-tuning Integration (NOT YET IMPLEMENTED)**
+1. **✅ Corrections System Phase 1 (COMPLETE)**
    - Pass corrections as features to hybrid analyzer
    - Include corrections in LLM context window
-   - Use corrections.json to fine-tune GPT-4o
-   - Periodic model updates based on user feedback
-   - **Current Status:** corrections.json is populated but only used by pattern matcher
+   - In-context learning from user feedback
 
-2. **Multi-model Support**
-   - Fallback to GPT-3.5 for cost savings
+2. **🔄 Corrections System Phase 2-4 (PLANNED)**
+   - Correction validation and quality scoring
+   - Semantic similarity matching using embeddings
+   - Fine-tuning pipeline when 50+ corrections available
+
+3. **Multi-model Support**
    - A/B testing different models
 
 3. **Advanced Caching**

@@ -12,11 +12,14 @@ A comprehensive web-based issue tracking and matching system with AI-powered qua
 - **Accessibility Compliance**: WCAG-compliant UI with proper contrast ratios
 
 ### Advanced Capabilities
-- **Multi-Attempt Quality Review**: Flexible quality gates with user choice
+- **AI-Powered Search Optimization**: Azure OpenAI generates intelligent search queries for better results
+- **Multi-Source Retirement Checking**: Comprehensive retirement information from multiple authoritative sources
+- **Smart Service Extraction**: Automatic service name detection using pattern matching
 - **Enterprise Integration**: Azure DevOps API integration for multiple organizations
 - **Session Management**: Persistent wizard data with auto-save functionality
 - **Character Limit Validation**: 125-character limits with real-time feedback
 - **Responsive Design**: Mobile-friendly interface with Bootstrap framework
+- **Collapsible UI Sections**: Prevent button displacement with scrollable retirement information
 
 ## 📁 Project Structure
 
@@ -204,7 +207,17 @@ Check console output for:
 - **Error Handling**: Comprehensive try-catch blocks with user feedback
 - **Type Hints**: Full type annotations for better code maintainability
 
-### Recent Enhancements (v2.0)
+### Recent Enhancements (v3.0 - January 2026)
+- **AI-Powered Search Query Generation**: LLM generates intelligent 3-5 word search queries instead of blind concatenation
+- **Multi-Source Retirement Checking**: Searches retirements.json + Microsoft Learn + Azure Updates for comprehensive coverage
+- **Smart Service Extraction**: Regex pattern matching to extract service names from issue text when domain entities are empty
+- **Retirement UI Improvements**: Collapsible sections with badges, scrollable containers (400px max-height) to prevent button displacement
+- **Enhanced Filtering**: Word boundary regex matching for precise service name matching
+- **Centered UI Elements**: Fixed Cancel button text alignment with flexbox classes
+- **Microsoft Learn Integration**: Direct search links for retirement information when local database lacks data
+- **Debug Logging**: Comprehensive retirement check tracing for troubleshooting
+
+### Previous Enhancements (v2.0)
 - Multi-attempt quality review system
 - Enhanced accessibility compliance
 - Character limit increase (100→125)
@@ -242,6 +255,6 @@ For technical support or questions:
 
 ---
 
-**Last Updated**: September 2025  
-**Version**: 2.0 (Enhanced Matching System)  
-**Compatibility**: Python 3.8+, Modern Web Browsers
+**Last Updated**: January 4, 2026  
+**Version**: 3.0 (AI-Powered Resource Search & Multi-Source Retirement Checking)  
+**Compatibility**: Python 3.8+, Modern Web Browsers, Azure OpenAI Service

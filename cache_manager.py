@@ -54,11 +54,12 @@ class CacheManager:
     Designed as independent service for agent architecture
     """
     
-    def __init__(self, cache_path: str, ttl_days: int = 7, api_first: bool = True, slow_threshold: float = 3.0):
+    def __init__(self, cache_path: str, ttl_days: int = 7, api_first: bool = True, slow_threshold: float = 14.0):
         self.cache_path = cache_path
         self.ttl_days = ttl_days
         self.api_first = api_first
         self.slow_threshold = slow_threshold
+        self.max_retries = 1  # Retry once if timeout (7s per attempt = 14s total)
         self._cache: Dict[str, CacheEntry] = {}
         self._load_cache()
     
@@ -172,23 +173,38 @@ class CacheManager:
         if cached is not None and self._cache[key].age_days() < self.ttl_days:
             # Cache is valid, but try API first if configured
             if self.api_first:
-                try:
-                    start_time = time.time()
-                    value = api_fn()
-                    elapsed = time.time() - start_time
-                    
-                    if elapsed > self.slow_threshold:
-                        print(f"[CacheManager] API slow ({elapsed:.2f}s), using cache as fallback")
-                        return cached, "cache_fallback"
-                    else:
-                        # API was fast, update cache
-                        print(f"[CacheManager] API success ({elapsed:.2f}s)")
-                        self.set(key, value)
-                        return value, "api"
+                retry_count = 0
+                while retry_count <= self.max_retries:
+                    try:
+                        start_time = time.time()
                         
-                except Exception as e:
-                    print(f"[CacheManager] API failed: {e}, using cache as fallback")
-                    return cached, "cache_fallback"
+                        # Show progress message if taking longer than expected
+                        if retry_count > 0:
+                            print(f"[CacheManager] Retrying API call (attempt {retry_count + 1}/{self.max_retries + 1})...")
+                        
+                        value = api_fn()
+                        elapsed = time.time() - start_time
+                        
+                        if elapsed > 7.0:
+                            print(f"[CacheManager] ⏱️  AI analysis taking longer than expected ({elapsed:.1f}s)...")
+                        
+                        if elapsed > self.slow_threshold:
+                            print(f"[CacheManager] API slow ({elapsed:.2f}s), using cache as fallback")
+                            return cached, "cache_fallback"
+                        else:
+                            # API was fast enough, update cache
+                            print(f"[CacheManager] API success ({elapsed:.2f}s)")
+                            self.set(key, value)
+                            return value, "api"
+                            
+                    except Exception as e:
+                        retry_count += 1
+                        if retry_count > self.max_retries:
+                            print(f"[CacheManager] API failed after {self.max_retries + 1} attempts: {e}, using cache as fallback")
+                            return cached, "cache_fallback"
+                        else:
+                            print(f"[CacheManager] API error: {e}, retrying...")
+                            time.sleep(1)  # Brief pause before retry
             else:
                 # Not API-first, just use cache
                 return cached, "cache"

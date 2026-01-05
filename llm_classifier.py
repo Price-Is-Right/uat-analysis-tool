@@ -50,25 +50,44 @@ class LLMClassifier:
     
     # Valid categories and intents from IntelligentContextAnalyzer
     VALID_CATEGORIES = [
-        "service_availability",
+        "compliance_regulatory",
         "technical_support",
-        "roadmap",
-        "service_retirement",
-        "capacity_limits",
-        "seeking_guidance",
+        "feature_request",
+        "migration_modernization",
+        "security_governance",
+        "performance_optimization",
+        "integration_connectivity",
+        "cost_billing",
         "training_documentation",
-        "migration"
+        "service_retirement",
+        "service_availability",
+        "data_sovereignty",
+        "product_roadmap",
+        "aoai_capacity",
+        "business_desk",
+        "capacity",
+        "retirements",
+        "roadmap",
+        "support",
+        "support_escalation"
     ]
     
     VALID_INTENTS = [
-        "service_inquiry",
-        "regional_availability",
-        "roadmap_inquiry",
-        "deployment_issue",
+        "seeking_guidance",
         "reporting_issue",
-        "architecture_advice",
-        "seeking_documentation",
-        "migration_planning"
+        "requesting_feature",
+        "need_migration_help",
+        "compliance_support",
+        "troubleshooting",
+        "configuration_help",
+        "best_practices",
+        "requesting_service",
+        "sovereignty_concern",
+        "roadmap_inquiry",
+        "capacity_request",
+        "escalation_request",
+        "business_engagement",
+        "sustainability_inquiry"
     ]
     
     VALID_BUSINESS_IMPACTS = [
@@ -141,8 +160,31 @@ CLASSIFICATION RULES:
 3. **Distinguish product names from inquiries**: Mentioning "Azure Planner" doesn't mean roadmap inquiry
 4. **Migration context**: "roadmap" in customer's migration plan ≠ Azure product roadmap
 5. **Regional availability**: "required in <region>" or "needed in <region>" indicates service_availability + regional_availability
-6. **Timeline requests**: Phrases like "when will", "ETA", "release date" indicate roadmap_inquiry
-7. **Seeking guidance**: Demos, comparisons, architecture advice = seeking_guidance + architecture_advice
+
+6. **CRITICAL: Feature Request vs Roadmap Inquiry distinction**:
+   
+   **USE category=feature_request + intent=requesting_feature WHEN:**
+   - Customer lists specific capabilities they WANT/NEED
+   - Customer says "we need X", "looking for Y", "requesting Z", "can you add/support"
+   - Customer compares your product with competitors asking for missing features
+   - Customer describes gaps in functionality they want filled
+   - Example: "We need XDR functionality" → category: feature_request, intent: requesting_feature
+   - Example: "Looking for SOC capabilities, here are the requested features" → category: feature_request, intent: requesting_feature
+   - Example: "Comparing with Wiz, we need these capabilities" → category: feature_request, intent: requesting_feature
+   
+   **USE category=roadmap + intent=roadmap_inquiry ONLY WHEN:**
+   - Customer explicitly asks about TIMELINE: "when will X be available?"
+   - Customer asks about ETA: "what's the ETA for feature Y?"
+   - Customer asks what's PLANNED: "is Z on the roadmap?", "what features are planned?"
+   - Customer asks about release dates: "when is the next release?"
+   - Example: "When will XDR be available?" → category: roadmap, intent: roadmap_inquiry
+   - Example: "What's the ETA for SOC capabilities?" → category: roadmap, intent: roadmap_inquiry
+   - Example: "Need a clear roadmap and ETA for 3rd party patching" → category: roadmap, intent: roadmap_inquiry
+   
+   **IF IN DOUBT:** Customer listing what they want = category: feature_request + intent: requesting_feature, NOT roadmap
+
+7. **Timeline requests**: ONLY phrases like "when will", "ETA", "release date", "what's planned" indicate roadmap_inquiry
+8. **Seeking guidance**: Demos, comparisons for decision-making, architecture advice = seeking_guidance + architecture_advice
 
 You MUST respond with valid JSON only (no markdown):
 {{
@@ -189,6 +231,20 @@ You MUST respond with valid JSON only (no markdown):
                     for cat, score in top_patterns:
                         if score > 0.3:
                             prompt_parts.append(f"  * {cat}: {score:.2f}")
+            
+            # NEW for Phase 1: Include relevant corrections
+            if "relevant_corrections" in pattern_features:
+                corrections = pattern_features["relevant_corrections"]
+                if corrections:
+                    prompt_parts.append("\n**⚠️ Learn from Previous Corrections (User Feedback):**")
+                    prompt_parts.append("Similar issues were misclassified in the past. Please learn from these corrections:")
+                    for i, corr in enumerate(corrections, 1):
+                        orig_cat = corr.get('original_category', 'unknown')
+                        correct_cat = corr.get('corrected_category', 'unknown')
+                        notes = corr.get('correction_notes', '')
+                        prompt_parts.append(f"  {i}. Was classified as '{orig_cat}' but should be '{correct_cat}'")
+                        if notes:
+                            prompt_parts.append(f"     Reason: {notes}")
         
         prompt_parts.append("\nClassify this inquiry:")
         

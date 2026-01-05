@@ -2,6 +2,22 @@
 
 {% block title %}Input Quality Review{% endblock %}
 
+<!-- Override navbar to remove Home/Admin links during quality review -->
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <span class="navbar-brand">
+            <i class="fas fa-headset me-2"></i>Issue Tracker System
+        </span>
+        <div class="navbar-nav ms-auto">
+            <span class="nav-link text-light">
+                <i class="fas fa-clipboard-check me-1"></i>Step 2: Quality Review
+            </span>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -19,17 +35,23 @@
                             <strong>Your submission quality is good!</strong>
                             You can proceed with your current submission, or review and make any final improvements below before continuing.
                         </div>
-                    {% elif quality.garbage_detected %}
+                    {% elif quality.garbage_detected and quality.completeness_score < 50 %}
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Invalid input detected!</strong>
                             Our system detected that some of your input appears to be random characters or meaningless text. Please provide clear, descriptive information about your issue so we can help you effectively.
                         </div>
+                    {% elif quality.completeness_score < 50 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>More information needed</strong>
+                            Your submission needs additional details for our AI to provide effective assistance. Please review the suggestions below and add more context.
+                        </div>
                     {% else %}
                         <div class="alert alert-info">
                              <i class="fas fa-info-circle me-2"></i>
-                            <strong>Final review and improvement opportunity</strong>
-                            Before we process your request, here's a chance to review your submission and make any improvements. Our AI analysis found some areas where additional context would help us provide better assistance.
+                            <strong>Almost there!</strong>
+                            Your submission is {{ quality.completeness_score }}% complete. Review the suggestions below to improve the quality of your submission.
                         </div>
                     {% endif %}
                     
@@ -81,7 +103,8 @@
                         </div>
                     </div>
 
-                    <!-- Suggestions for Improvement -->
+                    <!-- Suggestions for Improvement (only show if quality < 90%) -->
+                    {% if quality.completeness_score < 90 %}
                     <div class="mb-4">
                         <h5 class="text-danger">
                             <i class="fas fa-lightbulb me-2"></i>Suggestions for Improvement
@@ -97,8 +120,10 @@
                             </div>
                         {% endif %}
                     </div>
+                    {% endif %}
 
-                    <!-- Improved Form -->
+                    <!-- Review/Edit Form (only show if quality < 90%) -->
+                    {% if quality.completeness_score < 90 %}
                     <div class="card bg-light">
                         <div class="card-header">
                             <h5 class="mb-0">
@@ -154,38 +179,62 @@
                                 <input type="hidden" name="milestone_id" value="{{ milestone_id }}">
                                 <input type="hidden" name="is_second_attempt" value="{{ 'true' if is_second_attempt else 'false' }}">
                                 
-                                <!-- Hidden field to indicate action type -->
+                                <!-- Hidden fields for action routing -->
                                 <input type="hidden" name="action" value="improve" id="form-action">
+                                <input type="hidden" name="from_quality_review" value="true">
                                 
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Cancel
-                                    </a>
+                                <!-- Three Button Layout: Cancel | Update Input | Continue and Submit -->
+                                <div class="d-grid gap-2 mt-4">
+                                    <!-- Primary Action: Continue to ICA Analysis -->
                                     {% if quality.completeness_score >= 80 %}
-                                        <div class="btn-group">
-                                            <button type="submit" class="btn btn-outline-primary">
-                                                <i class="fas fa-edit me-2"></i>Make Final Improvements
-                                            </button>
-                                            <button type="button" class="btn btn-success" onclick="proceedWithCurrent()">
-                                                <i class="fas fa-check me-2"></i>Proceed as Is
-                                            </button>
-                                        </div>
-                                    {% elif is_second_attempt and show_proceed_warning %}
-                                        <div class="btn-group">
-                                            <button type="submit" class="btn btn-warning">
-                                                <i class="fas fa-edit me-2"></i>Edit Again
-                                            </button>
-                                            <button type="button" class="btn btn-primary" onclick="proceedWithCurrent()">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>Proceed Anyway
-                                            </button>
-                                        </div>
+                                        <button type="button" class="btn btn-success btn-lg" id="continueBtn1" onclick="proceedToAnalysis()">
+                                            <i class="fas fa-brain me-2"></i>Continue and Submit to Analysis
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="updateInput()">
+                                            <i class="fas fa-edit me-2"></i>Update Input
+                                        </button>
                                     {% else %}
-                                        <button type="submit" class="btn btn-primary" onclick="setSecondAttempt()">
-                                            <i class="fas fa-paper-plane me-2"></i>Submit Improved Issue
+                                        <button type="button" class="btn btn-outline-success btn-lg" id="continueBtn1" onclick="proceedToAnalysis()" {% if quality.completeness_score < 50 %}disabled title="Quality too low - please improve your input first"{% endif %}>
+                                            <i class="fas fa-brain me-2"></i>Continue and Submit to Analysis
+                                            {% if quality.completeness_score < 80 %}<small class="d-block">(Not Recommended - {{ quality.completeness_score }}% complete)</small>{% endif %}
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-lg" onclick="updateInput()">
+                                            <i class="fas fa-edit me-2"></i>Update Input
                                         </button>
                                     {% endif %}
+                                    
+                                    <!-- Cancel Button -->
+                                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons (always show) -->
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            {% if quality.completeness_score >= 90 %}
+                                <!-- High Quality: Simple Continue button -->
+                                <form method="POST" action="{{ url_for('submit_issue') }}" id="continueForm">
+                                    <input type="hidden" name="title" value="{{ title }}">
+                                    <input type="hidden" name="description" value="{{ description }}">
+                                    <input type="hidden" name="impact" value="{{ impact }}">
+                                    <input type="hidden" name="action" value="proceed" id="form-action">
+                                    <input type="hidden" name="from_quality_review" value="true">
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-success btn-lg" id="continueBtn">
+                                            <i class="fas fa-brain me-2"></i>Continue and Submit to Analysis
+                                        </button>
+                                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-2"></i>Cancel
+                                        </a>
+                                    </div>
+                                </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -194,24 +243,84 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: white;">
+        <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; margin-bottom: 1rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4>Starting Intelligent Context Analysis...</h4>
+        <p>Please wait while our AI processes your request</p>
+    </div>
+</div>
+
 <script>
-// Handle proceed with current issue
-function proceedWithCurrent() {
-    // Set action to proceed and submit with original data
+// Show loading overlay when any form is submitted
+document.addEventListener('DOMContentLoaded', function() {
+    const continueForm = document.getElementById('continueForm');
+    if (continueForm) {
+        continueForm.addEventListener('submit', function(event) {
+            // Show loading overlay
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            const btn = document.getElementById('continueBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            }
+        });
+    }
+    
+    // Also handle the edit form if it exists
+    const editForms = document.querySelectorAll('form[action*="submit_issue"]');
+    editForms.forEach(function(form) {
+        if (form.id !== 'continueForm') {
+            form.addEventListener('submit', function(event) {
+                const submitButtons = form.querySelectorAll('button[type="button"]');
+                submitButtons.forEach(btn => btn.disabled = true);
+            });
+        }
+    });
+});
+
+// Handle "Continue and Submit to Analysis" button
+function proceedToAnalysis() {
+    // Disable all continue buttons to prevent double-click
+    const btn1 = document.getElementById('continueBtn1');
+    const btn2 = document.getElementById('continueBtn');
+    
+    if (btn1) {
+        btn1.disabled = true;
+        btn1.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    }
+    if (btn2) {
+        btn2.disabled = true;
+        btn2.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    }
+    
+    // Show loading overlay
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    // Set action to proceed and submit with current data
     document.getElementById('form-action').value = 'proceed';
     
-    // Set form fields to original values to avoid quality re-check
-    document.getElementById('title').value = "{{ title }}";
-    document.getElementById('description').value = "{{ description|replace('\n', '\\n')|replace('\r', '') }}";
-    document.getElementById('impact').value = "{{ impact|replace('\n', '\\n')|replace('\r', '') }}";
-    
-    // Submit the form
+    // Keep the form fields as they are (user's current input)
+    // Submit the form to proceed to ICA Analysis
     document.querySelector('form').submit();
 }
 
-// Set second attempt flag when submitting improved issue
-function setSecondAttempt() {
-    document.querySelector('input[name="is_second_attempt"]').value = 'true';
+// Handle "Update Input" button - return to Step 1 with current data
+function updateInput() {
+    // Redirect to issue submission page with current data
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = '{{ url_for("index") }}';
+    
+    // Pass current values as URL parameters so Step 1 can pre-fill
+    const title = encodeURIComponent(document.getElementById('title').value);
+    const description = encodeURIComponent(document.getElementById('description').value);
+    const impact = encodeURIComponent(document.getElementById('impact').value);
+    
+    window.location.href = `{{ url_for("index") }}?title=${title}&description=${description}&impact=${impact}`;
 }
 
 // Title character counter

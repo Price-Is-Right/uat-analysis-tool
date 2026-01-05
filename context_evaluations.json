@@ -447,11 +447,865 @@
         "correct_urgency_level": null,
         "correction_notes": "Roadmap refers to WHEN SCOM will be supported by Linux. The user also wants a confidence call from someone in the PG and can confirm the roadmap (plan) of when it will be available."
       }
+    },
+    {
+      "id": "98b19bdb-a552-45eb-81ab-ef4cfb23751e",
+      "timestamp": "2025-12-31T15:54:13.864406",
+      "original_issue": {
+        "title": "Checkpoint - FWaaS - AzureGW LB does not support east-west traffic inspection unlike to competitors.",
+        "description": "Azure GWLB does not support East-West traffic. therefore we are using vNet peering, in AWS they are using their GWLB with Endpoint which support it and in a direct results, the pricing gaps is huge.",
+        "impact": "Customer would like to announce a private preview with Microsoft on his SKO, delivering MVP to santander, but without doing so, the pricing will be so much higher in Azure due to using vNet Peering."
+      },
+      "system_analysis": {
+        "category": "technical_support",
+        "intent": "seeking_guidance",
+        "confidence": 0.5,
+        "business_impact": "medium",
+        "reasoning": {
+          "step_by_step": [
+            "📊 Step 1: External Data Source Consultation",
+            "🎯 Step 2: Microsoft Product Detection",
+            "   ❌ No Microsoft products detected",
+            "🧠 Step 3: Corrective Learning Application",
+            "   ✅ Applied 1 corrective learning patterns",
+            "🔎 Step 4: Domain Entity Extraction",
+            "   📊 Extracted entities: 0 total",
+            "   🏷️ Categories: ['azure_services', 'compliance_frameworks', 'technologies', 'business_domains', 'technical_areas', 'regions', 'discovered_services']",
+            "📊 Step 5: Category Classification",
+            "   🏷️ Classified as: IssueCategory.TECHNICAL_SUPPORT (confidence: 0.50)",
+            "🎯 Step 6: Intent Determination",
+            "   💯 Primary intent: IntentType.SEEKING_GUIDANCE (confidence: 0.50)",
+            "🔑 Step 7: Key Concept and Keyword Analysis",
+            "   📝 Key concepts identified: 3",
+            "   🏷️ Semantic keywords generated: 4",
+            "📈 Step 8: Business Impact and Complexity Assessment",
+            "   📈 Business impact: medium",
+            "   ⚙️ Technical complexity: low",
+            "Step 9: Search Strategy Optimization",
+            "Step 10: Context Summary Generation"
+          ],
+          "data_sources_used": [
+            {
+              "source": "Regional Service Availability (.cache/regional_service_availability.json)",
+              "status": "USED",
+              "reason": "Available for region-specific service queries",
+              "data_size": "26 services mapped"
+            },
+            {
+              "source": "Microsoft Learn Documentation API",
+              "status": "AVAILABLE",
+              "reason": "External knowledge source for Microsoft product information",
+              "note": "Used for product disambiguation and context"
+            }
+          ],
+          "data_sources_skipped": [
+            {
+              "source": "Azure Services Database",
+              "status": "SKIPPED",
+              "reason": "No Azure service keywords detected"
+            },
+            {
+              "source": "Azure Regions Database",
+              "status": "SKIPPED",
+              "reason": "No geographic region keywords detected"
+            },
+            {
+              "source": "Compliance Frameworks Database",
+              "status": "SKIPPED",
+              "reason": "No compliance/regulatory keywords detected"
+            },
+            {
+              "source": "Service Retirements Database",
+              "status": "SKIPPED",
+              "reason": "No retirement/deprecation keywords detected"
+            }
+          ],
+          "confidence_breakdown": [
+            "Category confidence: 0.50",
+            "Intent confidence: 0.50",
+            "Overall confidence: 0.50"
+          ],
+          "microsoft_products": [],
+          "corrections_applied": [
+            {
+              "pattern": "service_availability_query",
+              "original_category": "training_documentation",
+              "corrected_category": "service_availability",
+              "confidence_boost": 0.15
+            }
+          ],
+          "final_analysis": {
+            "category_reason": "technical_support indicators found with 50% confidence",
+            "intent_reason": "seeking_guidance patterns detected with 50% confidence",
+            "data_source_summary": "Consulted 2 data sources, skipped 4"
+          },
+          "decision_factors": []
+        },
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.TECHNICAL_SUPPORT": 0.5
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "pattern"
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "requesting_feature",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The company Checkpoint want the Azure Gateway Load Balancer to support east-west traffic which it does not do today.  "
+      }
+    },
+    {
+      "id": "b6eb8d0d-640f-44c1-9768-af726ed7f3c1",
+      "timestamp": "2025-12-31T15:59:28.171443",
+      "original_issue": {
+        "title": "Checkpoint - FWaaS - AzureGW LB does not support east-west traffic inspection unlike to competitors.",
+        "description": "Azure GWLB does not support East-West traffic. therefore we are using vNet peering, in AWS they are using their GWLB with Endpoint which support it and in a direct results, the pricing gaps is huge.",
+        "impact": "Customer would like to announce a private preview with Microsoft on his SKO, delivering MVP to santander, but without doing so, the pricing will be so much higher in Azure due to using vNet Peering."
+      },
+      "system_analysis": {
+        "category": "technical_support",
+        "intent": "seeking_guidance",
+        "confidence": 0.5,
+        "business_impact": "medium",
+        "reasoning": {
+          "step_by_step": [
+            "📊 Step 1: External Data Source Consultation",
+            "🎯 Step 2: Microsoft Product Detection",
+            "   ❌ No Microsoft products detected",
+            "🧠 Step 3: Corrective Learning Application",
+            "   ✅ Applied 1 corrective learning patterns",
+            "🔎 Step 4: Domain Entity Extraction",
+            "   📊 Extracted entities: 0 total",
+            "   🏷️ Categories: ['azure_services', 'compliance_frameworks', 'technologies', 'business_domains', 'technical_areas', 'regions', 'discovered_services']",
+            "📊 Step 5: Category Classification",
+            "   🏷️ Classified as: IssueCategory.TECHNICAL_SUPPORT (confidence: 0.50)",
+            "🎯 Step 6: Intent Determination",
+            "   💯 Primary intent: IntentType.SEEKING_GUIDANCE (confidence: 0.50)",
+            "🔑 Step 7: Key Concept and Keyword Analysis",
+            "   📝 Key concepts identified: 3",
+            "   🏷️ Semantic keywords generated: 4",
+            "📈 Step 8: Business Impact and Complexity Assessment",
+            "   📈 Business impact: medium",
+            "   ⚙️ Technical complexity: low",
+            "Step 9: Search Strategy Optimization",
+            "Step 10: Context Summary Generation"
+          ],
+          "data_sources_used": [
+            {
+              "source": "Regional Service Availability (.cache/regional_service_availability.json)",
+              "status": "USED",
+              "reason": "Available for region-specific service queries",
+              "data_size": "26 services mapped"
+            },
+            {
+              "source": "Microsoft Learn Documentation API",
+              "status": "AVAILABLE",
+              "reason": "External knowledge source for Microsoft product information",
+              "note": "Used for product disambiguation and context"
+            }
+          ],
+          "data_sources_skipped": [
+            {
+              "source": "Azure Services Database",
+              "status": "SKIPPED",
+              "reason": "No Azure service keywords detected"
+            },
+            {
+              "source": "Azure Regions Database",
+              "status": "SKIPPED",
+              "reason": "No geographic region keywords detected"
+            },
+            {
+              "source": "Compliance Frameworks Database",
+              "status": "SKIPPED",
+              "reason": "No compliance/regulatory keywords detected"
+            },
+            {
+              "source": "Service Retirements Database",
+              "status": "SKIPPED",
+              "reason": "No retirement/deprecation keywords detected"
+            }
+          ],
+          "confidence_breakdown": [
+            "Category confidence: 0.50",
+            "Intent confidence: 0.50",
+            "Overall confidence: 0.50"
+          ],
+          "microsoft_products": [],
+          "corrections_applied": [
+            {
+              "pattern": "service_availability_query",
+              "original_category": "training_documentation",
+              "corrected_category": "service_availability",
+              "confidence_boost": 0.15
+            }
+          ],
+          "final_analysis": {
+            "category_reason": "technical_support indicators found with 50% confidence",
+            "intent_reason": "seeking_guidance patterns detected with 50% confidence",
+            "data_source_summary": "Consulted 2 data sources, skipped 4"
+          },
+          "decision_factors": []
+        },
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.TECHNICAL_SUPPORT": 0.5
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "pattern"
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "requesting_feature",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The company Checkpoint is requesting that Azure Gateway Load Balancer support east to west traffic, which it does not do today."
+      }
+    },
+    {
+      "id": "26ee7577-54f7-411e-9b8e-5bd02770c0ab",
+      "timestamp": "2025-12-31T16:09:49.932003",
+      "original_issue": {
+        "title": "Checkpoint - FWaaS - AzureGW LB does not support east-west traffic inspection unlike to competitors.",
+        "description": "Azure GWLB does not support East-West traffic. therefore we are using vNet peering, in AWS they are using their GWLB with Endpoint which support it and in a direct results, the pricing gaps is huge.",
+        "impact": "Customer would like to announce a private preview with Microsoft on his SKO, delivering MVP to santander, but without doing so, the pricing will be so much higher in Azure due to using vNet Peering."
+      },
+      "system_analysis": {
+        "category": "technical_support",
+        "intent": "seeking_guidance",
+        "confidence": 0.5,
+        "business_impact": "medium",
+        "reasoning": {
+          "step_by_step": [
+            "📊 Step 1: External Data Source Consultation",
+            "🎯 Step 2: Microsoft Product Detection",
+            "   ❌ No Microsoft products detected",
+            "🧠 Step 3: Corrective Learning Application",
+            "   ✅ Applied 1 corrective learning patterns",
+            "🔎 Step 4: Domain Entity Extraction",
+            "   📊 Extracted entities: 0 total",
+            "   🏷️ Categories: ['azure_services', 'compliance_frameworks', 'technologies', 'business_domains', 'technical_areas', 'regions', 'discovered_services']",
+            "📊 Step 5: Category Classification",
+            "   🏷️ Classified as: IssueCategory.TECHNICAL_SUPPORT (confidence: 0.50)",
+            "🎯 Step 6: Intent Determination",
+            "   💯 Primary intent: IntentType.SEEKING_GUIDANCE (confidence: 0.50)",
+            "🔑 Step 7: Key Concept and Keyword Analysis",
+            "   📝 Key concepts identified: 3",
+            "   🏷️ Semantic keywords generated: 4",
+            "📈 Step 8: Business Impact and Complexity Assessment",
+            "   📈 Business impact: medium",
+            "   ⚙️ Technical complexity: low",
+            "Step 9: Search Strategy Optimization",
+            "Step 10: Context Summary Generation"
+          ],
+          "data_sources_used": [
+            {
+              "source": "Regional Service Availability (.cache/regional_service_availability.json)",
+              "status": "USED",
+              "reason": "Available for region-specific service queries",
+              "data_size": "26 services mapped"
+            },
+            {
+              "source": "Microsoft Learn Documentation API",
+              "status": "AVAILABLE",
+              "reason": "External knowledge source for Microsoft product information",
+              "note": "Used for product disambiguation and context"
+            }
+          ],
+          "data_sources_skipped": [
+            {
+              "source": "Azure Services Database",
+              "status": "SKIPPED",
+              "reason": "No Azure service keywords detected"
+            },
+            {
+              "source": "Azure Regions Database",
+              "status": "SKIPPED",
+              "reason": "No geographic region keywords detected"
+            },
+            {
+              "source": "Compliance Frameworks Database",
+              "status": "SKIPPED",
+              "reason": "No compliance/regulatory keywords detected"
+            },
+            {
+              "source": "Service Retirements Database",
+              "status": "SKIPPED",
+              "reason": "No retirement/deprecation keywords detected"
+            }
+          ],
+          "confidence_breakdown": [
+            "Category confidence: 0.50",
+            "Intent confidence: 0.50",
+            "Overall confidence: 0.50"
+          ],
+          "microsoft_products": [],
+          "corrections_applied": [
+            {
+              "pattern": "service_availability_query",
+              "original_category": "training_documentation",
+              "corrected_category": "service_availability",
+              "confidence_boost": 0.15
+            }
+          ],
+          "final_analysis": {
+            "category_reason": "technical_support indicators found with 50% confidence",
+            "intent_reason": "seeking_guidance patterns detected with 50% confidence",
+            "data_source_summary": "Consulted 2 data sources, skipped 4"
+          },
+          "decision_factors": []
+        },
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.TECHNICAL_SUPPORT": 0.5
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "pattern"
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "requesting_feature",
+        "correct_business_impact": "low",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The customer Checkpoint is requesting that Azure Gateway Load Balancer support east-west traffic which it does not do today."
+      }
+    },
+    {
+      "id": "64a0c87b-0a08-4a09-a893-c793e45a30d9",
+      "timestamp": "2025-12-31T17:36:59.516643",
+      "original_issue": {
+        "title": "Checkpoint - FWaaS - AzureGW LB does not support east-west traffic inspection unlike to competitors.",
+        "description": "Azure GWLB does not support East-West traffic. therefore we are using vNet peering, in AWS they are using their GWLB with Endpoint which support it and in a direct results, the pricing gaps is huge.",
+        "impact": "Customer would like to announce a private preview with Microsoft on his SKO, delivering MVP to santander, but without doing so, the pricing will be so much higher in Azure due to using vNet Peering."
+      },
+      "system_analysis": {
+        "category": "technical_support",
+        "intent": "seeking_guidance",
+        "confidence": 0.5,
+        "business_impact": "medium",
+        "reasoning": {
+          "step_by_step": [
+            "📊 Step 1: External Data Source Consultation",
+            "🎯 Step 2: Microsoft Product Detection",
+            "   ❌ No Microsoft products detected",
+            "🧠 Step 3: Corrective Learning Application",
+            "   ✅ Applied 1 corrective learning patterns",
+            "🔎 Step 4: Domain Entity Extraction",
+            "   📊 Extracted entities: 0 total",
+            "   🏷️ Categories: ['azure_services', 'compliance_frameworks', 'technologies', 'business_domains', 'technical_areas', 'regions', 'discovered_services']",
+            "📊 Step 5: Category Classification",
+            "   🏷️ Classified as: IssueCategory.TECHNICAL_SUPPORT (confidence: 0.50)",
+            "🎯 Step 6: Intent Determination",
+            "   💯 Primary intent: IntentType.SEEKING_GUIDANCE (confidence: 0.50)",
+            "🔑 Step 7: Key Concept and Keyword Analysis",
+            "   📝 Key concepts identified: 3",
+            "   🏷️ Semantic keywords generated: 4",
+            "📈 Step 8: Business Impact and Complexity Assessment",
+            "   📈 Business impact: medium",
+            "   ⚙️ Technical complexity: low",
+            "Step 9: Search Strategy Optimization",
+            "Step 10: Context Summary Generation"
+          ],
+          "data_sources_used": [
+            {
+              "source": "Regional Service Availability (.cache/regional_service_availability.json)",
+              "status": "USED",
+              "reason": "Available for region-specific service queries",
+              "data_size": "26 services mapped"
+            },
+            {
+              "source": "Microsoft Learn Documentation API",
+              "status": "AVAILABLE",
+              "reason": "External knowledge source for Microsoft product information",
+              "note": "Used for product disambiguation and context"
+            }
+          ],
+          "data_sources_skipped": [
+            {
+              "source": "Azure Services Database",
+              "status": "SKIPPED",
+              "reason": "No Azure service keywords detected"
+            },
+            {
+              "source": "Azure Regions Database",
+              "status": "SKIPPED",
+              "reason": "No geographic region keywords detected"
+            },
+            {
+              "source": "Compliance Frameworks Database",
+              "status": "SKIPPED",
+              "reason": "No compliance/regulatory keywords detected"
+            },
+            {
+              "source": "Service Retirements Database",
+              "status": "SKIPPED",
+              "reason": "No retirement/deprecation keywords detected"
+            }
+          ],
+          "confidence_breakdown": [
+            "Category confidence: 0.50",
+            "Intent confidence: 0.50",
+            "Overall confidence: 0.50"
+          ],
+          "microsoft_products": [],
+          "corrections_applied": [
+            {
+              "pattern": "service_availability_query",
+              "original_category": "training_documentation",
+              "corrected_category": "service_availability",
+              "confidence_boost": 0.15
+            }
+          ],
+          "final_analysis": {
+            "category_reason": "technical_support indicators found with 50% confidence",
+            "intent_reason": "seeking_guidance patterns detected with 50% confidence",
+            "data_source_summary": "Consulted 2 data sources, skipped 4"
+          },
+          "decision_factors": []
+        },
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.TECHNICAL_SUPPORT": 0.5
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "pattern"
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "requesting_feature",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The customer Checkpoint is requesting that Azure Gateway Load Balancer support east-west traffic which it does not do today.  Not sure why Azure services was not used.\r\n"
+      }
+    },
+    {
+      "id": "8e94b39c-d3c3-4e04-9da4-c05f252c406d",
+      "timestamp": "2025-12-31T17:44:36.287329",
+      "original_issue": {
+        "title": "Checkpoint - FWaaS - AzureGW LB does not support east-west traffic inspection unlike to competitors.",
+        "description": "Azure GWLB does not support East-West traffic. therefore we are using vNet peering, in AWS they are using their GWLB with Endpoint which support it and in a direct results, the pricing gaps is huge.",
+        "impact": "Customer would like to announce a private preview with Microsoft on his SKO, delivering MVP to santander, but without doing so, the pricing will be so much higher in Azure due to using vNet Peering."
+      },
+      "system_analysis": {
+        "category": "technical_support",
+        "intent": "seeking_guidance",
+        "confidence": 0.5,
+        "business_impact": "medium",
+        "reasoning": {
+          "step_by_step": [
+            "📊 Step 1: External Data Source Consultation",
+            "🎯 Step 2: Microsoft Product Detection",
+            "   ❌ No Microsoft products detected",
+            "🧠 Step 3: Corrective Learning Application",
+            "   ✅ Applied 1 corrective learning patterns",
+            "🔎 Step 4: Domain Entity Extraction",
+            "   📊 Extracted entities: 0 total",
+            "   🏷️ Categories: ['azure_services', 'compliance_frameworks', 'technologies', 'business_domains', 'technical_areas', 'regions', 'discovered_services']",
+            "📊 Step 5: Category Classification",
+            "   🏷️ Classified as: IssueCategory.TECHNICAL_SUPPORT (confidence: 0.50)",
+            "🎯 Step 6: Intent Determination",
+            "   💯 Primary intent: IntentType.SEEKING_GUIDANCE (confidence: 0.50)",
+            "🔑 Step 7: Key Concept and Keyword Analysis",
+            "   📝 Key concepts identified: 3",
+            "   🏷️ Semantic keywords generated: 4",
+            "📈 Step 8: Business Impact and Complexity Assessment",
+            "   📈 Business impact: medium",
+            "   ⚙️ Technical complexity: low",
+            "Step 9: Search Strategy Optimization",
+            "Step 10: Context Summary Generation"
+          ],
+          "data_sources_used": [
+            {
+              "source": "Regional Service Availability (.cache/regional_service_availability.json)",
+              "status": "USED",
+              "reason": "Available for region-specific service queries",
+              "data_size": "26 services mapped"
+            },
+            {
+              "source": "Microsoft Learn Documentation API",
+              "status": "AVAILABLE",
+              "reason": "External knowledge source for Microsoft product information",
+              "note": "Used for product disambiguation and context"
+            }
+          ],
+          "data_sources_skipped": [
+            {
+              "source": "Azure Services Database",
+              "status": "SKIPPED",
+              "reason": "No Azure service keywords detected"
+            },
+            {
+              "source": "Azure Regions Database",
+              "status": "SKIPPED",
+              "reason": "No geographic region keywords detected"
+            },
+            {
+              "source": "Compliance Frameworks Database",
+              "status": "SKIPPED",
+              "reason": "No compliance/regulatory keywords detected"
+            },
+            {
+              "source": "Service Retirements Database",
+              "status": "SKIPPED",
+              "reason": "No retirement/deprecation keywords detected"
+            }
+          ],
+          "confidence_breakdown": [
+            "Category confidence: 0.50",
+            "Intent confidence: 0.50",
+            "Overall confidence: 0.50"
+          ],
+          "microsoft_products": [],
+          "corrections_applied": [
+            {
+              "pattern": "service_availability_query",
+              "original_category": "training_documentation",
+              "corrected_category": "service_availability",
+              "confidence_boost": 0.15
+            }
+          ],
+          "final_analysis": {
+            "category_reason": "technical_support indicators found with 50% confidence",
+            "intent_reason": "seeking_guidance patterns detected with 50% confidence",
+            "data_source_summary": "Consulted 2 data sources, skipped 4"
+          },
+          "decision_factors": []
+        },
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.TECHNICAL_SUPPORT": 0.5
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "pattern"
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "requesting_feature",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The customer Checkpoint is requesting that Azure Gateway Load Balancer support east-west traffic which it does not do today.  "
+      }
+    },
+    {
+      "id": "72df3bb2-db8b-45eb-8f6b-f95c85374b34",
+      "timestamp": "2025-12-31T17:59:52.316084",
+      "original_issue": {
+        "title": "Checkpoint - FWaaS - AzureGW LB does not support east-west traffic inspection unlike to competitors.",
+        "description": "Customer would like the same capability he got in AWS where he use AWS GWLB and GWLB endpoint which support east-west traffic.",
+        "impact": "Customer would like to announce a private preview with Microsoft on his SKO, delivering MVP to santander, but without doing so, the pricing will be so much higher in Azure due to using vNet Peering."
+      },
+      "system_analysis": {
+        "category": "feature_request",
+        "intent": "seeking_guidance",
+        "confidence": 0.5,
+        "business_impact": "medium",
+        "reasoning": {
+          "step_by_step": [
+            "📊 Step 1: External Data Source Consultation",
+            "🎯 Step 2: Microsoft Product Detection",
+            "   ❌ No Microsoft products detected",
+            "🧠 Step 3: Corrective Learning Application",
+            "   ✅ Applied 1 corrective learning patterns",
+            "🔎 Step 4: Domain Entity Extraction",
+            "   📊 Extracted entities: 0 total",
+            "   🏷️ Categories: ['azure_services', 'compliance_frameworks', 'technologies', 'business_domains', 'technical_areas', 'regions', 'discovered_services']",
+            "📊 Step 5: Category Classification",
+            "   🏷️ Classified as: IssueCategory.FEATURE_REQUEST (confidence: 0.50)",
+            "🎯 Step 6: Intent Determination",
+            "   💯 Primary intent: IntentType.SEEKING_GUIDANCE (confidence: 0.50)",
+            "🔑 Step 7: Key Concept and Keyword Analysis",
+            "   📝 Key concepts identified: 3",
+            "   🏷️ Semantic keywords generated: 4",
+            "📈 Step 8: Business Impact and Complexity Assessment",
+            "   📈 Business impact: medium",
+            "   ⚙️ Technical complexity: low",
+            "Step 9: Search Strategy Optimization",
+            "Step 10: Context Summary Generation"
+          ],
+          "data_sources_used": [
+            {
+              "source": "Regional Service Availability (.cache/regional_service_availability.json)",
+              "status": "USED",
+              "reason": "Available for region-specific service queries",
+              "data_size": "26 services mapped"
+            },
+            {
+              "source": "Microsoft Learn Documentation API",
+              "status": "AVAILABLE",
+              "reason": "External knowledge source for Microsoft product information",
+              "note": "Used for product disambiguation and context"
+            }
+          ],
+          "data_sources_skipped": [
+            {
+              "source": "Azure Services Database",
+              "status": "SKIPPED",
+              "reason": "No Azure service keywords detected"
+            },
+            {
+              "source": "Azure Regions Database",
+              "status": "SKIPPED",
+              "reason": "No geographic region keywords detected"
+            },
+            {
+              "source": "Compliance Frameworks Database",
+              "status": "SKIPPED",
+              "reason": "No compliance/regulatory keywords detected"
+            },
+            {
+              "source": "Service Retirements Database",
+              "status": "SKIPPED",
+              "reason": "No retirement/deprecation keywords detected"
+            }
+          ],
+          "confidence_breakdown": [
+            "Category confidence: 0.50",
+            "Intent confidence: 0.50",
+            "Overall confidence: 0.50"
+          ],
+          "microsoft_products": [],
+          "corrections_applied": [
+            {
+              "pattern": "service_availability_query",
+              "original_category": "training_documentation",
+              "corrected_category": "service_availability",
+              "confidence_boost": 0.15
+            }
+          ],
+          "final_analysis": {
+            "category_reason": "feature_request indicators found with 50% confidence",
+            "intent_reason": "seeking_guidance patterns detected with 50% confidence",
+            "data_source_summary": "Consulted 2 data sources, skipped 4"
+          },
+          "decision_factors": []
+        },
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.FEATURE_REQUEST": 0.5
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "pattern"
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "requesting_feature",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The customers intent is requesting a feature."
+      }
+    },
+    {
+      "id": "913ba11c-5cb0-4793-8e22-40a528518f8b",
+      "timestamp": "2026-01-02T19:14:53.184139",
+      "original_issue": {
+        "title": "[IAR] [Verohallinto] Azure Recovery Services Vault missing features",
+        "description": "We need to understand if there plans in Recovery Services Vault PG to fix the blockers Gentax project is having when testing, designing and implementing DR strategy to their VM based application.\r\n\r\nBackground\r\n▪ Business critical application hosted in Sweden Central Region \r\n▪ Azure IaaS VMs with 3 main roles: web, app and SQL DB  \r\n▪ VM's provisioned from Market place image Windows Server 2022 \r\n▪ VM Encryption at host with CMK \r\n▪ SQL server SKU FXmdsV2 series, NVMe interface, accelerated network \r\n▪ Premium SSD v1 OS Disk, Premium SSD v2 data disks, SQL Log on Ultra disk \r\n▪ RSV backup, App & Web VM all disks, SQL VM with DB data disk and DB log disks excluded \r\n▪ Requirement for in zone, cross zone and cross region restore for VM– Blockers / issues in VM restore fom RSV currently \r\n▪ Solution implemented for SQL DB backup to URL using Azure Storage Account with local and Geo DR \r\n▪ Requirement is to ensure and maintain consistency throughout environments\r\n\r\nIssues\r\nIn same AZ VM restore from RSV to overwrite an existing VM\r\nHost Encrypted and disk exclude not supported for VM restore, and does not work \r\n Critical for SQL VM restore, currently leads to incompliancy for consistency target \r\n In same AZ VM restore from RSV as new VM (current IaC blocker, customer issue) \r\n Changes the option CreateFrom\r\n Blocks use of current IaC pipeline. Conflicts the consistency requirement as restored VM differ from originally provisioned VM\r\nCross AZ restore from RSV ZRS storage\r\nBlocked due VM encryption not supported (host encryption) \r\n RSV backup / restore with GRS \r\n Not supported for Premium SSD v2 in Sweden Central. Capacity plan far in future, can it be improved? \r\n VM Azure Compute Gallery Image \r\n Complains about NVMe storage interface and refers to SCSi while image provisioning (May be Image properties issue) \r\n Use of ASR (Azure Site Recovery) \r\n Would add additional agent requirement, may lead variation between servers if not all, can not be use with SQL server \r\n Preview for Premium SSD v2 \r\n Cost impact",
+        "impact": "The Finnish Tax Administration is migrating Gentax from on-prem to Azure. It has approximately 430 servers to migrate. And currently they are looking at the DR options in Azure. Timeframe: Customer needs this ASAP Impact: They need a way to backup their Gentax solution using a designed security baseline and features."
+      },
+      "system_analysis": {
+        "category": "capacity_limits",
+        "intent": "reporting_issue",
+        "confidence": 0.95,
+        "business_impact": "critical",
+        "technical_complexity": "low",
+        "urgency_level": "high",
+        "key_concepts": [
+          "servers",
+          "their gentax solution",
+          "database",
+          "azure storage account",
+          "azure site recovery",
+          "azure iaas vms",
+          "Sweden",
+          "security baseline",
+          "azure recovery services",
+          "azure compute gallery",
+          "sql"
+        ],
+        "semantic_keywords": [
+          "scaling",
+          "resource",
+          "allocation",
+          "limit",
+          "quota",
+          "constraint"
+        ],
+        "domain_entities": {
+          "azure_services": [
+            "servers"
+          ],
+          "compliance_frameworks": [],
+          "technologies": [
+            "sql"
+          ],
+          "business_domains": [],
+          "technical_areas": [
+            "database"
+          ],
+          "regions": [
+            "Sweden"
+          ],
+          "discovered_services": []
+        },
+        "recommended_search_strategy": {
+          "search_retirements": false,
+          "prioritize_uats": true,
+          "prioritize_features": true,
+          "use_semantic_matching": true,
+          "expand_search_terms": true
+        },
+        "context_summary": "Capacity request for SQL Database in Sweden with user requesting a feature involving servers related to sql with high business impact.",
+        "reasoning": "The inquiry highlights multiple blockers and limitations in Azure Recovery Services Vault related to VM restore, encryption, and storage compatibility, which directly impact the customer's ability to implement their DR strategy for a critical migration project. The stated impact and urgency indicate a critical business impact. The focus on unsupported features and capacity planning aligns with the 'capacity_limits' category and 'reporting_issue' intent.",
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.CAPACITY": 0.875
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "llm",
+        "ai_available": true,
+        "ai_error": null
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "roadmap_inquiry",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The user is asking for additional capabilities in Azure Recovery Services which is not a capacity issue, it is a missing feature"
+      }
+    },
+    {
+      "id": "bbb1725f-ea3f-45e7-9a5e-f0700e154650",
+      "timestamp": "2026-01-02T19:23:39.621394",
+      "original_issue": {
+        "title": "[IAR] [Verohallinto] Azure Recovery Services Vault missing features",
+        "description": "We need to understand if there plans in Recovery Services Vault PG to fix the blockers Gentax project is having when testing, designing and implementing DR strategy to their VM based application.\r\n\r\nBackground\r\n▪ Business critical application hosted in Sweden Central Region \r\n▪ Azure IaaS VMs with 3 main roles: web, app and SQL DB  \r\n▪ VM's provisioned from Market place image Windows Server 2022 \r\n▪ VM Encryption at host with CMK \r\n▪ SQL server SKU FXmdsV2 series, NVMe interface, accelerated network \r\n▪ Premium SSD v1 OS Disk, Premium SSD v2 data disks, SQL Log on Ultra disk \r\n▪ RSV backup, App & Web VM all disks, SQL VM with DB data disk and DB log disks excluded \r\n▪ Requirement for in zone, cross zone and cross region restore for VM– Blockers / issues in VM restore fom RSV currently \r\n▪ Solution implemented for SQL DB backup to URL using Azure Storage Account with local and Geo DR \r\n▪ Requirement is to ensure and maintain consistency throughout environments\r\n\r\nIssues\r\nIn same AZ VM restore from RSV to overwrite an existing VM\r\nHost Encrypted and disk exclude not supported for VM restore, and does not work \r\n Critical for SQL VM restore, currently leads to incompliancy for consistency target \r\n In same AZ VM restore from RSV as new VM (current IaC blocker, customer issue) \r\n Changes the option CreateFrom\r\n Blocks use of current IaC pipeline. Conflicts the consistency requirement as restored VM differ from originally provisioned VM\r\nCross AZ restore from RSV ZRS storage\r\nBlocked due VM encryption not supported (host encryption) \r\n RSV backup / restore with GRS \r\n Not supported for Premium SSD v2 in Sweden Central. Capacity plan far in future, can it be improved? \r\n VM Azure Compute Gallery Image \r\n Complains about NVMe storage interface and refers to SCSi while image provisioning (May be Image properties issue) \r\n Use of ASR (Azure Site Recovery) \r\n Would add additional agent requirement, may lead variation between servers if not all, can not be use with SQL server \r\n Preview for Premium SSD v2 \r\n Cost impact",
+        "impact": "The Finnish Tax Administration is migrating Gentax from on-prem to Azure. It has approximately 430 servers to migrate. And currently they are looking at the DR options in Azure. Timeframe: Customer needs this ASAP Impact: They need a way to backup their Gentax solution using a designed security baseline and features."
+      },
+      "system_analysis": {
+        "category": "capacity_limits",
+        "intent": "reporting_issue",
+        "confidence": 0.95,
+        "business_impact": "critical",
+        "technical_complexity": "low",
+        "urgency_level": "high",
+        "key_concepts": [
+          "azure site recovery",
+          "azure compute gallery",
+          "Sweden",
+          "servers",
+          "sql",
+          "azure iaas vms",
+          "database",
+          "their gentax solution",
+          "azure recovery services",
+          "azure storage account",
+          "security baseline"
+        ],
+        "semantic_keywords": [
+          "quota",
+          "scaling",
+          "limit",
+          "allocation",
+          "resource",
+          "constraint"
+        ],
+        "domain_entities": {
+          "azure_services": [
+            "servers"
+          ],
+          "compliance_frameworks": [],
+          "technologies": [
+            "sql"
+          ],
+          "business_domains": [],
+          "technical_areas": [
+            "database"
+          ],
+          "regions": [
+            "Sweden"
+          ],
+          "discovered_services": []
+        },
+        "recommended_search_strategy": {
+          "search_retirements": false,
+          "prioritize_uats": true,
+          "prioritize_features": true,
+          "use_semantic_matching": true,
+          "expand_search_terms": true
+        },
+        "context_summary": "Capacity request for SQL Database in Sweden with user requesting a feature involving servers related to sql with high business impact.",
+        "reasoning": "The inquiry highlights multiple blockers and limitations in Azure Recovery Services Vault related to VM restore, encryption, and storage compatibility, which are critical for the customer's disaster recovery strategy. The stated impact emphasizes urgency and the migration of a business-critical application, making this a capacity_limits issue with reporting_issue intent due to the detailed description of unsupported features and limitations.",
+        "pattern_features": {
+          "category_scores": {
+            "IssueCategory.CAPACITY": 0.875
+          },
+          "detected_products": [],
+          "technical_indicators": [],
+          "relevant_corrections": []
+        },
+        "source": "llm",
+        "ai_available": true,
+        "ai_error": null
+      },
+      "evaluation_result": "reject",
+      "general_feedback": "",
+      "corrections": {
+        "correct_category": "feature_request",
+        "correct_intent": "roadmap_inquiry",
+        "correct_business_impact": "medium",
+        "correct_technical_complexity": null,
+        "correct_urgency_level": null,
+        "correction_notes": "The user is requesting features for Azure Recovery Services Vault, which is called out in the title and further detailed in the description."
+      }
     }
   ],
   "statistics": {
-    "total": 7,
+    "total": 15,
     "approved": 0,
-    "rejected": 7
+    "rejected": 15
   }
 }

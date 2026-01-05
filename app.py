@@ -79,6 +79,7 @@ from ado_integration import AzureDevOpsClient           # Azure DevOps API integ
 from markupsafe import Markup                          # HTML safety for templates
 from app_wizard import wizard_bp                       # Multi-step wizard blueprint
 from bs4 import BeautifulSoup                          # HTML parsing and cleaning
+from search_service import ResourceSearchService, ComprehensiveSearchResults, SearchResult  # Resource search orchestrator
 
 # =============================================================================
 # FLASK APPLICATION INITIALIZATION AND CONFIGURATION
@@ -299,7 +300,7 @@ class IssueTracker:
                 json.dump(self.evaluations, f, indent=2, ensure_ascii=False)
             print(f"✅ Evaluation {evaluation_id} saved successfully")
         except Exception as e:
-            print(f"❌ Error saving evaluation: {e}")
+            print(f"[ERROR] Error saving evaluation: {e}")
         
         return evaluation_id
     
@@ -331,166 +332,136 @@ tracker = IssueTracker()
 @app.route('/')
 def index():
     """
-    MAIN DASHBOARD - QUICK ICA ANALYSIS INTERFACE
+    STEP 1: ISSUE SUBMISSION FORM
     
-    Primary landing page that provides immediate access to Quick ICA analysis.
-    Serves as the main entry point for users seeking rapid AI-powered
-    context analysis with comprehensive reasoning display.
+    Primary landing page for the new 3-step process:
+    Step 1: Issue Submission → Step 2: Quality Review → Step 3: ICA Analysis
     
     FUNCTIONALITY:
-    - Clean session state for fresh analysis
-    - Display quick analysis form for immediate input
-    - Redirect users to appropriate workflow based on their needs
+    - Display issue submission form with Title, Description/Customer Scenario, and Impact
+    - Support pre-filling fields from quality review "Update Input" action
+    - Clean session state for fresh submission
     
     SESSION MANAGEMENT:
     - Clears any existing wizard or submission data
-    - Ensures clean slate for new analysis
+    - Ensures clean slate for new submission
     - Prevents data contamination between sessions
     
     USER EXPERIENCE:
-    - Single-click access to Quick ICA analysis
-    - Streamlined interface for rapid feedback
-    - Clear navigation to advanced features
+    - Single form for all required input
+    - Clear instructions and examples
+    - Direct path to quality analysis
     
-    TEMPLATE: quick_ica_form.html
-    - Simple form for title, description, and business impact
-    - Real-time validation and input guidance
-    - Direct submission to Quick ICA analysis engine
+    TEMPLATE: issue_submission.html
+    - Combined Description and Customer Scenario field with guidance
+    - Optional Business Impact field
+    - Examples and help text for clarity
     """
-    # Clean session state to ensure fresh analysis experience
-    # Removes any lingering data from previous wizard sessions
+    # Clean session state to ensure fresh submission experience
     session.pop('wizard_data', None)
     session.pop('submission_data', None)
     
-    # Render the quick analysis form for immediate user input
-    return render_template('quick_ica_form.html')
+    # Get pre-fill values from query parameters (from "Update Input" in quality review)
+    title = request.args.get('title', '')
+    description = request.args.get('description', '')
+    impact = request.args.get('impact', '')
+    
+    # Render the issue submission form
+    return render_template('issue_submission.html', title=title, description=description, impact=impact)
 
 @app.route('/submit', methods=['POST', 'GET'])
 def submit_issue():
     """
-    ISSUE SUBMISSION AND ANALYSIS ORCHESTRATOR
+    STEP 2: QUALITY ANALYSIS AND ROUTING
     
-    Central processing hub that handles issue submissions from multiple sources
-    (direct forms, wizard completion, quality review improvements) and orchestrates
-    comprehensive AI-powered analysis with progress tracking.
+    Central processing hub for the new 3-step flow:
+    - Receives submission from Step 1 (Issue Submission)
+    - Performs quality analysis
+    - Routes to Quality Review page
+    - Handles "Continue to Analysis" or "Update Input" actions
     
     INPUT SOURCES:
-    1. Direct Form Submission (POST):
-       - Quick ICA form from main dashboard
-       - Quality review improvement submissions
-       - Admin interface direct submissions
+    1. Initial Submission (POST from issue_submission.html):
+       - First time submission with title, description, impact
+       - Always shows quality review first
     
-    2. Wizard Completion (Session Data):
-       - Multi-step wizard final submission
-       - Enhanced data collection from guided process
-       - Validated and structured input data
+    2. Quality Review Actions (POST from input_quality_review.html):
+       - action='proceed': Continue to ICA Analysis
+       - action='improve': Return to quality review with updated input
     
     PROCESSING WORKFLOW:
-    1. Input Data Extraction and Validation
-    2. Session State Management and Cleanup
-    3. Quality Analysis and Completeness Assessment
-    4. AI-Powered Context Analysis with Transparency
-    5. Multi-Source Knowledge Search
-    6. Result Synthesis and Confidence Scoring
-    7. Progress Tracking and User Feedback
+    1. Extract and validate input data
+    2. Perform quality analysis (completeness score)
+    3. Display quality review with 3 options:
+       - Cancel → Return to Step 1
+       - Update Input → Return to Step 1 with current data
+       - Continue and Submit to Analysis → Proceed to Step 3 (ICA)
     
     SESSION MANAGEMENT:
-    - Cleans previous session data to prevent contamination
-    - Stores new submission data for analysis pipeline
-    - Manages temporary storage for large analysis results
-    
-    QUALITY HANDLING:
-    - Validates input completeness and quality
-    - Provides improvement recommendations
-    - Handles second-attempt submissions after improvements
-    
-    ERROR HANDLING:
-    - Graceful degradation for missing or invalid input
-    - User-friendly error messages and guidance
-    - Fallback to manual processing when automated analysis fails
+    - Stores submission data for ICA analysis
+    - Manages quality review iterations
+    - Cleans up on fresh submissions
     """
-    # Extract data from form (POST) or session (from wizard)
-    if request.method == 'POST' and request.form and any(request.form.get(field) for field in ['title', 'description', 'impact']):
-        # Data from direct form submission (e.g., quality review page)
+    # Extract data from form submission
+    if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         impact = request.form.get('impact', '').strip()
-        opportunity_id = request.form.get('opportunity_id', '').strip()
-        milestone_id = request.form.get('milestone_id', '').strip()
         action = request.form.get('action', 'improve').strip()
-        is_second_attempt = request.form.get('is_second_attempt', 'false').strip() == 'true'
+        from_quality_review = request.form.get('from_quality_review', 'false') == 'true'
         
-        # Clear any existing session data
-        session.pop('submission_data', None)
-        session.pop('wizard_data', None)
-        session.pop('enhanced_info', None)
-        session.pop('enhanced_results', None)
-        session.pop('process_id', None)
-    elif session.get('submission_data'):
-        # Data from wizard submission
-        submission_data = session.get('submission_data', {})
-        title = submission_data.get('title', '').strip()
-        description = submission_data.get('description', '').strip()
-        impact = submission_data.get('impact', '').strip()
-        opportunity_id = submission_data.get('opportunity_id', '').strip()
-        milestone_id = submission_data.get('milestone_id', '').strip()
-        action = 'improve'  # Default action for wizard submissions
-        is_second_attempt = False  # First attempt from wizard
+        # Validate required fields
+        if not title or not description:
+            flash('Title and Description are required fields.', 'error')
+            return redirect(url_for('index'))
         
-        # Clear wizard-related session data
-        session.pop('wizard_data', None)
-        session.pop('enhanced_info', None)
-        session.pop('enhanced_results', None)
-        session.pop('process_id', None)
-    else:
-        return redirect(url_for('index'))
-    
-    try:
-        from enhanced_matching import AIAnalyzer
+        # Check if user wants to proceed to analysis (from quality review page)
+        if action == 'proceed' and from_quality_review:
+            # User clicked "Continue and Submit to Analysis"
+            # Store data and proceed to ICA Analysis
+            session['original_wizard_data'] = {
+                'title': title,
+                'description': description,
+                'impact': impact
+            }
+            
+            # Clear old session data
+            session.pop('submission_data', None)
+            session.pop('wizard_data', None)
+            
+            # Generate process ID for tracking
+            process_id = str(uuid.uuid4())
+            session['process_id'] = process_id
+            
+            app.config['processing_sessions'] = app.config.get('processing_sessions', {})
+            if process_id in app.config['processing_sessions']:
+                del app.config['processing_sessions'][process_id]
+            
+            # Proceed to ICA Analysis (Step 3)
+            return redirect(url_for('start_processing'))
         
-        # Quality analysis (if not proceeding directly)
-        if action != 'proceed':
+        # Otherwise, perform quality analysis and show review page
+        try:
+            from enhanced_matching import AIAnalyzer
             quality_analysis = AIAnalyzer.analyze_completeness(title, description, impact)
             
-            # Always show quality review on first attempt to give user opportunity to review/improve
-            if not is_second_attempt:
-                return render_template('input_quality_review.html',
-                                     title=title, description=description, impact=impact,
-                                     opportunity_id=opportunity_id, milestone_id=milestone_id,
-                                     quality=quality_analysis, min_words=5, min_impact_words=3,
-                                     is_second_attempt=False)
-            
-            # On second attempt, show review again if quality is still below threshold
-            elif is_second_attempt and quality_analysis['completeness_score'] < 80:
-                return render_template('input_quality_review.html',
-                                     title=title, description=description, impact=impact,
-                                     opportunity_id=opportunity_id, milestone_id=milestone_id,
-                                     quality=quality_analysis, min_words=5, min_impact_words=3,
-                                     is_second_attempt=True, show_proceed_warning=True)
+            # Always show quality review to give user the 3 options
+            return render_template('input_quality_review.html',
+                                 title=title,
+                                 description=description,
+                                 impact=impact,
+                                 quality=quality_analysis,
+                                 min_words=5,
+                                 min_impact_words=3,
+                                 is_second_attempt=False)
         
-        # Store wizard data and start processing
-        session['original_wizard_data'] = {
-            'title': title, 'description': description, 'impact': impact,
-            'opportunity_id': opportunity_id, 'milestone_id': milestone_id
-        }
-        
-        # Clear submission data now that we've processed it
-        session.pop('submission_data', None)
-        
-        process_id = str(uuid.uuid4())
-        session['process_id'] = process_id
-        
-        app.config['processing_sessions'] = app.config.get('processing_sessions', {})
-        if process_id in app.config['processing_sessions']:
-            del app.config['processing_sessions'][process_id]
-        
-        return redirect(url_for('start_processing'))
-        
-    except Exception as e:
-        print(f"Error in submit_issue: {str(e)}")
-        session.clear()
-        flash('An error occurred processing your submission. Please try again.', 'error')
-        return redirect(url_for('index'))
+        except Exception as e:
+            print(f"Error in submit_issue quality analysis: {str(e)}")
+            flash('An error occurred analyzing your submission. Please try again.', 'error')
+            return redirect(url_for('index'))
+    
+    # GET request - redirect to index
+    return redirect(url_for('index'))
 
 @app.route('/no_match')
 def no_match():
@@ -509,19 +480,19 @@ def no_match():
     
 
     
-    print(f"🔍 DEBUG /no_match: results_id = {results_id}")
-    print(f"🔍 DEBUG /no_match: temp_storage keys = {list(temp_storage.keys())}")
+    print(f"[DEBUG] /no_match: results_id = {results_id}")
+    print(f"[DEBUG] /no_match: temp_storage keys = {list(temp_storage.keys())}")
     
     if results_id and results_id in temp_storage:
         enhanced_results = temp_storage[results_id]['enhanced_results']
         
-        print(f"🔍 DEBUG /no_match: Found results with keys = {list(enhanced_results.keys())}")
+        print(f"[DEBUG] /no_match: Found results with keys = {list(enhanced_results.keys())}")
         
         # Prepare pagination for results
         all_items = enhanced_results.get('all_items', [])
         total_items = len(all_items)
         
-        print(f"🔍 DEBUG /no_match: total_items = {total_items}, all_items length = {len(all_items)}")
+        print(f"[DEBUG] /no_match: total_items = {total_items}, all_items length = {len(all_items)}")
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
         paginated_items = all_items[start_idx:end_idx]
@@ -633,8 +604,8 @@ def start_processing():
         evaluation_id = str(uuid.uuid4())
         temp_storage[evaluation_id] = evaluation_data
         
-        # Redirect to evaluation form
-        return redirect(url_for('evaluate_context', eval_id=evaluation_id))
+        # Redirect to summary page for user review
+        return redirect(url_for('context_summary', eval_id=evaluation_id))
         
     except Exception as e:
         print(f"Context evaluation error: {e}")
@@ -689,15 +660,15 @@ def processing_status(process_id):
         session['wizard_title'] = wizard_data.get('title', 'Unknown Issue')
         session['results_id'] = results_id  # Store ID instead of data
         
-        print(f"🔍 DEBUG PROCESSING_STATUS: Set session results_id = {results_id}")
+        print(f"[DEBUG] PROCESSING_STATUS: Set session results_id = {results_id}")
         
         total_matches = results.get('total_matches', 0)
         
-        print(f"🔍 DEBUG: Results structure keys: {list(results.keys())}")
-        print(f"🔍 DEBUG: total_matches value: {total_matches}")
-        print(f"🔍 DEBUG: UAT items count: {len(results.get('uat_items', []))}")
-        print(f"🔍 DEBUG: Feature items count: {len(results.get('feature_items', []))}")
-        print(f"🔍 DEBUG: All items count: {len(results.get('all_items', []))}")
+        print(f"[DEBUG] Results structure keys: {list(results.keys())}")
+        print(f"[DEBUG] total_matches value: {total_matches}")
+        print(f"[DEBUG] UAT items count: {len(results.get('uat_items', []))}")
+        print(f"[DEBUG] Feature items count: {len(results.get('feature_items', []))}")
+        print(f"[DEBUG] All items count: {len(results.get('all_items', []))}")
         
         if total_matches > 0:
             # Found matches - redirect to results page
@@ -705,7 +676,7 @@ def processing_status(process_id):
             response['redirect_url'] = url_for('results')
         else:
             # No matches found - redirect to no match page
-            print(f"❌ NO MATCHES FOUND - Redirecting to no_match")
+            print(f"[WARNING] NO MATCHES FOUND - Redirecting to no_match")
             response['redirect_url'] = url_for('no_match')
     elif status.get('completed') and status.get('error'):
         # Handle error case
@@ -713,6 +684,407 @@ def processing_status(process_id):
         response['redirect_url'] = url_for('index')
     
     return jsonify(response)
+
+@app.route('/context_summary', methods=['GET'])
+def context_summary():
+    """
+    SUMMARY PAGE - User agreement checkpoint
+    
+    Displays simplified classification results for user review before proceeding.
+    Shows key metrics in user-friendly format with options to:
+    - Agree and continue to search results
+    - Modify the classification
+    - See detailed analysis
+    - Cancel
+    """
+    # Get evaluation ID from query parameters
+    evaluation_id = request.args.get('eval_id')
+    if not evaluation_id or evaluation_id not in temp_storage:
+        flash('Evaluation session not found or expired', 'error')
+        return redirect(url_for('index'))
+    
+    # Get evaluation data from temporary storage
+    evaluation_data = temp_storage[evaluation_id]
+    
+    return render_template('context_summary.html',
+                         evaluation_id=evaluation_id,
+                         original_title=evaluation_data['original_issue']['title'],
+                         original_description=evaluation_data['original_issue']['description'],
+                         original_impact=evaluation_data['original_issue'].get('impact', ''),
+                         context=evaluation_data['context_analysis'],
+                         search_strategy=evaluation_data.get('recommended_strategy', {'type': 'comprehensive', 'search_ado': True, 'search_retirements': True}))
+
+@app.route('/submit_evaluation_summary', methods=['POST'])
+def submit_evaluation_summary():
+    """
+    Handle user feedback from summary page
+    
+    Actions:
+    - agree: User approves classification, continue to search
+    - modify: User wants to correct classification
+    - (See Detail is a direct link, not a form action)
+    """
+    evaluation_id = request.form.get('evaluation_id')
+    action = request.form.get('action')
+    
+    if not evaluation_id or evaluation_id not in temp_storage:
+        flash('Evaluation session not found or expired', 'error')
+        return redirect(url_for('index'))
+    
+    evaluation_data = temp_storage[evaluation_id]
+    
+    if action == 'agree':
+        # User agrees with classification - proceed to resource search
+        # Show search results before UAT creation
+        return redirect(url_for('search_resources', eval_id=evaluation_id))
+    
+    elif action == 'modify':
+        # User wants to modify - show detailed evaluation page for corrections
+        flash('Please review and correct the classification below', 'info')
+        return redirect(url_for('evaluate_context', eval_id=evaluation_id))
+    
+    else:
+        # Unknown action, redirect back to summary
+        return redirect(url_for('context_summary', eval_id=evaluation_id))
+
+@app.route('/search_resources', methods=['GET'])
+def search_resources():
+    """
+    RESOURCE SEARCH PROCESSING PAGE
+    
+    Shows progress while searching multiple sources for helpful resources:
+    1. Microsoft Learn documentation
+    2. Similar/alternative Azure products  
+    3. Regional service availability
+    4. Capacity guidance (AOAI/standard)
+    5. Retirement information
+    
+    Displays animated progress and redirects to results when complete.
+    """
+    evaluation_id = request.args.get('eval_id')
+    deep_search = request.args.get('deep_search', 'false').lower() == 'true'
+    
+    if not evaluation_id or evaluation_id not in temp_storage:
+        flash('Evaluation session not found or expired', 'error')
+        return redirect(url_for('index'))
+    
+    # Show processing page - actual search happens in background
+    return render_template('searching_resources.html',
+                         eval_id=evaluation_id,
+                         deep_search=deep_search)
+
+def _generate_smart_search_query(title, description, services, technologies, key_concepts, semantic_keywords, category, intent, reasoning):
+    """
+    Use LLM to generate an intelligent Microsoft Learn search query.
+    
+    Instead of blindly concatenating terms, this understands the actual need
+    and generates targeted search queries.
+    
+    Example: "CosmosDB connector to Spark in Korea" 
+    → "Azure Cosmos DB Spark connector"
+    """
+    try:
+        from openai import AzureOpenAI
+        import os
+        
+        client = AzureOpenAI(
+            azure_endpoint=os.environ.get('AZURE_OPENAI_ENDPOINT'),
+            api_key=os.environ.get('AZURE_OPENAI_API_KEY'),
+            api_version="2024-08-01-preview"
+        )
+        
+        # Build context for LLM
+        context_parts = []
+        if services:
+            context_parts.append(f"Azure Services: {', '.join(services[:3])}")
+        if technologies:
+            context_parts.append(f"Technologies: {', '.join(technologies[:2])}")
+        if reasoning:
+            context_parts.append(f"Analysis: {reasoning[:200]}")
+        
+        prompt = f"""Generate a concise, effective Microsoft Learn search query (3-5 words max) for this Azure issue.
+
+ISSUE TITLE: {title[:150]}
+DESCRIPTION: {description[:300]}
+
+{chr(10).join(context_parts)}
+
+RULES:
+- Focus on the ACTUAL NEED (e.g., "connector", "integration", "migration", "availability")
+- Use official Azure service names (e.g., "Cosmos DB" not "CosmosDB")
+- Remove filler words, partial phrases, location names
+- For connectivity/integration: include "connector" or "SDK" or "integration"
+- For features: include "feature" or "capability"
+- For availability: include "regions" or "availability"
+- For capacity: include "quota" or "capacity"
+
+EXAMPLES:
+- "CosmosDB to Spark in Korea" → "Cosmos DB Spark connector"
+- "need XDR capabilities" → "Microsoft Defender XDR capabilities"
+- "service not available in region" → "Azure service regional availability"
+
+Generate ONLY the search query (3-5 words), nothing else:"""
+
+        response = client.chat.completions.create(
+            model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o'),
+            messages=[
+                {"role": "system", "content": "You are a Microsoft Learn documentation search expert. Generate concise, effective search queries."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=50
+        )
+        
+        smart_query = response.choices[0].message.content.strip()
+        
+        # Remove quotes if LLM added them
+        smart_query = smart_query.strip('"').strip("'")
+        
+        print(f"[SearchService] Smart search query generated: {smart_query}")
+        return smart_query
+        
+    except Exception as e:
+        print(f"[SearchService] Smart query generation failed: {e}")
+        # Fallback to simpler logic
+        query_parts = []
+        if services:
+            query_parts.extend(services[:2])
+        if technologies:
+            query_parts.extend(technologies[:1])
+        
+        # Add domain-specific terms based on category
+        if category == 'integration_connectivity' or intent == 'requesting_service':
+            query_parts.append('connector')
+        elif category == 'feature_request':
+            query_parts.append('capability')
+        elif category == 'service_availability':
+            query_parts.append('regional availability')
+        
+        return ' '.join(query_parts) if query_parts else title[:50]
+
+@app.route('/perform_search', methods=['POST'])
+def perform_search():
+    """
+    BACKGROUND SEARCH EXECUTION
+    
+    Performs the actual resource searches and stores results.
+    Called via AJAX from the processing page to enable real-time progress updates.
+    """
+    evaluation_id = request.json.get('eval_id')
+    deep_search = request.json.get('deep_search', False)
+    
+    if not evaluation_id or evaluation_id not in temp_storage:
+        return jsonify({'success': False, 'error': 'Invalid evaluation ID'})
+    
+    evaluation_data = temp_storage[evaluation_id]
+    context = evaluation_data['context_analysis']
+    
+    # Initialize search service
+    search_service = ResourceSearchService(use_deep_search=deep_search)
+    
+    # Perform comprehensive search
+    search_results = search_service.search_all(
+        title=evaluation_data['original_issue']['title'],
+        description=evaluation_data['original_issue']['description'],
+        category=context['category'],
+        intent=context['intent'],
+        domain_entities=context.get('domain_entities', {})
+    )
+    
+    # Search Microsoft Learn using MCP tools
+    learn_results = []
+    try:
+        # Build comprehensive search query from context analysis
+        # Priority: key concepts > semantic keywords > technologies > title/description
+        key_concepts = context.get('key_concepts', [])
+        semantic_keywords = context.get('semantic_keywords', [])
+        services = context.get('domain_entities', {}).get('azure_services', [])
+        technologies = context.get('domain_entities', {}).get('technologies', [])
+        regions = context.get('domain_entities', {}).get('regions', [])
+        
+        # Use LLM to generate intelligent search query
+        search_query = _generate_smart_search_query(
+            title=evaluation_data['original_issue']['title'],
+            description=evaluation_data['original_issue']['description'],
+            services=services,
+            technologies=technologies,
+            key_concepts=key_concepts,
+            semantic_keywords=semantic_keywords,
+            category=context.get('category'),
+            intent=context.get('intent'),
+            reasoning=context.get('reasoning', '')
+        )
+        
+        print(f"[SearchService] Microsoft Learn search query: {search_query}")
+        
+        # Call MCP Microsoft Learn search - the tool is available directly in the environment
+        # Note: In production, this would call mcp_microsoft_doc_microsoft_docs_search
+        # For now, create a direct search URL with the query terms
+        learn_results.append(SearchResult(
+            title=f"Azure Documentation for {services[0] if services else 'your issue'}",
+            url=f"https://learn.microsoft.com/en-us/search/?terms={search_query.replace(' ', '+')}",
+            snippet=f"Search Microsoft Learn for: {search_query}",
+            source="learn",
+            relevance_score=0.9
+        ))
+        
+        # Add specific service documentation links if we identified services
+        if services:
+            for idx, service in enumerate(services[:3]):
+                # Generate documentation URL based on common patterns
+                service_lower = service.lower().replace(' ', '-')
+                doc_url = f"https://learn.microsoft.com/en-us/azure/{service_lower}/"
+                
+                learn_results.append(SearchResult(
+                    title=f"{service} Documentation",
+                    url=doc_url,
+                    snippet=f"Official Microsoft Learn documentation for {service}",
+                    source="learn",
+                    relevance_score=0.8 - (idx * 0.1)
+                ))
+        
+        # Add regional documentation if region-related
+        if regions and context.get('category') == 'service_availability':
+            learn_results.append(SearchResult(
+                title="Azure Regions and Availability Zones",
+                url="https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview",
+                snippet="Learn about Azure regions, availability zones, and service availability",
+                source="learn",
+                relevance_score=0.85
+            ))
+        
+        # Add capacity documentation if capacity-related
+        if context.get('category') == 'capacity':
+            learn_results.append(SearchResult(
+                title="Azure Capacity Planning",
+                url="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/considerations/capacity",
+                snippet="Guidance on Azure capacity planning and quota management",
+                source="learn",
+                relevance_score=0.85
+            ))
+            
+        print(f"[SearchService] Found {len(learn_results)} Microsoft Learn documents")
+        
+    except Exception as e:
+        print(f"[SearchService] Microsoft Learn search error: {e}")
+        # Create generic fallback
+        search_terms = ' '.join(context.get('key_concepts', [])[:3])
+        if not search_terms:
+            search_terms = evaluation_data['original_issue']['title']
+        learn_results.append(SearchResult(
+            title="Search Microsoft Learn Documentation",
+            url=f"https://learn.microsoft.com/en-us/search/?terms={search_terms.replace(' ', '+')}",
+            snippet=f"Search Microsoft Learn for: {search_terms}",
+            source="learn",
+            relevance_score=0.7
+        ))
+    
+    search_results.learn_docs = learn_results
+    
+    # Enhanced retirement search using MCP if retirement info was triggered
+    if search_results.retirement_info and not search_results.retirement_info.get('found'):
+        print(f"[SearchService] No retirement data in JSON, searching Microsoft Learn...")
+        try:
+            # Extract service names for retirement search
+            retirement_services = services if services else []
+            if not retirement_services:
+                # Try to extract from title
+                import re
+                title_words = evaluation_data['original_issue']['title'].split()
+                for i, word in enumerate(title_words):
+                    if word.lower() in ['retir', 'retiring', 'retirement', 'deprecat']:
+                        # Get words before this keyword (likely service name)
+                        if i > 0:
+                            retirement_services.append(' '.join(title_words[:i]))
+                        break
+            
+            # Search Microsoft Learn for retirement announcements
+            retirement_results = []
+            for service in retirement_services[:2]:  # Top 2 services
+                search_query = f"{service} retirement deprecation announcement"
+                print(f"[SearchService] MCP retirement search: {search_query}")
+                
+                # Note: In production, would call mcp_microsoft_doc_microsoft_docs_search(query=search_query)
+                # For now, create enhanced search link
+                retirement_results.append({
+                    'service': service,
+                    'feature': 'Check Microsoft Learn',
+                    'retirement_date': 'See announcement',
+                    'announcement_url': f"https://learn.microsoft.com/en-us/search/?terms={search_query.replace(' ', '+')}",
+                    'migration_guide': 'https://learn.microsoft.com/azure/advisor/advisor-how-to-plan-migration-workloads-service-retirement',
+                    'extension_available': False,
+                    'extension_url': None,
+                    'replacement': 'Review Microsoft Learn for alternatives',
+                    'source': 'microsoft_learn_search'
+                })
+            
+            if retirement_results:
+                search_results.retirement_info = {
+                    'found': True,
+                    'count': len(retirement_results),
+                    'retirements': retirement_results,
+                    'general_guidance_url': 'https://learn.microsoft.com/azure/advisor/advisor-how-to-plan-migration-workloads-service-retirement',
+                    'source': 'online_search'
+                }
+                print(f"[SearchService] Found {len(retirement_results)} retirement references from Microsoft Learn")
+        except Exception as e:
+            print(f"[SearchService] Error in enhanced retirement search: {e}")
+    
+    # Store search results in temp storage
+    evaluation_data['search_results'] = {
+        'learn_docs': [
+            {
+                'title': r.title,
+                'url': r.url,
+                'snippet': r.snippet,
+                'relevance_score': r.relevance_score
+            } for r in search_results.learn_docs
+        ],
+        'similar_products': search_results.similar_products,
+        'regional_options': search_results.regional_options,
+        'capacity_guidance': search_results.capacity_guidance,
+        'retirement_info': search_results.retirement_info,
+        'search_metadata': search_results.search_metadata
+    }
+    
+    return jsonify({'success': True, 'eval_id': evaluation_id})
+
+@app.route('/search_results', methods=['GET'])
+def search_results():
+    """
+    SEARCH RESULTS DISPLAY PAGE
+    
+    Displays comprehensive search results with organized sections:
+    - Microsoft Learn documentation links
+    - Alternative product suggestions
+    - Regional availability options
+    - Capacity guidance (if applicable)
+    - Retirement information (if applicable)
+    
+    User can review resources and choose to:
+    - Continue to create UAT
+    - Perform deep search for more results
+    - Cancel and return to summary
+    """
+    evaluation_id = request.args.get('eval_id')
+    
+    if not evaluation_id or evaluation_id not in temp_storage:
+        flash('Evaluation session not found or expired', 'error')
+        return redirect(url_for('index'))
+    
+    evaluation_data = temp_storage[evaluation_id]
+    
+    # Check if search has been performed
+    if 'search_results' not in evaluation_data:
+        # Redirect to perform search first
+        return redirect(url_for('search_resources', eval_id=evaluation_id))
+    
+    return render_template('search_results.html',
+                         evaluation_id=evaluation_id,
+                         original_title=evaluation_data['original_issue']['title'],
+                         original_description=evaluation_data['original_issue']['description'],
+                         context=evaluation_data['context_analysis'],
+                         search_results=evaluation_data['search_results'])
 
 @app.route('/evaluate_context', methods=['GET', 'POST'])
 def evaluate_context():
@@ -775,13 +1147,13 @@ def evaluate_context():
         # Get evaluation data from temporary storage
         evaluation_data = temp_storage[evaluation_id]
         
-        # 🔍 DEBUG: Check what data we're passing to the template
+        # [DEBUG] Check what data we're passing to the template
         context_data = evaluation_data['context_analysis']
-        print(f"🔍 DEBUG - Context data keys: {list(context_data.keys())}")
-        print(f"🔍 DEBUG - Category: '{context_data.get('category', 'MISSING')}'")
-        print(f"🔍 DEBUG - Intent: '{context_data.get('intent', 'MISSING')}'")
-        print(f"🔍 DEBUG - Confidence: '{context_data.get('confidence', 'MISSING')}'")
-        print(f"🔍 DEBUG - Business Impact: '{context_data.get('business_impact', 'MISSING')}'")
+        print(f"[DEBUG] Context data keys: {list(context_data.keys())}")
+        print(f"[DEBUG] Category: '{context_data.get('category', 'MISSING')}'")
+        print(f"[DEBUG] Intent: '{context_data.get('intent', 'MISSING')}'")
+        print(f"[DEBUG] Confidence: '{context_data.get('confidence', 'MISSING')}'")
+        print(f"[DEBUG] Business Impact: '{context_data.get('business_impact', 'MISSING')}'")
         
         # Check if this is a reanalyzed version
         is_reanalyzed = evaluation_data['context_analysis'].get('reanalyzed', False)
@@ -793,7 +1165,7 @@ def evaluate_context():
                              original_description=evaluation_data['original_issue']['description'],
                              original_impact=evaluation_data['original_issue'].get('impact', ''),
                              context=evaluation_data['context_analysis'],
-                             search_strategy=evaluation_data['recommended_strategy'],
+                             search_strategy=evaluation_data.get('recommended_strategy', {'type': 'comprehensive', 'search_ado': True, 'search_retirements': True}),
                              is_reanalyzed=is_reanalyzed,
                              corrections_applied=corrections_applied,
                              cache_buster=datetime.now().timestamp())
@@ -882,16 +1254,20 @@ def evaluate_context():
             enhanced_description = f"{corrected_description}\n\n[Correction Context: User indicated this should be categorized as '{corrections['correct_category']}' with intent '{corrections['correct_intent']}' and business impact '{corrections['correct_business_impact']}']"
             
             # Run fresh context analysis with enhanced description
-            fresh_analysis = matcher.context_analyzer.analyze_context(
+            fresh_analysis = matcher.context_analyzer.analyze(
                 corrected_title, 
                 enhanced_description, 
                 corrected_impact
             )
             
             # Convert fresh analysis to dictionary format
+            # Handle both enum and string values for category/intent
+            category_value = fresh_analysis.category.value if hasattr(fresh_analysis.category, 'value') else fresh_analysis.category
+            intent_value = fresh_analysis.intent.value if hasattr(fresh_analysis.intent, 'value') else fresh_analysis.intent
+            
             new_context_analysis = {
-                'category': fresh_analysis.category.value,
-                'intent': fresh_analysis.intent.value,
+                'category': category_value,
+                'intent': intent_value,
                 'confidence': fresh_analysis.confidence,
                 'business_impact': fresh_analysis.business_impact,
                 'technical_complexity': fresh_analysis.technical_complexity,
@@ -899,7 +1275,23 @@ def evaluate_context():
                 'context_summary': fresh_analysis.context_summary,
                 'key_concepts': fresh_analysis.key_concepts,
                 'semantic_keywords': fresh_analysis.semantic_keywords,
-                'domain_entities': fresh_analysis.domain_entities
+                'domain_entities': fresh_analysis.domain_entities,
+                'recommended_search_strategy': fresh_analysis.recommended_search_strategy,
+                
+                # Analysis details
+                'reasoning': fresh_analysis.reasoning,
+                'pattern_features': fresh_analysis.pattern_features,
+                'pattern_reasoning': fresh_analysis.pattern_reasoning if hasattr(fresh_analysis, 'pattern_reasoning') else None,
+                'source': fresh_analysis.source,
+                
+                # AI status tracking
+                'ai_available': fresh_analysis.ai_available,
+                'ai_error': fresh_analysis.ai_error,
+                
+                # Display-friendly field mappings
+                'category_display': category_value.replace('_', ' ').title(),
+                'intent_display': intent_value.replace('_', ' ').title(),
+                'business_impact_display': fresh_analysis.business_impact.replace('_', ' ').title() if fresh_analysis.business_impact else 'Not Assessed'
             }
             
             # Override with user corrections to ensure they take precedence
@@ -934,8 +1326,8 @@ def evaluate_context():
             print(f"🔄 REANALYSIS COMPLETE: New analysis ready for review")
             flash('Reanalysis complete! Please review the updated analysis below.', 'success')
             
-            # Redirect back to evaluation page with new analysis
-            return redirect(url_for('evaluate_context', eval_id=new_eval_id))
+            # Redirect back to summary page to show updated classification
+            return redirect(url_for('context_summary', eval_id=new_eval_id))
         
         elif action == 'save_corrections':
             # Save corrections without reanalyzing
@@ -1002,12 +1394,12 @@ def evaluate_context():
             # Original approval logic for non-reanalyzed data
             flash('Context analysis approved! Proceeding with intelligent matching...', 'success')
             
-            # 🔧 APPLY USER'S RETIREMENT SEARCH OVERRIDE
+            # [CONFIG] APPLY USER'S RETIREMENT SEARCH OVERRIDE
             retirement_override = request.form.get('override_search_retirements')
             if retirement_override is not None:
                 # Update the recommended strategy based on user choice
                 evaluation_data['recommended_strategy']['search_retirements'] = (retirement_override == 'true')
-                print(f"🔧 USER OVERRIDE: search_retirements = {evaluation_data['recommended_strategy']['search_retirements']}")
+                print(f"[CONFIG] USER OVERRIDE: search_retirements = {evaluation_data['recommended_strategy']['search_retirements']}")
             
             # Store approved evaluation data for processing
             process_id = str(uuid.uuid4())
@@ -1051,10 +1443,10 @@ def evaluate_context():
                         'timestamp': time.time()
                     }
                     
-                    print(f"🔍 DEBUG APPROVED SEARCH: Stored results with ID = {results_id}")
-                    print(f"🔍 DEBUG APPROVED SEARCH: Results keys = {list(results.keys())}")
-                    print(f"🔍 DEBUG APPROVED SEARCH: Total matches = {results.get('total_matches', 0)}")
-                    print(f"🔍 DEBUG APPROVED SEARCH: UAT items = {len(results.get('uat_items', []))}")
+                    print(f"[DEBUG] APPROVED SEARCH: Stored results with ID = {results_id}")
+                    print(f"[DEBUG] APPROVED SEARCH: Results keys = {list(results.keys())}")
+                    print(f"[DEBUG] APPROVED SEARCH: Total matches = {results.get('total_matches', 0)}")
+                    print(f"[DEBUG] APPROVED SEARCH: UAT items = {len(results.get('uat_items', []))}")
                     
                     # Also store for backward compatibility with /results route
                     temp_storage[f"{process_id}_results"] = results
@@ -1093,8 +1485,8 @@ def quick_ica():
         
         # DEBUG: Show what data is being submitted for analysis
         print("=" * 80)
-        print("🔍 QUICK ICA SUBMISSION DATA:")
-        print(f"📝 Title: '{title}'")
+        print("[DEBUG] QUICK ICA SUBMISSION DATA:")
+        print(f"[DEBUG] Title: '{title}'")
         print(f"📄 Description: '{description}'")
         print(f"💼 Impact: '{impact}'")
         print(f"📏 Title length: {len(title)} chars")
@@ -1115,8 +1507,8 @@ def quick_ica():
         evaluation_id = str(uuid.uuid4())
         temp_storage[evaluation_id] = evaluation_data
         
-        # Redirect to ICA evaluation form
-        return redirect(url_for('evaluate_context', eval_id=evaluation_id))
+        # Redirect to summary page for user review
+        return redirect(url_for('context_summary', eval_id=evaluation_id))
         
     except Exception as e:
         print(f"Quick ICA error: {e}")
@@ -1145,8 +1537,8 @@ def start_evaluation():
         evaluation_id = str(uuid.uuid4())
         temp_storage[evaluation_id] = evaluation_data
         
-        # Redirect to evaluation form
-        return redirect(url_for('evaluate_context', eval_id=evaluation_id))
+        # Redirect to summary page for user review
+        return redirect(url_for('context_summary', eval_id=evaluation_id))
         
     except Exception as e:
         print(f"Evaluation start error: {e}")
@@ -1178,18 +1570,18 @@ def results():
     if results_id:
         # Try results_id first (from background thread)
         results_data = temp_storage.get(results_id, {})
-        print(f"🔍 DEBUG RESULTS: Looking for results_id = {results_id}")
-        print(f"🔍 DEBUG RESULTS: Found data with keys = {list(results_data.keys()) if results_data else 'None'}")
+        print(f"[DEBUG] RESULTS: Looking for results_id = {results_id}")
+        print(f"[DEBUG] RESULTS: Found data with keys = {list(results_data.keys()) if results_data else 'None'}")
     
     if not results_data:
         # Fallback to old format
         results_key = f"{process_id}_results"
         results_data = temp_storage.get(results_key, {})
-        print(f"🔍 DEBUG RESULTS: Fallback to process_id key = {results_key}")
-        print(f"🔍 DEBUG RESULTS: Found fallback data = {bool(results_data)}")
+        print(f"[DEBUG] RESULTS: Fallback to process_id key = {results_key}")
+        print(f"[DEBUG] RESULTS: Found fallback data = {bool(results_data)}")
     
     if not results_data:
-        print(f"🔍 DEBUG RESULTS: No results found for process_id = {process_id} or results_id = {results_id}")
+        print(f"[DEBUG] RESULTS: No results found for process_id = {process_id} or results_id = {results_id}")
         flash('No results found for this session', 'error')
         return redirect(url_for('index'))
     
@@ -1200,17 +1592,17 @@ def results():
         uat_items = enhanced_results.get('uat_items', [])
         feature_items = enhanced_results.get('feature_items', [])
         all_items = enhanced_results.get('all_items', [])
-        print(f"🔍 DEBUG RESULTS: Using enhanced_results format")
-        print(f"🔍 DEBUG RESULTS: UAT items = {len(uat_items)}, Feature items = {len(feature_items)}, All items = {len(all_items)}")
+        print(f"[DEBUG] RESULTS: Using enhanced_results format")
+        print(f"[DEBUG] RESULTS: UAT items = {len(uat_items)}, Feature items = {len(feature_items)}, All items = {len(all_items)}")
     else:
         # Old format
         uat_items = results_data.get('uat_items', [])
         feature_items = results_data.get('feature_items', [])
         all_items = results_data.get('all_items', [])
-        print(f"🔍 DEBUG RESULTS: Using old format")
+        print(f"[DEBUG] RESULTS: Using old format")
     
     total_matches = len(uat_items) + len(feature_items) + len(all_items)
-    print(f"🔍 DEBUG RESULTS: Total matches calculated = {total_matches}")
+    print(f"[DEBUG] RESULTS: Total matches calculated = {total_matches}")
     
     return render_template('results.html',
                          uat_items=uat_items,
@@ -1223,20 +1615,67 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static', exist_ok=True)
     
+    print("="*80)
     print("Issue Tracker System starting...")
+    print("="*80)
+    
+    # Health check for AI services - TEMPORARILY DISABLED FOR TESTING
+    print("\nSkipping health check for now...")
+    # try:
+    #     from hybrid_context_analyzer import HybridContextAnalyzer
+    #     from ai_config import get_config, validate_config
+    #     
+    #     # Try to validate configuration
+    #     config = get_config()
+    #     azure_config = config.azure_openai
+    #     
+    #     if azure_config.endpoint and azure_config.api_key:
+    #         print(f"[OK] Azure OpenAI Endpoint configured: {azure_config.endpoint}")
+    #         print(f"[OK] Deployment: {azure_config.classification_deployment}")
+    #         print(f"[OK] API Version: {azure_config.api_version}")
+    #         
+    #         # Try to initialize analyzer to test connection
+    #         try:
+    #             test_analyzer = HybridContextAnalyzer(use_ai=True)
+    #             print("[OK] AI services initialized successfully")
+    #             print(f"[OK] System Mode: AI-Powered (High Confidence)")
+    #         except Exception as e:
+    #             print(f"[WARNING] AI initialization warning: {str(e)}")
+    #             print(f"[WARNING] System Mode: Pattern Matching Fallback")
+    #             print(f"          The system will use pattern-based analysis (50-90% confidence)")
+    #             print(f"          This is functional but not optimal. Check Azure OpenAI configuration.")
+    #     else:
+    #         print("[WARNING] Azure OpenAI not configured (missing endpoint or API key)")
+    #         print("[WARNING] System Mode: Pattern Matching Only")
+    # except Exception as e:
+    #     print(f"[WARNING] Health check error: {e}")
+    #     print(f"[WARNING] System will attempt to start anyway...")
+    
+    print("="*80)
     port = 5002
-    print(f"Navigate to http://127.0.0.1:{port} to access the application")
+    print(f"\nNavigate to http://127.0.0.1:{port} to access the application\n")
     
     # VS Code debugging compatibility
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1' or os.environ.get('FLASK_ENV') == 'development'
     
     # Enable debug mode and template reloading
-    app.config['DEBUG'] = True
+    # Temporarily disable debug mode to test if that's causing immediate exit
+    app.config['DEBUG'] = False
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     
     try:
-        app.run(debug=True, host='127.0.0.1', port=port, use_reloader=False)
+        print("[DEBUG] Starting Flask with app.run()...")
+        app.run(debug=False, host='127.0.0.1', port=port, use_reloader=False, threaded=True)
+        print("[DEBUG] Flask exited normally")
     except Exception as e:
-        print(f"Error starting Flask app: {e}")
-        # Fallback: try without debug mode
-        app.run(debug=False, host='127.0.0.1', port=port, use_reloader=False)
+        import traceback
+        print(f"\n[ERROR] Flask failed to start!")
+        print(f"[ERROR] Exception: {e}")
+        print(f"[ERROR] Traceback:")
+        traceback.print_exc()
+        print("\n[RETRY] Attempting fallback without debug mode...")
+        try:
+            app.run(debug=False, host='127.0.0.1', port=port, use_reloader=False)
+        except Exception as e2:
+            print(f"[ERROR] Fallback also failed: {e2}")
+            traceback.print_exc()
