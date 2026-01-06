@@ -5,11 +5,11 @@
 ### Option 1: Using PowerShell Commands
 
 ```powershell
-# Set Azure OpenAI environment variables
-$env:AZURE_OPENAI_ENDPOINT='https://openai-bp-northcentral.openai.azure.com'
-$env:AZURE_OPENAI_API_KEY='DVVMshKMSgEtLfq3AKLqo12lJ1EshK1UmmGUufi4f8JbGnKCtV1jJQQJ99BFACHrzpqXJ3w3AAABACOGuNep'
-$env:AZURE_OPENAI_DEPLOYMENT_NAME='gpt-4o-standard'
-$env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT='text-embedding-3-large'
+# Set Azure OpenAI environment variables (replace with your actual values)
+$env:AZURE_OPENAI_ENDPOINT='YOUR_AZURE_OPENAI_ENDPOINT'
+$env:AZURE_OPENAI_API_KEY='YOUR_AZURE_OPENAI_API_KEY'
+$env:AZURE_OPENAI_DEPLOYMENT_NAME='YOUR_DEPLOYMENT_NAME'
+$env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT='YOUR_EMBEDDING_DEPLOYMENT'
 
 # Start the Flask application
 python app.py
@@ -45,10 +45,10 @@ Press `CTRL+C` in the terminal where the app is running.
 
 ## Environment Variables (Required)
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `AZURE_OPENAI_ENDPOINT` | `https://openai-bp-northcentral.openai.azure.com` | Azure OpenAI endpoint URL |
-| `AZURE_OPENAI_API_KEY` | `DVVMshKMSgEtLfq3AKLqo12lJ1EshK1UmmGUufi4f8JbGnKCtV1jJQQJ99BFACHrzpqXJ3w3AAABACOGuNep` | API authentication key |
+| Variable | Example Value | Purpose |
+|----------|---------------|---------|
+| `AZURE_OPENAI_ENDPOINT` | `https://YOUR-RESOURCE.openai.azure.com` | Azure OpenAI endpoint URL |
+| `AZURE_OPENAI_API_KEY` | `YOUR_API_KEY_HERE` | API authentication key |
 | `AZURE_OPENAI_DEPLOYMENT_NAME` | `gpt-4o-standard` | GPT-4o deployment for classification |
 | `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | `text-embedding-3-large` | Embedding model for similarity search |
 
@@ -59,10 +59,10 @@ Press `CTRL+C` in the terminal where the app is running.
 Create a `.env` file in the project root:
 
 ```bash
-AZURE_OPENAI_ENDPOINT=https://openai-bp-northcentral.openai.azure.com
-AZURE_OPENAI_API_KEY=DVVMshKMSgEtLfq3AKLqo12lJ1EshK1UmmGUufi4f8JbGnKCtV1jJQQJ99BFACHrzpqXJ3w3AAABACOGuNep
-AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-standard
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
+AZURE_OPENAI_ENDPOINT=YOUR_AZURE_OPENAI_ENDPOINT
+AZURE_OPENAI_API_KEY=YOUR_AZURE_OPENAI_API_KEY
+AZURE_OPENAI_DEPLOYMENT_NAME=YOUR_DEPLOYMENT_NAME
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=YOUR_EMBEDDING_DEPLOYMENT
 ```
 
 Then install python-dotenv: `pip install python-dotenv`
@@ -71,10 +71,10 @@ Then install python-dotenv: `pip install python-dotenv`
 
 Set permanently in Windows:
 ```powershell
-[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_ENDPOINT', 'https://openai-bp-northcentral.openai.azure.com', 'User')
-[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_API_KEY', 'DVVMshKMSgEtLfq3AKLqo12lJ1EshK1UmmGUufi4f8JbGnKCtV1jJQQJ99BFACHrzpqXJ3w3AAABACOGuNep', 'User')
-[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o-standard', 'User')
-[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-3-large', 'User')
+[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_ENDPOINT', 'YOUR_ENDPOINT_HERE', 'User')
+[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_API_KEY', 'YOUR_API_KEY_HERE', 'User')
+[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_DEPLOYMENT_NAME', 'YOUR_DEPLOYMENT_NAME', 'User')
+[System.Environment]::SetEnvironmentVariable('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'YOUR_EMBEDDING_DEPLOYMENT', 'User')
 ```
 
 **Note:** Restart your terminal after setting system variables.
@@ -83,10 +83,10 @@ Set permanently in Windows:
 
 Add to your PowerShell profile (`$PROFILE`):
 ```powershell
-$env:AZURE_OPENAI_ENDPOINT='https://openai-bp-northcentral.openai.azure.com'
-$env:AZURE_OPENAI_API_KEY='DVVMshKMSgEtLfq3AKLqo12lJ1EshK1UmmGUufi4f8JbGnKCtV1jJQQJ99BFACHrzpqXJ3w3AAABACOGuNep'
-$env:AZURE_OPENAI_DEPLOYMENT_NAME='gpt-4o-standard'
-$env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT='text-embedding-3-large'
+$env:AZURE_OPENAI_ENDPOINT='YOUR_ENDPOINT_HERE'
+$env:AZURE_OPENAI_API_KEY='YOUR_API_KEY_HERE'
+$env:AZURE_OPENAI_DEPLOYMENT_NAME='YOUR_DEPLOYMENT_NAME'
+$env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT='YOUR_EMBEDDING_DEPLOYMENT'
 ```
 
 ## Troubleshooting
