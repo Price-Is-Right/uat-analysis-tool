@@ -70,6 +70,32 @@ body {
     width: 100%;
 }
 
+/* Feature List Hover Effect */
+.hover-highlight {
+    transition: background-color 0.2s ease, border-left 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.hover-highlight:hover {
+    background-color: #f0f8ff;
+    border-left-color: #0078d4;
+}
+
+/* Prominent Feature Checkboxes */
+.feature-checkbox {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: #0078d4;
+    margin-top: 0 !important;
+    border: 2px solid #0078d4;
+}
+
+.feature-checkbox:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 8px rgba(0, 120, 212, 0.5);
+}
+
 /* Navbar Styling */
 .navbar-brand {
     font-weight: 700;

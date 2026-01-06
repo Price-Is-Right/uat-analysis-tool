@@ -25,7 +25,7 @@
                     <h5 class="card-title mb-4">Search Progress</h5>
                     
                     <div class="progress-steps">
-                        <!-- Step 1: Microsoft Learn -->
+                        <!-- Step 1: Microsoft Learn (all categories) -->
                         <div class="step-item" id="step-learn">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="spinner-border spinner-border-sm text-primary me-3" role="status" id="spinner-learn">
@@ -42,7 +42,27 @@
                             </div>
                         </div>
 
-                        <!-- Step 2: Similar Products -->
+                        {% if category == 'feature_request' %}
+                        <!-- Step 2: TFT Features (feature_request only) -->
+                        <div class="step-item" id="step-features">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="spinner-border spinner-border-sm text-primary me-3 d-none" role="status" id="spinner-features">
+                                    <span class="visually-hidden">Searching...</span>
+                                </div>
+                                <i class="fas fa-check-circle text-success me-3 d-none" id="check-features"></i>
+                                <i class="fas fa-circle text-muted me-3" id="wait-features"></i>
+                                <div>
+                                    <strong>2. Searching for Existing Features</strong>
+                                    <div class="small text-muted">Looking for similar feature requests in Technical Feedback</div>
+                                    <div class="small text-muted fst-italic mt-1">If prompted, please authenticate to access Technical Feedback...</div>
+                                </div>
+                            </div>
+                            <div class="progress mb-3" style="height: 4px;">
+                                <div class="progress-bar" id="progress-features" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        {% elif category not in ['technical_support', 'cost_billing', 'aoai_capacity', 'capacity'] %}
+                        <!-- Step 2: Similar Products (other categories) -->
                         <div class="step-item" id="step-products">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="spinner-border spinner-border-sm text-primary me-3 d-none" role="status" id="spinner-products">
@@ -60,7 +80,7 @@
                             </div>
                         </div>
 
-                        <!-- Step 3: Regional Availability -->
+                        <!-- Step 3: Regional Availability (other categories) -->
                         <div class="step-item" id="step-regions">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="spinner-border spinner-border-sm text-primary me-3 d-none" role="status" id="spinner-regions">
@@ -78,7 +98,7 @@
                             </div>
                         </div>
 
-                        <!-- Step 4: Special Guidance -->
+                        <!-- Step 4: Special Guidance (other categories) -->
                         <div class="step-item" id="step-guidance">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="spinner-border spinner-border-sm text-primary me-3 d-none" role="status" id="spinner-guidance">
@@ -95,8 +115,9 @@
                                 <div class="progress-bar" id="progress-guidance" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
+                        {% endif %}
 
-                        <!-- Step 5: Finalizing -->
+                        <!-- Final Step: Preparing Results (all categories) -->
                         <div class="step-item" id="step-finalize">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="spinner-border spinner-border-sm text-primary me-3 d-none" role="status" id="spinner-finalize">
@@ -105,7 +126,7 @@
                                 <i class="fas fa-check-circle text-success me-3 d-none" id="check-finalize"></i>
                                 <i class="fas fa-circle text-muted me-3" id="wait-finalize"></i>
                                 <div>
-                                    <strong>5. Preparing Results</strong>
+                                    <strong>{% if category == 'feature_request' %}3{% elif category in ['technical_support', 'cost_billing', 'aoai_capacity', 'capacity'] %}2{% else %}5{% endif %}. Preparing Results</strong>
                                     <div class="small text-muted">Organizing findings for your review</div>
                                 </div>
                             </div>
@@ -134,10 +155,51 @@
     </div>
 </div>
 
-<!-- Auto-redirect script -->
+<!-- 
+    =============================================================================
+    LOADING OVERLAY - Displayed During Backend Processing
+    =============================================================================
+    This semi-transparent overlay appears after 1 second if the search hasn't
+    completed. This covers authentication delays and long-running backend 
+    operations (embeddings, TFT searches, etc.) to prevent the appearance of
+    a frozen/broken page.
+    =============================================================================
+-->
+<div class="loading-overlay" id="finalizingOverlay" style="display: none;">
+    <div class="loading-content">
+        <div class="spinner-border text-light mb-3" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="text-light">Finalizing Results...</h4>
+        <p class="text-light">Compiling search results and preparing your recommendations</p>
+    </div>
+</div>
+
+<!-- 
+    =============================================================================
+    PROGRESS ANIMATION & SEARCH COORDINATION SCRIPT
+    =============================================================================
+    This script manages:
+    1. Visual progress bar animations (client-side, for UX feedback)
+    2. Actual background search execution (server-side via fetch)
+    3. Loading overlay display (handles auth delays and long processing)
+    4. Automatic redirect when search completes
+    =============================================================================
+-->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const steps = ['learn', 'products', 'regions', 'guidance', 'finalize'];
+    const category = '{{ category }}';
+    let steps = [];
+    
+    // Define animation steps based on category type
+    if (category === 'feature_request') {
+        steps = ['learn', 'features', 'finalize'];
+    } else if (['technical_support', 'cost_billing', 'aoai_capacity', 'capacity'].includes(category)) {
+        steps = ['learn', 'finalize'];
+    } else {
+        steps = ['learn', 'products', 'regions', 'guidance', 'finalize'];
+    }
+    
     let currentStep = 0;
     const evalId = '{{ eval_id }}';
     const deepSearch = {{ 'true' if deep_search else 'false' }};
@@ -147,6 +209,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const check = document.getElementById('check-' + stepName);
         const wait = document.getElementById('wait-' + stepName);
         const progress = document.getElementById('progress-' + stepName);
+        
+        if (!progress) return; // Skip if step doesn't exist
         
         if (status === 'active') {
             if (wait) wait.classList.add('d-none');
@@ -166,7 +230,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Start background search immediately
+    let searchCompleted = false;
+    let fetchStarted = false;
+    
+    // =========================================================================
+    // EARLY OVERLAY DISPLAY
+    // =========================================================================
+    // Show overlay after 1 second if search hasn't completed.
+    // This ensures users see feedback during:
+    // - Authentication popup delays
+    // - Long-running backend operations (embeddings, WIQL queries)
+    // - Network delays
+    // =========================================================================
+    setTimeout(() => {
+        if (!searchCompleted) {
+            console.log('Showing overlay after 1 second - search still in progress');
+            const overlay = document.getElementById('finalizingOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                console.log('Overlay display set to flex');
+            } else {
+                console.error('Could not find overlay element!');
+            }
+        }
+    }, 1000);
+    
+    // =========================================================================
+    // BACKGROUND SEARCH EXECUTION
+    // =========================================================================
+    // Initiates server-side search immediately. This runs in parallel with
+    // the client-side progress animations.
+    // =========================================================================
+    console.log('Starting background search...');
     fetch('/perform_search', {
         method: 'POST',
         headers: {
@@ -177,8 +272,13 @@ document.addEventListener('DOMContentLoaded', function() {
             deep_search: deepSearch
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Search response received, processing...');
+        return response.json();
+    })
     .then(data => {
+        searchCompleted = true;
+        console.log('Search completed, setting flag to true');
         if (data.success) {
             console.log('Search completed successfully');
         } else {
@@ -186,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     })
     .catch(error => {
+        searchCompleted = true; // Mark complete even on error to prevent infinite loop
         console.error('Search error:', error);
     });
     
@@ -201,10 +302,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 processSteps();
             }, stepDuration);
         } else {
-            // All steps complete, redirect to results
-            setTimeout(() => {
-                window.location.href = '/search_results?eval_id=' + evalId;
-            }, 500);
+            // All animation steps complete, wait for actual search to finish
+            checkAndRedirect();
+        }
+    }
+    
+    function checkAndRedirect() {
+        if (searchCompleted) {
+            // Search is done, redirect immediately
+            console.log('Search completed, redirecting to results');
+            window.location.href = '/search_results?eval_id=' + evalId;
+        } else {
+            // Keep waiting and checking
+            console.log('Still waiting for search to complete...');
+            setTimeout(checkAndRedirect, 500);
         }
     }
     
@@ -235,6 +346,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .progress-bar {
     transition: width 0.3s ease;
+}
+
+/* Loading Overlay for final processing */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-content {
+    text-align: center;
+    padding: 30px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
 }
 </style>
 {% endblock %}

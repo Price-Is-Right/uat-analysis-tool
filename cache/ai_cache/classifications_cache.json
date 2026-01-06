@@ -334,5 +334,89 @@
     "created_at": "2026-01-04T16:08:03.525846",
     "ttl_days": 7,
     "hits": 1
+  },
+  "df2bd4495d82f415a4cf6d391a7a84600c2da4a1b4d9e37508be08f13601ceae": {
+    "data": {
+      "category": "technical_support",
+      "intent": "escalation_request",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is reporting a technical issue with the Azure AI Translator Disconnected Tier container image, specifically related to increased RAM requirements and licensing key compatibility. The issue has caused service degradation and operational burden, and the customer is escalating due to lack of notification about the requirements change. This aligns with technical_support and escalation_request due to the critical impact and the customer's explicit escalation of the matter."
+    },
+    "created_at": "2026-01-05T13:07:13.833682",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "2cb5c188ee68d2f0392c76a7f5810b4e8c80e77d1a43dd108f0d942b8fa28eea": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer explicitly requests the implementation of support for 32-bit ASNs in Azure Route Server, which is a specific capability they need. This aligns with the feature_request category and requesting_feature intent. The stated impact indicates a significant business dependency on this feature, but it is not critical as it does not indicate an immediate outage or failure."
+    },
+    "created_at": "2026-01-06T14:57:27.289849",
+    "ttl_days": 7,
+    "hits": 2
+  },
+  "1b1f13227373ea07886a7a46fb748613e7fcc607c349d9238d501cdcada15c70": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.9,
+      "reasoning": "The customer is requesting the ability to invoke MCP tools through a private network, which is a specific capability they need to meet their strict security requirements. This aligns with a feature request rather than a technical support issue or roadmap inquiry. The high business impact is due to the customer's financial industry context and strict security policies."
+    },
+    "created_at": "2026-01-06T13:24:59.647882",
+    "ttl_days": 7,
+    "hits": 1
+  },
+  "0b61606828b96e5d5402b1c827445fe06d5897ee15b5c13d38d6aabcb57815a5": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is explicitly requesting a new feature to allow sharing of subnets or reducing network capacity requirements for the AI Foundry Agent Service. This aligns with the feature_request category and requesting_feature intent. The stated impact on network capacity indicates a high business impact."
+    },
+    "created_at": "2026-01-06T14:34:49.879592",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "b2a07cfdbdcd3b49a2381f6f0ff4e987841c24a4b5b049a191b6ec9159271710": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "critical",
+      "confidence": 0.97,
+      "reasoning": "The customer is explicitly requesting a specific capability (session-level context injection in AVD) to achieve functional parity with AWS AppStream. They are not asking about timelines or roadmap plans but are instead seeking a feature to address a critical gap blocking their PoC. The stated impact is critical as it directly affects a $1M/year opportunity and the ability to displace AWS."
+    },
+    "created_at": "2026-01-06T14:37:31.497550",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "8c50d83eecc4fa1e152a9b0e5d8a215fe0b82dd6547d8957d06320dbcc42ed7b": {
+    "data": {
+      "category": "capacity",
+      "intent": "escalation_request",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is facing a critical service continuity issue due to increased RAM requirements for the new container image, which was not communicated in advance. They are escalating the issue, requesting a resolution to maintain their existing setup without additional infrastructure changes. The stated impact includes degraded functionality, operational burden, and trust issues, indicating a critical business impact. The primary concern is capacity-related, as the customer cannot meet the new RAM requirements."
+    },
+    "created_at": "2026-01-06T14:39:22.873140",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "14d93c9554315ab91360d2faeb4f00214ee55c1d9cd900476d141f01391c67a9": {
+    "data": {
+      "category": "capacity",
+      "intent": "capacity_request",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting specific capacity (vCPU and VM types) in the UK South region to support critical data analytics workloads. They have a strict UK South data residency requirement and an urgent need to avoid delays in production system deployment, which would impact vital patient research and government strategy. This aligns with the 'capacity' category and 'capacity_request' intent, with a critical business impact due to the stated consequences of delay."
+    },
+    "created_at": "2026-01-06T14:50:41.200045",
+    "ttl_days": 7,
+    "hits": 1
   }
 }

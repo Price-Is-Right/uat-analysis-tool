@@ -1,5 +1,70 @@
 # Changelog - Intelligent Context Analysis System
 
+## Version 3.2 - January 6, 2026
+
+### Search & Resource Discovery Improvements
+
+#### 🎯 AI-Powered Service Name Extraction
+- **Intelligent fallback system** for Microsoft Learn search queries
+- **Multi-tier extraction strategy**:
+  - Primary: Full LLM-based smart query generation
+  - Secondary: AI extraction of service names from titles (gpt-4o-02)
+  - Tertiary: Regex pattern matching for Azure/Microsoft services
+  - Final: Title prefix as last resort
+- **Fixes generic term extraction** - no longer extracts "api", "app", "tool" as service names
+- **Example improvements**:
+  - "MCP tool call in Microsoft Foundry Responses API" → "Foundry Responses" (not "api")
+  - "Azure Route Server 32-bit ASN support" → "Route Server"
+
+#### 🔍 TFT Feature Search Enhancements
+- **Improved service name extraction** from issue titles for WIQL queries
+- **Consistent pattern matching** between TFT search and Learn documentation
+- **Better handling of compound service names** (e.g., "Route Server", "Foundry Responses")
+- **Date filter optimization** - searches last 24 months using ChangedDate instead of CreatedDate
+
+#### 📋 Collapsible TFT Features Display
+- **Auto-collapse for 3+ features** - prevents long page scrolling
+- **Auto-expand for <3 features** - maintains UX for short lists
+- **Count badge** showing total features found
+- **Scrollable container** with 500px max-height for long lists
+- **Chevron indicator** for expand/collapse state
+
+### UI/UX Improvements
+
+#### 💫 Search Progress Loading Overlay
+- **Semi-transparent overlay** during backend finalization (authentication, long queries)
+- **Early display trigger** (1 second) to cover authentication popup delays
+- **Progress feedback** with "Finalizing Results..." message
+- **Prevents frozen page appearance** during 20+ second backend operations
+- **Console logging** for debugging timing issues
+
+#### 📝 Capacity Request Guidelines
+- **Proper HTML rendering** - removed escaped HTML tags
+- **Formatted sections** with bold headers for AI and Non-AI capacity
+- **Clickable links** - URLs condensed into proper anchor tags
+- **Visual separator** - horizontal rule between AI and Non-AI sections
+- **Clean presentation** - removed "For" prefix, improved readability
+
+#### 🎨 Search Results Navigation
+- **Removed Admin link** from search results page navbar
+- **Cleaner navigation** - only shows Home link on results page
+
+### Technical Improvements
+
+#### Code Quality & Documentation
+- **Comprehensive inline comments** explaining AI fallback logic
+- **Clear section headers** for major code blocks
+- **Improved error handling** with detailed console logging
+- **Better separation of concerns** between animation and search execution
+
+### Files Modified
+- `app.py` - AI-powered service extraction, capacity guidelines formatting
+- `templates/search_results.html` - Collapsible TFT features, navbar cleanup, proper HTML rendering
+- `templates/searching_resources.html` - Loading overlay, comprehensive documentation comments
+- `ado_integration.py` - Service name extraction patterns (from previous session)
+
+---
+
 ## Version 3.1 - January 1, 2026
 
 ### Major Enhancements

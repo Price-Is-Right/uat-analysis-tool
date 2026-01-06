@@ -13,7 +13,7 @@ class AzureOpenAIConfig:
     """Azure OpenAI service configuration"""
     endpoint: str = field(default_factory=lambda: os.environ.get("AZURE_OPENAI_ENDPOINT", ""))
     api_key: str = field(default_factory=lambda: os.environ.get("AZURE_OPENAI_API_KEY", ""))
-    api_version: str = "2024-02-15-preview"  # Compatible with gpt-4o deployments
+    api_version: str = "2024-08-01-preview"  # Working API version for gpt-4o deployments
     
     # Model deployments
     embedding_model: str = "text-embedding-3-large"  # High-quality embeddings

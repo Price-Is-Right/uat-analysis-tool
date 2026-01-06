@@ -76,7 +76,6 @@ from urllib.parse import quote                          # URL encoding for API c
 import time                                             # Performance timing and delays
 
 # Custom module imports for specialized functionality
-from retirement_checker import RetirementChecker        # Service retirement database integration
 from hybrid_context_analyzer import HybridContextAnalyzer
 from intelligent_context_analyzer import IssueCategory, IntentType
 # ↑ AI-powered hybrid context analysis with LLM and pattern matching
@@ -1711,7 +1710,6 @@ class EnhancedMatcher:
         self.progress_tracker = ProgressTracker()
         self.ai_analyzer = AIAnalyzer()
         self.ado_searcher = AzureDevOpsSearcher()
-        self.retirement_checker = RetirementChecker()
         self.context_analyzer = HybridContextAnalyzer()
     
     def start_matching_process(self, wizard_data: Dict) -> Dict:
@@ -1950,20 +1948,9 @@ class EnhancedMatcher:
         strategy = {'search_retirements': True, 'search_ado': True}
         results['search_strategy_used'] = strategy
         
+        # Retirement checking is now handled by search_service.py via the /perform_search route
         if strategy.get('search_retirements', False):
-            print("SMART ROUTING: Checking retirements (context indicates retirement-related issue)")
-            try:
-                is_retirement_issue, matching_retirements = self.retirement_checker.check_retirement_match(title, description)
-                
-                if is_retirement_issue and matching_retirements:
-                    print(f"RETIREMENT DETECTED: Found {len(matching_retirements)} contextually relevant retirements")
-                    
-                    for retirement in matching_retirements:
-                        formatted_retirement = self.retirement_checker.format_retirement_for_display(retirement)
-                        results['evaluating_retirements'].append(formatted_retirement)
-                        
-            except Exception as e:
-                print(f"Warning: Error in smart retirement checking: {e}")
+            print("SMART ROUTING: Retirement checking available via search service")
         else:
             print("SMART ROUTING: Skipping retirement check (context indicates non-retirement issue)")
         
@@ -2180,27 +2167,14 @@ class EnhancedMatcher:
         # Step 2: Check Evaluating Retirements database
         time.sleep(0.5)  # Simulate processing time
         
-        # Check for retirement issues using instance retirement checker
-        try:
-            is_retirement_issue, matching_retirements = self.retirement_checker.check_retirement_match(title, description)
-            
-            if is_retirement_issue and matching_retirements:
-                print(f"RETIREMENT DETECTED: Found {len(matching_retirements)} matching retirements")
-                
-                # Process retirement matches and format for display
-                for retirement in matching_retirements:
-                    formatted_retirement = self.retirement_checker.format_retirement_for_display(retirement)
-                    results['evaluating_retirements'].append(formatted_retirement)
-                    
-        except Exception as e:
-            print(f"Warning: Error checking retirements: {e}")
-            # Fallback to original local database search
-            search_text = f"{title} {description}"
-            similar_issues = self.issue_tracker.find_similar_issues(search_text)
-            if similar_issues:
-                for issue_data, similarity in similar_issues:
-                    results['evaluating_retirements'].append({
-                        'id': issue_data['id'],
+        # Retirement checking is now handled by search_service.py
+        # Fallback to original local database search
+        search_text = f"{title} {description}"
+        similar_issues = self.issue_tracker.find_similar_issues(search_text)
+        if similar_issues:
+            for issue_data, similarity in similar_issues:
+                results['evaluating_retirements'].append({
+                    'id': issue_data['id'],
                         'title': issue_data['issue'],
                         'description': issue_data['description'],
                         'similarity': similarity,
@@ -2342,20 +2316,9 @@ class EnhancedMatcher:
         if progress_callback:
             progress_callback(1, 4, 25, "Executing Smart Retirement Search - Using approved context analysis")
         
+        # Retirement checking is now handled by search_service.py
         if approved_strategy.get('search_retirements', False):
-            print("🔄 APPROVED ROUTING: Checking retirements (user confirmed retirement-related issue)")
-            try:
-                is_retirement_issue, matching_retirements = self.retirement_checker.check_retirement_match(title, description)
-                
-                if is_retirement_issue and matching_retirements:
-                    print(f"RETIREMENT DETECTED: Found {len(matching_retirements)} contextually relevant retirements")
-                    
-                    for retirement in matching_retirements:
-                        formatted_retirement = self.retirement_checker.format_retirement_for_display(retirement)
-                        results['evaluating_retirements'].append(formatted_retirement)
-                        
-            except Exception as e:
-                print(f"Warning: Error in approved retirement checking: {e}")
+            print("🔄 APPROVED ROUTING: Retirement checking available via search service")
         else:
             print("🚫 APPROVED ROUTING: Skipping retirement check (user confirmed non-retirement issue)")
             print(f"   ✅ Strategy correctly set search_retirements = {approved_strategy.get('search_retirements')}")

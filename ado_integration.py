@@ -34,7 +34,7 @@ import json
 import os
 from typing import Dict, List, Optional
 from urllib.parse import quote
-from azure.identity import AzureCliCredential, DefaultAzureCredential
+from azure.identity import AzureCliCredential, DefaultAzureCredential, InteractiveBrowserCredential
 
 
 class AzureDevOpsConfig:
@@ -83,6 +83,21 @@ class AzureDevOpsConfig:
             print(f"⚠️  Azure CLI credential failed: {e}")
             print("📝 Make sure you're logged in: az login")
             return DefaultAzureCredential()
+    
+    @staticmethod
+    def get_tft_credential():
+        """
+        Get Azure credential for Technical Feedback organization access.
+        
+        Uses InteractiveBrowserCredential for cross-org access which requires
+        browser-based authentication to materialize identity.
+        
+        Returns:
+            Azure credential object configured for browser authentication
+        """
+        # Use tenant ID for Microsoft
+        tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47"
+        return InteractiveBrowserCredential(tenant_id=tenant_id)
 
 
 class AzureDevOpsClient:
@@ -436,6 +451,232 @@ class AzureDevOpsClient:
                 'success': False,
                 'error': f"Request failed: {str(e)}"
             }
+    
+    def search_tft_features(self, title: str, description: str, threshold: float = 0.7) -> List[Dict]:
+        """
+        Search Technical Feedback ADO for similar Features.
+        
+        Searches the Technical Feedback project for existing Feature work items
+        that match the provided title and description.
+        
+        Args:
+            title: Issue title to search for
+            description: Issue description for matching
+            threshold: Similarity threshold (0.0-1.0), default 0.7
+            
+        Returns:
+            List of matching features with metadata and similarity scores
+        """
+        try:
+            from datetime import datetime, timedelta
+            
+            # Search Technical Feedback organization
+            tft_org = "unifiedactiontracker"
+            tft_project = "Technical Feedback"
+            tft_base_url = f"https://dev.azure.com/{tft_org}"
+            
+            # Get token for TFT org using InteractiveBrowserCredential
+            # This will open a browser window for authentication on first use
+            credential = self.config.get_tft_credential()
+            token = credential.get_token(self.config.ADO_SCOPE).token
+            tft_headers = {
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Search last 24 months (expanded from 12 to capture older features)
+            cutoff_date = (datetime.now() - timedelta(days=730)).strftime("%Y-%m-%d")
+            
+            # SMART SERVICE NAME EXTRACTION & PROGRESSIVE SEARCH
+            # Step 1: Extract base service name from title
+            import re
+            import json
+            import os
+            
+            # Try to extract the actual Azure service name (skip Azure/Microsoft prefix)
+            # Pattern 1: "Azure ServiceName" or "Microsoft ServiceName" - extract just ServiceName
+            azure_service_pattern = r'(?:Azure|Microsoft)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)'
+            azure_match = re.search(azure_service_pattern, title)
+            
+            if azure_match:
+                # Found "Azure Route Server" → extract "Route Server"
+                base_service_name = azure_match.group(1).strip()
+                print(f"[TFT Search] Extracted service name (with Azure prefix): {base_service_name}")
+            else:
+                # Pattern 2: Just find 2-word capitalized phrases
+                service_pattern = r'\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b'
+                potential_services = re.findall(service_pattern, title)
+                
+                if not potential_services:
+                    print("[TFT Search] No service name pattern found in title, searching all features")
+                    product_filter = ""
+                    base_service_name = None
+                else:
+                    # Use the LAST found service name
+                    base_service_name = potential_services[-1].strip()
+                    print(f"[TFT Search] Extracted service name: {base_service_name}")
+            
+            if not base_service_name:
+                print("[TFT Search] No service name found, searching all features")
+                product_filter = ""
+            else:
+                # Step 2: Use the base service name directly - CONTAINS will match all variations
+                # "Route Server" matches: "Route Server", "Azure Route Server", "Route Server - IPv6", etc.
+                print(f"[TFT Search] Using service filter: CONTAINS '{base_service_name}'")
+                product_filter = f"AND [System.Title] CONTAINS '{base_service_name}'"
+
+            
+            # WIQL query to find Features (exclude Closed state)
+            wiql_query = f"""
+            SELECT [System.Id], [System.Title], [System.Description], [System.ChangedDate], [System.State]
+            FROM workitems
+            WHERE [System.TeamProject] = '{tft_project}'
+            AND [System.WorkItemType] = 'Feature'
+            AND [System.ChangedDate] >= '{cutoff_date}'
+            AND [System.State] <> 'Closed'
+            {product_filter}
+            ORDER BY [System.ChangedDate] DESC
+            """
+            
+            print(f"[TFT Search] WIQL Query:\n{wiql_query}")
+            
+            wiql_url = f"{tft_base_url}/{quote(tft_project)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
+            wiql_response = requests.post(
+                wiql_url,
+                headers=tft_headers,
+                json={'query': wiql_query}
+            )
+            
+            if wiql_response.status_code != 200:
+                print(f"[TFT Search] WIQL query failed: {wiql_response.status_code}")
+                return []
+            
+            work_items = wiql_response.json().get('workItems', [])
+            if not work_items:
+                print("[TFT Search] No Features found in last 12 months")
+                return []
+            
+            print(f"[TFT Search] Found {len(work_items)} Features, calculating similarity...")
+            
+            # Get detailed work item info (limit to 200 since we have product-filtered results)
+            work_item_ids = [str(wi['id']) for wi in work_items[:200]]
+            batch_url = f"{tft_base_url}/{quote(tft_project)}/_apis/wit/workitemsbatch?api-version={self.config.API_VERSION}"
+            
+            batch_response = requests.post(
+                batch_url,
+                headers=tft_headers,
+                json={
+                    'ids': work_item_ids,
+                    'fields': ['System.Id', 'System.Title', 'System.Description', 'System.State', 'System.CreatedDate']
+                }
+            )
+            
+            if batch_response.status_code != 200:
+                print(f"[TFT Search] Batch request failed: {batch_response.status_code}")
+                return []
+            
+            # Use AI semantic search for better matching
+            print("[TFT Search] Using AI semantic search for similarity matching...")
+            try:
+                from embedding_service import EmbeddingService
+                import time
+                
+                embedding_service = EmbeddingService()
+                
+                # Generate embedding for search query
+                search_text = f"{title} {description}"
+                search_embedding = embedding_service.embed(search_text)
+                
+                items = batch_response.json().get('value', [])
+                print(f"[TFT Search] Processing {len(items)} product-filtered features with AI embeddings")
+                
+                # Limit to 100 items max to avoid excessive processing
+                if len(items) > 100:
+                    print(f"[TFT Search] Limiting from {len(items)} to 100 features")
+                    items = items[:100]
+                
+                matches = []
+                
+                # Process in smaller batches to avoid rate limits
+                batch_size = 10
+                for i in range(0, len(items), batch_size):
+                    batch_items = items[i:i+batch_size]
+                    
+                    for item in batch_items:
+                        try:
+                            fields = item.get('fields', {})
+                            item_id = fields.get('System.Id')
+                            item_title = fields.get('System.Title', '')
+                            item_desc = fields.get('System.Description', '')
+                            
+                            # Strip HTML tags from description
+                            if item_desc:
+                                from html import unescape
+                                import re
+                                # Remove HTML tags
+                                item_desc = re.sub(r'<[^>]+>', '', item_desc)
+                                # Unescape HTML entities (&nbsp;, etc.)
+                                item_desc = unescape(item_desc)
+                                # Clean up extra whitespace
+                                item_desc = ' '.join(item_desc.split())
+                            
+                            # Generate embedding for TFT feature
+                            feature_text = f"{item_title} {item_desc}" if item_desc else item_title
+                            feature_embedding = embedding_service.embed(feature_text)
+                            
+                            # Calculate cosine similarity
+                            similarity = embedding_service.cosine_similarity(search_embedding, feature_embedding)
+                            
+                            if similarity >= threshold:
+                                matches.append({
+                                    'id': item_id,
+                                    'title': item_title,
+                                    'description': item_desc,
+                                    'state': fields.get('System.State', 'Unknown'),
+                                    'created_date': fields.get('System.CreatedDate', ''),
+                                    'similarity': round(similarity, 2),
+                                    'url': f"{tft_base_url}/{quote(tft_project)}/_workitems/edit/{item_id}",
+                                    'source': 'Technical Feedback'
+                                })
+                        except Exception as e:
+                            # Rate limit or other error on individual item - skip it
+                            if '429' in str(e) or 'RateLimitReached' in str(e):
+                                print(f"[TFT Search] Rate limit hit, stopping AI search early")
+                                raise  # Raise to trigger fallback
+                            continue
+                    
+                    # Small delay between batches to avoid rate limits
+                    if i + batch_size < len(items):
+                        time.sleep(0.5)
+                
+                # Sort by similarity
+                matches.sort(key=lambda x: x['similarity'], reverse=True)
+                
+                print(f"[TFT Search] AI semantic search found {len(matches)} Features above threshold {threshold}")
+                return matches[:10]  # Return top 10 matches
+                
+            except Exception as e:
+                error_msg = str(e)
+                print(f"[TFT Search] AI semantic search failed: {e}")
+                
+                # Return error information instead of using inaccurate text matching fallback
+                if '429' in error_msg or 'RateLimitReached' in error_msg:
+                    return {
+                        'error': 'rate_limit',
+                        'message': 'AI search capacity exceeded. The embedding service is temporarily at capacity.',
+                        'retry_after': 60,
+                        'details': 'Please wait a moment and try Deep Search to search again with AI semantic matching.'
+                    }
+                else:
+                    return {
+                        'error': 'ai_failure',
+                        'message': f'AI semantic search is temporarily unavailable: {error_msg}',
+                        'details': 'Cannot perform accurate TFT Feature matching without AI embeddings.'
+                    }
+            
+        except Exception as e:
+            print(f"[TFT Search] Error: {e}")
+            return []
 
 
 def test_ado_integration():

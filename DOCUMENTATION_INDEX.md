@@ -77,7 +77,6 @@ app.py                              # Flask web application
 intelligent_context_analyzer.py     # AI analysis engine (v3.1 enhancements)
 enhanced_matching.py                # Search orchestrator (field fix)
 ado_integration.py                  # Azure DevOps integration
-app_wizard.py                       # Multi-step wizard
 ```
 
 ### Documentation Files
@@ -101,20 +100,10 @@ templates/                          # HTML templates
 ├── base.html                       # Base template
 ├── index.html                      # Main dashboard
 ├── context_evaluation.html         # Analysis results
-├── processing.html                 # Progress tracking
-└── wizard/                         # Wizard step templates
+└── processing.html                 # Progress tracking
 
 static/
 └── style.css                       # Application styles
-```
-
-### Wizard Modules
-```
-wizard/
-├── __init__.py
-├── wizard_controller.py            # Main wizard logic
-├── step1.py - step5.py             # Individual steps
-└── wizard_utils.py                 # Shared utilities
 ```
 
 ---
@@ -126,7 +115,6 @@ wizard/
 checkpoint_backup_20260101_193135/
 ├── *.py (all Python files)
 ├── templates/ (all UI templates)
-├── wizard/ (all wizard modules)
 ├── static/ (all static files)
 └── *.json, *.md (configuration & docs)
 ```

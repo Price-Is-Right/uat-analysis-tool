@@ -40,11 +40,11 @@ python app.py --debug
 
 1. **Open your browser**
 2. **Navigate to**: http://127.0.0.1:5001
-3. **You'll be redirected to**: http://127.0.0.1:5001/wizard/start
+3. **You'll see the Quick ICA Analysis form**
 
 ## 🎯 First Issue Submission (2 minutes)
 
-### Step 1: Issue Title
+### Quick ICA Form
 - Enter a descriptive title (max 125 characters)
 - Real-time character counter shows remaining characters
 - Example: "Cannot access company email on mobile device"
@@ -192,7 +192,7 @@ python app.py
 
 ### Optimal Usage
 - **Single Browser Window**: Avoid multiple simultaneous sessions
-- **Regular Submission**: Don't leave wizard open for extended periods
+- **Regular Submission**: Submit issues promptly for best results
 - **Clear Sessions**: Close browser when finished
 
 ### Speed Optimization

@@ -5,7 +5,7 @@ A comprehensive web-based issue tracking and matching system with AI-powered qua
 ## 🚀 Features
 
 ### Core Functionality
-- **Multi-Step Wizard Interface**: Guided issue submission with progressive data collection
+- **Quick ICA Analysis**: Intelligent Context Analysis with AI-powered classification
 - **AI-Powered Quality Analysis**: Intelligent input validation and completeness scoring
 - **Enhanced Matching Engine**: Multi-source searching across Azure DevOps organizations
 - **Real-Time Progress Tracking**: Live updates during processing operations
@@ -16,7 +16,6 @@ A comprehensive web-based issue tracking and matching system with AI-powered qua
 - **Multi-Source Retirement Checking**: Comprehensive retirement information from multiple authoritative sources
 - **Smart Service Extraction**: Automatic service name detection using pattern matching
 - **Enterprise Integration**: Azure DevOps API integration for multiple organizations
-- **Session Management**: Persistent wizard data with auto-save functionality
 - **Character Limit Validation**: 125-character limits with real-time feedback
 - **Responsive Design**: Mobile-friendly interface with Bootstrap framework
 - **Collapsible UI Sections**: Prevent button displacement with scrollable retirement information
@@ -33,11 +32,9 @@ c:\Projects\Hack\
 │   └── style.css                  # Custom CSS with accessibility features
 ├── templates/                     # Jinja2 HTML templates
 │   ├── base.html                  # Base template with navigation
-│   ├── wizard_step1.html          # Issue title input
-│   ├── wizard_step2.html          # Description input
-│   ├── wizard_step3.html          # Impact statement
-│   ├── wizard_step4.html          # MSX information
-│   ├── wizard_review.html         # Final review page
+│   ├── quick_ica_form.html        # Quick ICA analysis form
+│   ├── context_evaluation.html    # Context analysis results
+│   ├── context_summary.html       # Analysis summary page
 │   ├── input_quality_review.html  # Quality analysis and improvement
 │   ├── processing.html            # Real-time progress display
 │   ├── enhanced_review.html       # Pre-matching review
@@ -83,16 +80,16 @@ c:\Projects\Hack\
 
 5. **Access the System**
    - Open http://127.0.0.1:5001 in your browser
-   - Follow the guided wizard to submit issues
+   - Use the Quick ICA Analysis form to submit issues
 
 ## 🎯 Usage Workflow
 
 ### Issue Submission Process
-1. **Title Entry** (Step 1): Enter a descriptive issue title (max 125 characters)
-2. **Description** (Step 2): Provide detailed issue description with auto-save
-3. **Impact Statement** (Step 3): Describe business/user impact
-4. **MSX Information** (Step 4): Enter opportunity and milestone IDs
-5. **Review & Validation** (Step 5): Final review with edit capabilities
+1. **Quick ICA Form**: Enter title, description, and impact in a single form
+2. **AI-Powered Analysis**: Automatic context classification and quality scoring
+3. **Resource Search**: Optional search for Azure resources and retirement information
+4. **Context Evaluation**: Review AI analysis with detailed reasoning
+5. **ADO Integration**: Create work items or link to existing issues
 
 ### Quality Analysis Pipeline
 1. **AI Analysis**: Automatic quality scoring based on completeness
@@ -113,12 +110,12 @@ When no matches are found, the system automatically creates a work item in Azure
 - **Corp Assignment**: Automatically set to active status
 - **Opportunity ID**: Links to the submitted opportunity number
 - **Milestone ID**: Links to the submitted milestone ID
-- **Status Update**: Marked as 'WizardAuto' for tracking
+- **Status Update**: Automatically tracked for monitoring
 
 ## 🔧 Configuration
 
 ### Application Settings
-- **Session Management**: Automatic session cleanup and data persistence
+- **Session Management**: Automatic session cleanup and temporary data storage
 - **Character Limits**: Configurable limits with real-time validation
 - **Quality Thresholds**: Adjustable scoring parameters
 - **Search Parameters**: Similarity thresholds and result limits
@@ -156,11 +153,11 @@ SIMILARITY_THRESHOLD = 0.3   # Minimum similarity for matches
 ## 📊 API Endpoints
 
 ### Public Routes
-- `GET /` - Application entry point (redirects to wizard)
-- `GET /wizard/start` - Initialize wizard session
-- `GET /wizard/step/<int:step>` - Wizard step pages
-- `POST /wizard/save_step` - Save wizard step data
-- `POST /submit` - Process issue submission
+- `GET /` - Application entry point with Quick ICA form
+- `POST /quick_ica` - Process ICA analysis submission
+- `POST /perform_search` - Execute resource and retirement search
+- `GET /context_summary/<session_id>` - View analysis summary
+- `GET /context_evaluation/<session_id>` - Detailed evaluation page
 
 ### Processing Routes
 - `GET /start_processing` - Initialize enhanced matching
@@ -203,7 +200,7 @@ Check console output for:
 
 ### Code Architecture
 - **Modular Design**: Separated concerns across multiple files
-- **Session Management**: Flask sessions for wizard state persistence
+- **Session Management**: Temporary in-memory storage for analysis results
 - **Error Handling**: Comprehensive try-catch blocks with user feedback
 - **Type Hints**: Full type annotations for better code maintainability
 

@@ -127,6 +127,8 @@ class LLMClassifier:
         
         print(f"[LLMClassifier] Initialized with model: {self.model}")
         print(f"[LLMClassifier] Deployment: {self.deployment}")
+        print(f"[LLMClassifier] Endpoint: {self.azure_config.endpoint}")
+        print(f"[LLMClassifier] API Version: {self.azure_config.api_version}")
     
     def _make_cache_key(self, title: str, description: str, impact: str, pattern_features: Optional[Dict]) -> str:
         """Generate cache key for classification"""

@@ -47,7 +47,6 @@ ROUTE STRUCTURE:
 - /: Main dashboard and quick analysis interface
 - /quick_ica: Rapid context analysis with reasoning display
 - /evaluate_context: Comprehensive analysis results page
-- /wizard/*: Multi-step issue creation wizard
 - /admin: System administration and monitoring
 
 Author: Enhanced Matching Development Team
@@ -58,6 +57,10 @@ Last Updated: December 2025
 # =============================================================================
 # FLASK APPLICATION IMPORTS AND DEPENDENCIES
 # =============================================================================
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file before any other imports that use env vars
 
 # Core Flask framework imports
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
@@ -77,7 +80,6 @@ import time                                             # Time operations and de
 # Custom module imports for specialized functionality
 from ado_integration import AzureDevOpsClient           # Azure DevOps API integration
 from markupsafe import Markup                          # HTML safety for templates
-from app_wizard import wizard_bp                       # Multi-step wizard blueprint
 from bs4 import BeautifulSoup                          # HTML parsing and cleaning
 from search_service import ResourceSearchService, ComprehensiveSearchResults, SearchResult  # Resource search orchestrator
 
@@ -91,15 +93,6 @@ app = Flask(__name__)
 # Generate secure session key for user session management
 # This ensures secure session handling for user data and progress tracking
 app.secret_key = secrets.token_hex(16)
-
-# =============================================================================
-# BLUEPRINT REGISTRATION
-# Register modular components for organized application structure
-# =============================================================================
-
-# Register the multi-step wizard blueprint for guided issue creation
-# Provides step-by-step interface for complex issue submissions
-app.register_blueprint(wizard_bp)
 
 # =============================================================================
 # TEMPORARY DATA STORAGE SYSTEM
@@ -759,6 +752,11 @@ def search_resources():
     4. Capacity guidance (AOAI/standard)
     5. Retirement information
     
+    For special categories (feature_request, technical_support, etc.):
+    - Shows category-specific search steps
+    - Searches TFT Features for feature_request
+    - Skips irrelevant searches
+    
     Displays animated progress and redirects to results when complete.
     """
     evaluation_id = request.args.get('eval_id')
@@ -768,10 +766,69 @@ def search_resources():
         flash('Evaluation session not found or expired', 'error')
         return redirect(url_for('index'))
     
+    evaluation_data = temp_storage[evaluation_id]
+    category = evaluation_data.get('context_analysis', {}).get('category', '')
+    
     # Show processing page - actual search happens in background
     return render_template('searching_resources.html',
                          eval_id=evaluation_id,
-                         deep_search=deep_search)
+                         deep_search=deep_search,
+                         category=category)
+
+def _get_category_guidance(category: str) -> dict:
+    """
+    Get category-specific guidance for user display.
+    
+    Returns guidance dictionary with type, title, content, and any links.
+    """
+    guidance_map = {
+        'technical_support': {
+            'type': 'technical_support',
+            'title': 'Technical Support Issue Detected',
+            'content': '''This appears to be a Technical Support issue:
+
+1. Please open a support case via https://aka.ms/csscompass and provide that support case ID here for reference.
+
+2. If there is a CSAM assigned to this account, if further escalation is required after opening a support case, please work with your CSAM to follow the CSS "Escalate NOW" process through http://aka.ms/reactiveescalation
+
+3. If all CSS escalation options from above are exhausted (or if there is not a CSAM assigned to this account) and an engineering escalation is required, please submit a GetHelp through https://aka.ms/GetHelp''',
+            'variant': 'warning'
+        },
+        'cost_billing': {
+            'type': 'cost_billing',
+            'title': 'Billing Issue - Out of Scope',
+            'content': '''It appears this issue falls outside the scope of our support. This forum is dedicated to technical escalations and is not equipped to address billing-related inquiries. 
+
+For assistance with billing, please submit your request through GetHelp at https://aka.ms/GetHelp.''',
+            'variant': 'danger'
+        },
+        'aoai_capacity': {
+            'type': 'aoai_capacity',
+            'title': 'Azure OpenAI Capacity Request',
+            'content': '''Please review the guidelines for submitting an Azure OpenAI Capacity request:
+
+https://aka.ms/aicapacityhub
+
+This action will be completed from the Milestone in MSX.''',
+            'variant': 'info'
+        },
+        'capacity': {
+            'type': 'capacity',
+            'title': 'Capacity Request Guidelines',
+            # Provides both AI and Non-AI capacity request guidance with proper HTML formatting
+            # Links are clickable, sections are separated with horizontal rule
+            'content': '''<strong>AI Capacity Requests:</strong><br>
+All AI capacity requests should be made per the instructions provided at <a href="https://aka.ms/aicapacityhub#ai-infra-uat-submission-process" target="_blank">aka.ms/aicapacityhub</a> (the second half of the guidance page) from within the MSX Milestone.
+
+<hr style="margin: 15px 0;">
+
+<strong>Non-AI Capacity Requests:</strong><br>
+Please ensure that a valid non-AI capacity escalation request is created following the <a href="https://microsoft.sharepoint.com/:p:/t/NAMOAzureTeam/Ea8xa2cMYntFtg2DpofdqLEBB71zxyVANC_JQx1Y3NgJeQ?e=lPzVxF&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiI0OS8yNDA5MTIyMTMwNyIsIkhhc0ZlZGVyYXRlZFVzZXIiOmZhbHNlfQ%3D%3D" target="_blank">published guidelines</a> and is done directly from within the MSX Milestone.''',
+            'variant': 'info'
+        }
+    }
+    
+    return guidance_map.get(category, None)
 
 def _generate_smart_search_query(title, description, services, technologies, key_concepts, semantic_keywords, category, intent, reasoning):
     """
@@ -814,7 +871,7 @@ RULES:
 - Use official Azure service names (e.g., "Cosmos DB" not "CosmosDB")
 - Remove filler words, partial phrases, location names
 - For connectivity/integration: include "connector" or "SDK" or "integration"
-- For features: include "feature" or "capability"
+- For features: use the service name (e.g., "Route Server" not "capability")
 - For availability: include "regions" or "availability"
 - For capacity: include "quota" or "capacity"
 
@@ -845,22 +902,71 @@ Generate ONLY the search query (3-5 words), nothing else:"""
         
     except Exception as e:
         print(f"[SearchService] Smart query generation failed: {e}")
-        # Fallback to simpler logic
-        query_parts = []
-        if services:
-            query_parts.extend(services[:2])
-        if technologies:
-            query_parts.extend(technologies[:1])
         
-        # Add domain-specific terms based on category
-        if category == 'integration_connectivity' or intent == 'requesting_service':
-            query_parts.append('connector')
-        elif category == 'feature_request':
-            query_parts.append('capability')
-        elif category == 'service_availability':
-            query_parts.append('regional availability')
-        
-        return ' '.join(query_parts) if query_parts else title[:50]
+        # ========================================================================
+        # AI-POWERED FALLBACK: Extract Service Name from Title
+        # ========================================================================
+        # When the primary LLM fails (deployment issues, rate limits, etc.),
+        # use a secondary AI call to intelligently extract the service name.
+        # This is more reliable than hardcoded filters or regex patterns.
+        # ========================================================================
+        try:
+            from openai import AzureOpenAI
+            import os
+            
+            client = AzureOpenAI(
+                azure_endpoint=os.environ.get('AZURE_OPENAI_ENDPOINT'),
+                api_key=os.environ.get('AZURE_OPENAI_API_KEY'),
+                api_version="2024-08-01-preview"
+            )
+            
+            extraction_prompt = f"""Extract the main Azure or Microsoft service/product name from this title.
+Return ONLY the service name (2-4 words), nothing else.
+
+Examples:
+- "Azure Route Server 32-bit ASN support" → "Route Server"
+- "MCP tool call in Microsoft Foundry Responses API" → "Foundry Responses"
+- "CosmosDB connector needed in Korea region" → "Cosmos DB"
+- "ExpressRoute circuit bandwidth increase" → "ExpressRoute"
+
+Title: {title}
+
+Service name:"""
+            
+            response = client.chat.completions.create(
+                model="gpt-4o-02",  # Use the working deployment from context analysis
+                messages=[
+                    {"role": "system", "content": "You extract Azure/Microsoft service names from issue titles. Return only the service name, 2-4 words maximum."},
+                    {"role": "user", "content": extraction_prompt}
+                ],
+                temperature=0.1,
+                max_tokens=20
+            )
+            
+            extracted_service = response.choices[0].message.content.strip().strip('"').strip("'")
+            print(f"[SearchService] AI extracted service from title: {extracted_service}")
+            return extracted_service
+            
+        except Exception as ai_error:
+            print(f"[SearchService] AI extraction also failed: {ai_error}")
+            
+            # ====================================================================
+            # REGEX FALLBACK: Pattern-based extraction as last resort
+            # ====================================================================
+            import re
+            azure_service_pattern = r'(?:Azure|Microsoft)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)'
+            azure_match = re.search(azure_service_pattern, title)
+            
+            if azure_match:
+                extracted_service = azure_match.group(1).strip()
+                print(f"[SearchService] Regex extracted service from title: {extracted_service}")
+                return extracted_service
+            else:
+                # Return first few words of title as absolute last resort
+                words = title.split()[:4]
+                fallback_query = ' '.join(words)
+                print(f"[SearchService] Using title prefix as fallback: {fallback_query}")
+                return fallback_query
 
 @app.route('/perform_search', methods=['POST'])
 def perform_search():
@@ -882,14 +988,32 @@ def perform_search():
     # Initialize search service
     search_service = ResourceSearchService(use_deep_search=deep_search)
     
-    # Perform comprehensive search
-    search_results = search_service.search_all(
-        title=evaluation_data['original_issue']['title'],
-        description=evaluation_data['original_issue']['description'],
-        category=context['category'],
-        intent=context['intent'],
-        domain_entities=context.get('domain_entities', {})
-    )
+    # Get category for special handling
+    category = context.get('category', '')
+    
+    # Categories that need special guidance
+    special_categories = ['technical_support', 'feature_request', 'cost_billing', 'aoai_capacity', 'capacity']
+    
+    # Perform comprehensive search (skip similar products, regional, capacity for special categories)
+    if category in special_categories:
+        # Skip ResourceSearchService for these categories, only search Learn docs
+        from search_service import ComprehensiveSearchResults
+        search_results = ComprehensiveSearchResults(
+            learn_docs=[],
+            similar_products=[],
+            regional_options=[],
+            capacity_guidance=None,
+            retirement_info=None,
+            search_metadata={'searches_performed': []}
+        )
+    else:
+        search_results = search_service.search_all(
+            title=evaluation_data['original_issue']['title'],
+            description=evaluation_data['original_issue']['description'],
+            category=context['category'],
+            intent=context['intent'],
+            domain_entities=context.get('domain_entities', {})
+        )
     
     # Search Microsoft Learn using MCP tools
     learn_results = []
@@ -1030,6 +1154,37 @@ def perform_search():
         except Exception as e:
             print(f"[SearchService] Error in enhanced retirement search: {e}")
     
+    # Search for TFT Features if feature_request category
+    tft_features = []
+    tft_error = None
+    if category == 'feature_request':
+        try:
+            print("[TFT Search] Searching Technical Feedback for similar Features...")
+            from ado_integration import AzureDevOpsClient
+            ado_client = AzureDevOpsClient()
+            tft_result = ado_client.search_tft_features(
+                title=evaluation_data['original_issue']['title'],
+                description=evaluation_data['original_issue']['description'],
+                threshold=0.6  # Higher threshold to ensure accurate matches
+            )
+            
+            # Check if result is an error dict
+            if isinstance(tft_result, dict) and 'error' in tft_result:
+                tft_error = tft_result
+                print(f"[TFT Search] AI search failed: {tft_error['message']}")
+            else:
+                tft_features = tft_result
+                print(f"[TFT Search] Found {len(tft_features)} similar Features")
+        except Exception as e:
+            print(f"[TFT Search] Error searching TFT: {e}")
+            tft_error = {
+                'error': 'unexpected_failure',
+                'message': f'Unexpected error during TFT search: {str(e)}'
+            }
+    
+    # Generate category-specific guidance
+    category_guidance = _get_category_guidance(category)
+    
     # Store search results in temp storage
     evaluation_data['search_results'] = {
         'learn_docs': [
@@ -1044,10 +1199,47 @@ def perform_search():
         'regional_options': search_results.regional_options,
         'capacity_guidance': search_results.capacity_guidance,
         'retirement_info': search_results.retirement_info,
-        'search_metadata': search_results.search_metadata
+        'search_metadata': search_results.search_metadata,
+        'tft_features': tft_features,  # TFT Feature search results
+        'tft_error': tft_error,  # TFT search error info if AI failed
+        'category_guidance': category_guidance  # Category-specific guidance
     }
     
     return jsonify({'success': True, 'eval_id': evaluation_id})
+
+@app.route('/save_selected_feature', methods=['POST'])
+def save_selected_feature():
+    """
+    Save user-selected TFT Feature for UAT creation.
+    
+    Stores the selected Feature ID so it can be referenced when creating
+    the UAT work item in Azure DevOps.
+    """
+    evaluation_id = request.json.get('eval_id')
+    feature_id = request.json.get('feature_id')
+    
+    if not evaluation_id or evaluation_id not in temp_storage:
+        return jsonify({'success': False, 'error': 'Invalid evaluation ID'})
+    
+    if not feature_id:
+        return jsonify({'success': False, 'error': 'No feature ID provided'})
+    
+    evaluation_data = temp_storage[evaluation_id]
+    
+    # Store selected feature ID
+    if 'selected_tft_features' not in evaluation_data:
+        evaluation_data['selected_tft_features'] = []
+    
+    # Add if not already selected
+    if feature_id not in evaluation_data['selected_tft_features']:
+        evaluation_data['selected_tft_features'].append(feature_id)
+        print(f"[TFT Selection] User selected Feature ID: {feature_id}")
+        return jsonify({'success': True, 'message': 'Feature selected'})
+    else:
+        # Remove if already selected (toggle)
+        evaluation_data['selected_tft_features'].remove(feature_id)
+        print(f"[TFT Selection] User deselected Feature ID: {feature_id}")
+        return jsonify({'success': True, 'message': 'Feature deselected'})
 
 @app.route('/search_results', methods=['GET'])
 def search_results():
@@ -1060,6 +1252,8 @@ def search_results():
     - Regional availability options
     - Capacity guidance (if applicable)
     - Retirement information (if applicable)
+    - TFT Features (for feature_request category)
+    - Category-specific guidance (for special categories)
     
     User can review resources and choose to:
     - Continue to create UAT
@@ -1084,7 +1278,8 @@ def search_results():
                          original_title=evaluation_data['original_issue']['title'],
                          original_description=evaluation_data['original_issue']['description'],
                          context=evaluation_data['context_analysis'],
-                         search_results=evaluation_data['search_results'])
+                         search_results=evaluation_data['search_results'],
+                         selected_features=evaluation_data.get('selected_tft_features', []))
 
 @app.route('/evaluate_context', methods=['GET', 'POST'])
 def evaluate_context():
