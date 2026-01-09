@@ -61,28 +61,65 @@ class AzureDevOpsConfig:
     # Azure DevOps scope for authentication
     ADO_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"  # Azure DevOps scope
     
+    # Cached credential to reuse across operations
+    _cached_credential = None
+    
     @staticmethod
     def get_credential():
         """
         Get Azure credential for authentication.
         
-        Development: Uses Azure CLI credential (requires 'az login')
-        Production: TODO - Switch to Service Principal with client_id/client_secret
+        Uses InteractiveBrowserCredential for proper permissions, with caching
+        so authentication only happens once. Attempts to reuse credential from
+        EnhancedMatchingConfig if already authenticated.
         
         Returns:
             Azure credential object
         """
+        from azure.identity import AzureCliCredential, DefaultAzureCredential, InteractiveBrowserCredential
+        
+        # Try to reuse credential from EnhancedMatchingConfig (if already authenticated)
         try:
-            # Try Azure CLI credential first (development)
-            credential = AzureCliCredential()
-            # Test the credential
-            credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
+            from enhanced_matching import EnhancedMatchingConfig
+            if EnhancedMatchingConfig._uat_credential is not None:
+                print("🔐 Reusing cached credential from UAT search...")
+                # Test it still works
+                EnhancedMatchingConfig._uat_credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
+                print("✅ Authentication successful (cached)")
+                AzureDevOpsConfig._cached_credential = EnhancedMatchingConfig._uat_credential
+                return EnhancedMatchingConfig._uat_credential
+        except Exception as reuse_error:
+            print(f"⚠️  Could not reuse cached credential: {reuse_error}")
+            pass  # Fall through to create new credential
+        
+        # Return our own cached credential if available
+        if AzureDevOpsConfig._cached_credential is not None:
+            return AzureDevOpsConfig._cached_credential
+        
+        try:
+            # Use Interactive Browser first for proper permissions
+            print("🔐 Using Interactive Browser credential (one-time login)...")
+            credential = InteractiveBrowserCredential()
+            token = credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
+            print("✅ Authentication successful (cached for session)")
+            AzureDevOpsConfig._cached_credential = credential
+            
+            # CRITICAL: Also cache in EnhancedMatchingConfig so search doesn't prompt again
+            from enhanced_matching import EnhancedMatchingConfig
+            EnhancedMatchingConfig._uat_credential = credential
+            EnhancedMatchingConfig._uat_token = token.token
+            print("✅ Credential shared with search services")
+            
             return credential
         except Exception as e:
-            # Fallback to default credential chain (includes managed identity for production)
-            print(f"⚠️  Azure CLI credential failed: {e}")
-            print("📝 Make sure you're logged in: az login")
-            return DefaultAzureCredential()
+            # Fallback to Azure CLI credential
+            print(f"⚠️  Interactive Browser credential failed: {e}")
+            
+            # DO NOT fallback to Azure CLI - it doesn't work for work item creation
+            # Azure CLI tokens cause "identity not materialized" errors
+            print("❌ Interactive Browser authentication is REQUIRED for work item creation")
+            print("💡 Please complete the browser login when prompted")
+            raise Exception("Interactive Browser authentication required. Please log in through the browser.")
     
     @staticmethod
     def get_tft_credential():
@@ -138,7 +175,7 @@ class AzureDevOpsClient:
             Dict[str, str]: HTTP headers including Authorization, Content-Type, and Accept
         """
         try:
-            # Get access token from credential
+            # Always get fresh token from credential
             token = self.credential.get_token(self.config.ADO_SCOPE)
             
             return {
@@ -320,6 +357,13 @@ class AzureDevOpsClient:
                 "value": full_description
             })
             
+            # State field - set to 'In Progress'
+            operations.append({
+                "op": "add",
+                "path": "/fields/System.State",
+                "value": "In Progress"
+            })
+            
             # Assigned To field - set to "ACR Accelerate Blockers Help"
             operations.append({
                 "op": "add",
@@ -327,13 +371,83 @@ class AzureDevOpsClient:
                 "value": "ACR Accelerate Blockers Help"
             })
             
-            # Custom field: CustomerScenarioandDesiredOutcome (set to Impact statement)
+            # Custom field: CustomerImpactData (set to Impact statement)
             if impact:
                 operations.append({
                     "op": "add",
-                    "path": "/fields/custom.CustomerScenarioandDesiredOutcome",
+                    "path": "/fields/custom.CustomerImpactData",
                     "value": impact
                 })
+            
+            # Custom field: CustomerScenarioandDesiredOutcome (formatted AI classification data)
+            # This field contains the AI analysis results, selected features, and related UATs
+            # formatted as HTML for proper display in Azure DevOps work item view
+            scenario_data_parts = []
+            context_analysis = issue_data.get('context_analysis', {})
+            
+            print(f"\n[ADO DEBUG] issue_data keys: {list(issue_data.keys())}")
+            print(f"[ADO DEBUG] context_analysis: {context_analysis}")
+            print(f"[ADO DEBUG] selected_features: {issue_data.get('selected_features', [])}")
+            print(f"[ADO DEBUG] selected_uats: {issue_data.get('selected_uats', [])}")
+            
+            if context_analysis:
+                # Add Category and Intent with proper formatting
+                # Category examples: 'feature_request', 'technical_support', 'service_availability'
+                # Intent examples: 'requesting_feature', 'reporting_issue', 'seeking_information'
+                category = context_analysis.get('category', 'Unknown')
+                intent = context_analysis.get('intent', 'Unknown')
+                
+                # Convert underscored values to readable format (e.g., 'feature_request' → 'Feature Request')
+                category_display = category.replace('_', ' ').title()
+                intent_display = intent.replace('_', ' ').title()
+                
+                scenario_data_parts.append(f"<strong>Category:</strong> {category_display}")
+                scenario_data_parts.append(f"<strong>Intent:</strong> {intent_display}")
+                
+                # Add reasoning/why we classified it this way
+                # This provides transparency into the AI's decision-making process
+                reasoning = context_analysis.get('reasoning', '')
+                if reasoning:
+                    scenario_data_parts.append(f"<strong>Classification Reason:</strong> {reasoning}")
+            
+            # Add selected features if present (with clickable links to Azure DevOps)
+            # These are TFT (Technical Feedback Tracker) features that relate to this UAT
+            selected_features = issue_data.get('selected_features', [])
+            if selected_features:
+                feature_links = []
+                for feature_id in selected_features:
+                    # Create ADO link format: <a href="URL">#ID</a>
+                    # Links directly to the feature work item in the TFT project
+                    feature_url = f"https://dev.azure.com/acrblockers/b47dfa86-3c5d-4fc9-8ab9-e4e10ec93dc4/_workitems/edit/{feature_id}"
+                    feature_links.append(f'<a href="{feature_url}" target="_blank">#{feature_id}</a>')
+                feature_html = ', '.join(feature_links)
+                scenario_data_parts.append(f"<strong>Associated Features:</strong> {feature_html}")
+            
+            # Add selected related UATs if present (with clickable links)
+            # These are similar/related UATs found in the search that the user selected for reference
+            selected_uats = issue_data.get('selected_uats', [])
+            if selected_uats:
+                uat_links = []
+                for uat_id in selected_uats:
+                    # Create ADO link format: <a href="URL">#ID</a>
+                    # Links directly to the related UAT work item in the UAT project
+                    uat_url = f"https://dev.azure.com/unifiedactiontracker/Unified%20Action%20Tracker/_workitems/edit/{uat_id}"
+                    uat_links.append(f'<a href="{uat_url}" target="_blank">#{uat_id}</a>')
+                uat_html = ', '.join(uat_links)
+                scenario_data_parts.append(f"<strong>Associated UATs:</strong> {uat_html}")
+            
+            if scenario_data_parts:
+                # Join with <br><br> for proper HTML line breaks in Azure DevOps
+                scenario_value = "<br><br>".join(scenario_data_parts)
+                print(f"\n[ADO DEBUG] Writing to CustomerScenarioandDesiredOutcome:")
+                print(f"[ADO DEBUG] Value: {scenario_value}")
+                operations.append({
+                    "op": "add",
+                    "path": "/fields/custom.CustomerScenarioandDesiredOutcome",
+                    "value": scenario_value
+                })
+            else:
+                print("[ADO DEBUG] ⚠️ No scenario_data_parts to write!")
             
             # Custom field: AssigntoCorp (set to True)
             operations.append({

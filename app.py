@@ -178,6 +178,10 @@ def clean_html(text):
 # Prevents XSS vulnerabilities while maintaining content readability
 app.jinja_env.filters['clean_html'] = clean_html
 
+# Add datetime functions to Jinja2 context for templates
+from datetime import datetime as dt
+app.jinja_env.globals['now'] = dt.now
+
 def cleanup_temp_storage():
     """
     TEMPORARY STORAGE CLEANUP AND MEMORY MANAGEMENT
@@ -220,7 +224,14 @@ def nl2br(s):
         return s
     return Markup(str(s).replace('\n', '<br>\n'))
 
+# =============================================================================
+# INITIALIZE AZURE DEVOPS CLIENTS AT STARTUP (ONE-TIME AUTHENTICATION)
+# =============================================================================
+
+# Initialize Azure DevOps client for work item creation
+# This will authenticate once and share the credential with search services
 ado_client = AzureDevOpsClient()
+print("✅ All Azure DevOps services authenticated and ready")
 
 class IssueTracker:
     def __init__(self, data_file: str = "issues_actions.json"):
@@ -473,19 +484,12 @@ def no_match():
     
 
     
-    print(f"[DEBUG] /no_match: results_id = {results_id}")
-    print(f"[DEBUG] /no_match: temp_storage keys = {list(temp_storage.keys())}")
-    
     if results_id and results_id in temp_storage:
         enhanced_results = temp_storage[results_id]['enhanced_results']
-        
-        print(f"[DEBUG] /no_match: Found results with keys = {list(enhanced_results.keys())}")
         
         # Prepare pagination for results
         all_items = enhanced_results.get('all_items', [])
         total_items = len(all_items)
-        
-        print(f"[DEBUG] /no_match: total_items = {total_items}, all_items length = {len(all_items)}")
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
         paginated_items = all_items[start_idx:end_idx]
@@ -516,47 +520,433 @@ def no_match():
                          paginated_results=paginated_results)
 
 
-
-@app.route('/create_uat', methods=['POST'])
-def create_uat():
-    """Create UAT ticket in Azure DevOps"""
+@app.route('/uat_input')
+def uat_input():
+    """Display UAT input form for Opportunity ID and Milestone ID"""
     current_issue = session.get('current_issue', '')
-    wizard_title = session.get('wizard_title', 'Untitled Issue')
+    wizard_title = session.get('wizard_title', '')
+    opportunity_id = session.get('opportunity_id', '')
+    milestone_id = session.get('milestone_id', '')
+    show_warning = request.args.get('show_warning', False)
     
-    import random
-    current_date = datetime.now().strftime("%Y%m%d")
-    current_datetime = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    ticket_number = random.randint(1000, 9999)
+    return render_template('uat_input.html', 
+                         current_issue=current_issue,
+                         wizard_title=wizard_title,
+                         opportunity_id=opportunity_id,
+                         milestone_id=milestone_id,
+                         show_warning=show_warning)
+
+@app.route('/process_uat_input', methods=['POST'])
+def process_uat_input():
+    """
+    Process UAT input form - Opportunity and Milestone ID collection
+    
+    This route handles the user's input for optional Opportunity ID and Milestone ID
+    fields that will be included in the UAT creation. It serves as a bridge between
+    feature/UAT selection and the final UAT creation step.
+    
+    WORKFLOW:
+    1. Receives form data with action type and optional IDs
+    2. Stores IDs in session for later UAT creation
+    3. Retrieves context_analysis and selected features from evaluation data
+    4. Routes based on action:
+       - 'continue'/'force_skip': Proceed to UAT search
+       - 'skip' with empty IDs: Redirect back with warning
+    
+    ERROR HANDLING:
+    - Catches all exceptions with detailed logging
+    - Provides user-friendly error messages via flash
+    - Safely redirects to index on critical failures
+    
+    Returns:
+        Renders searching_uats.html (loading screen) or redirects to uat_input with warning
+    """
+    try:
+        print("\n[PROCESS_UAT_INPUT] Processing UAT input form...")
+        action = request.form.get('action')
+        opportunity_id = request.form.get('opportunity_id', '').strip()
+        milestone_id = request.form.get('milestone_id', '').strip()
+        print(f"[PROCESS_UAT_INPUT] Opportunity ID: {opportunity_id}, Milestone ID: {milestone_id}")
+        
+        # Store IDs in session
+        session['opportunity_id'] = opportunity_id
+        session['milestone_id'] = milestone_id
+        
+        # Store in original_wizard_data for create_work_item_from_issue
+        wizard_data = session.get('original_wizard_data', {})
+        wizard_data['opportunity_id'] = opportunity_id
+        wizard_data['milestone_id'] = milestone_id
+        
+        # Get context_analysis and selected_features from the evaluation session
+        # The evaluation_id should be stored somewhere - check session or temp_storage
+        evaluation_id = session.get('evaluation_id')  # Should be set during context analysis
+        
+        if evaluation_id and evaluation_id in temp_storage:
+            eval_data = temp_storage[evaluation_id]
+            # Pass context analysis and selected features to wizard_data for UAT creation
+            if 'context_analysis' in eval_data:
+                wizard_data['context_analysis'] = eval_data['context_analysis']
+                print(f"[UAT INPUT] Found context_analysis with category: {eval_data['context_analysis'].get('category')}")
+            # Also grab selected TFT features if available
+            if 'selected_tft_features' in eval_data:
+                wizard_data['selected_features'] = eval_data['selected_tft_features']
+                print(f"[UAT INPUT] Found {len(eval_data['selected_tft_features'])} selected features")
+        else:
+            print("[UAT INPUT] Warning: No evaluation_id found in session, context_analysis will be empty")
+        
+        session['original_wizard_data'] = wizard_data
+        
+        # If user clicks "Continue with IDs" or "Force Skip", proceed to UAT selection
+        if action == 'continue' or action == 'force_skip':
+            # Show processing overlay while searching for UATs
+            return render_template('searching_uats.html')
+        
+        # If user clicks "Continue Without IDs" and both are empty, redirect back with warning
+        if action == 'skip' and not opportunity_id and not milestone_id:
+            return redirect(url_for('uat_input', show_warning=True))
+        
+        # If they have at least one ID, proceed to UAT selection with loading overlay
+        return render_template('searching_uats.html')
+        
+    except Exception as e:
+        print(f"[PROCESS_UAT_INPUT] ❌ ERROR processing UAT input: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error processing input: {str(e)}", 'error')
+        return redirect(url_for('index'))
+
+@app.route('/select_related_uats')
+def select_related_uats():
+    """
+    Display similar UAT selection page - Search and present related UATs from last 180 days
+    
+    This route searches for existing UATs that are similar to the user's issue,
+    allowing them to reference or link to existing work items. This prevents
+    duplicate UAT creation and enables cross-referencing related issues.
+    
+    SEARCH STRATEGY:
+    - Uses the issue title from evaluation data (not session wizard_title)
+    - Searches Azure DevOps for similar UATs
+    - Filters results to last 180 days (6 months)
+    - Handles date parsing failures gracefully
+    
+    USER OPTIONS:
+    - Select up to 5 related UATs to link in the new UAT
+    - Skip this step if no similar UATs found
+    - Proceed to UAT creation after selection
+    
+    DATA FLOW:
+    1. Retrieves title from temp_storage evaluation data
+    2. Searches using EnhancedMatcher.search_uat_items()
+    3. Filters by date (last 180 days)
+    4. Stores results in temp_storage with unique selection_id
+    5. Renders selection page with found UATs
+    
+    ERROR HANDLING:
+    - Catches search failures and proceeds to UAT creation
+    - Handles missing evaluation data with fallback to session
+    - Logs all errors with stack traces for debugging
+    
+    Returns:
+        Renders select_related_uats.html with found UATs or redirects to create_uat
+    """
+    current_issue = session.get('current_issue', '')
+    
+    # Get the actual title from evaluation data, not from wizard_title
+    # This ensures we search with the exact user-provided title, not a truncated session value
+    evaluation_id = session.get('evaluation_id')
+    wizard_title = 'Untitled Issue'  # Default fallback
+    if evaluation_id and evaluation_id in temp_storage:
+        eval_data = temp_storage[evaluation_id]
+        wizard_title = eval_data.get('original_issue', {}).get('title', 'Untitled Issue')
+        print(f"[UAT SELECTION] Using title from evaluation: {wizard_title[:100]}")
+    else:
+        # Fallback to session if evaluation data not available
+        wizard_title = session.get('wizard_title', 'Untitled Issue')
+        print(f"[UAT SELECTION] Using title from session: {wizard_title[:100]}")
     
     wizard_data = session.get('original_wizard_data', {})
-    ado_result = ado_client.create_work_item_from_issue(wizard_data)
     
-    response_data = {
-        'issue': current_issue, 'current_date': current_date,
-        'current_datetime': current_datetime, 'ticket_number': ticket_number,
-        'ado_success': ado_result['success'],
-        'opportunity_id': wizard_data.get('opportunity_id', ''),
-        'milestone_id': wizard_data.get('milestone_id', '')
+    # Search for similar UATs from last 180 days
+    from enhanced_matching import EnhancedMatcher
+    matcher = EnhancedMatcher(tracker)
+    
+    try:
+        print(f"\n[UAT SELECTION] Searching for similar UATs (last 180 days): {wizard_title[:100]}...")
+        uat_items = matcher.ado_searcher.search_uat_items(wizard_title, current_issue)
+        
+        # Filter to last 180 days
+        from datetime import datetime, timedelta
+        cutoff_date = datetime.now() - timedelta(days=180)
+        
+        filtered_uats = []
+        for uat in uat_items:
+            created_str = uat.get('created_date', '')
+            if created_str:
+                try:
+                    created_date = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
+                    if created_date >= cutoff_date:
+                        filtered_uats.append(uat)
+                except Exception as date_error:
+                    # If date parsing fails, include it anyway
+                    print(f"[UAT SELECTION] Warning: Date parsing failed for UAT, including anyway: {date_error}")
+                    filtered_uats.append(uat)
+        
+        print(f"[UAT SELECTION] Found {len(filtered_uats)} UATs in last 180 days (from {len(uat_items)} total)")
+        
+        # If no UATs found, skip to create_uat
+        if not filtered_uats:
+            print("[UAT SELECTION] No similar UATs found - skipping selection step")
+            return redirect(url_for('create_uat'))
+        
+        # Store in temp_storage for the session
+        selection_id = str(uuid.uuid4())
+        temp_storage[selection_id] = {
+            'found_uats': filtered_uats,
+            'wizard_data': wizard_data
+        }
+        session['uat_selection_id'] = selection_id
+        
+        # Get already selected UATs if any
+        selected_uats = wizard_data.get('selected_uats', [])
+        
+        return render_template('select_related_uats.html',
+                             current_issue=current_issue,
+                             wizard_title=wizard_title,
+                             found_uats=filtered_uats,
+                             selected_uats=selected_uats,
+                             selection_id=selection_id)
+    
+    except Exception as e:
+        print(f"[UAT SELECTION] Error searching for UATs: {e}")
+        import traceback
+        traceback.print_exc()
+        # On error, skip to create_uat
+        return redirect(url_for('create_uat'))
+
+@app.route('/save_selected_uat', methods=['POST'])
+def save_selected_uat():
+    """
+    Save user-selected related UAT for reference - AJAX endpoint for UAT selection
+    
+    This AJAX endpoint handles real-time UAT selection/deselection from the
+    UAT search results page. It provides toggle functionality (click to select,
+    click again to deselect) and enforces a maximum of 5 UAT selections.
+    
+    FUNCTIONALITY:
+    - Toggle selection: Adds UAT if not selected, removes if already selected
+    - Enforces 5 UAT maximum limit
+    - Returns success/error with current selection count
+    - Updates session data in real-time
+    
+    REQUEST FORMAT (JSON):
+    {
+        'selection_id': '<uuid>',  # Session identifier from temp_storage
+        'uat_id': '<uat_work_item_id>'  # Azure DevOps work item ID
     }
     
-    if ado_result['success']:
-        response_data.update({
-            'work_item_id': ado_result['work_item_id'], 'work_item_url': ado_result['url'],
-            'work_item_title': ado_result['title'], 'work_item_state': ado_result['state'],
-            'assigned_to': ado_result.get('assigned_to', 'ACR Accelerate Blockers Help')
-        })
-        flash(f"Work item #{ado_result['work_item_id']} created successfully!", 'success')
-    else:
-        response_data['ado_error'] = ado_result['error']
-        flash(f"Warning: Failed to create work item: {ado_result['error']}", 'warning')
+    RESPONSE FORMAT (JSON):
+    {
+        'success': true/false,
+        'message': 'UAT selected/deselected',
+        'count': <current_selection_count>,
+        'error': '<error_message>'  # Only on failure
+    }
     
-    return render_template('uat_created.html', **response_data)
+    BUSINESS RULES:
+    - Maximum 5 UATs can be selected
+    - Duplicate selections not allowed
+    - Toggle behavior for user convenience
+    - Session persistence for wizard flow
+    
+    Returns:
+        JSON response with success status and selection count
+    """
+    selection_id = request.json.get('selection_id')
+    uat_id = request.json.get('uat_id')
+    
+    # Validate selection_id exists in temp_storage
+    if not selection_id or selection_id not in temp_storage:
+        return jsonify({'success': False, 'error': 'Invalid selection ID'})
+    
+    if not uat_id:
+        return jsonify({'success': False, 'error': 'No UAT ID provided'})
+    
+    # Get wizard_data from session
+    wizard_data = session.get('original_wizard_data', {})
+    
+    # Store selected UAT ID
+    if 'selected_uats' not in wizard_data:
+        wizard_data['selected_uats'] = []
+    
+    # Check max limit of 5
+    if uat_id not in wizard_data['selected_uats']:
+        if len(wizard_data['selected_uats']) >= 5:
+            return jsonify({'success': False, 'error': 'Maximum 5 UATs can be selected'})
+        wizard_data['selected_uats'].append(uat_id)
+        session['original_wizard_data'] = wizard_data
+        print(f"[UAT Selection] User selected UAT ID: {uat_id}")
+        return jsonify({'success': True, 'message': 'UAT selected', 'count': len(wizard_data['selected_uats'])})
+    else:
+        # Remove if already selected (toggle)
+        wizard_data['selected_uats'].remove(uat_id)
+        session['original_wizard_data'] = wizard_data
+        print(f"[UAT Selection] User deselected UAT ID: {uat_id}")
+        return jsonify({'success': True, 'message': 'UAT deselected', 'count': len(wizard_data['selected_uats'])})
+
+@app.route('/create_uat', methods=['GET', 'POST'])
+def create_uat():
+    """
+    Create UAT ticket in Azure DevOps - Final step in UAT creation workflow
+    
+    This is the culmination of the multi-step UAT creation wizard. It takes all
+    collected information (issue details, context analysis, selected features/UATs,
+    opportunity/milestone IDs) and creates a new work item in Azure DevOps.
+    
+    DATA SOURCES (from wizard_data in session):
+    - title, description, impact: Original issue information
+    - context_analysis: AI classification and reasoning
+    - selected_features: TFT Feature IDs to link (up to 5)
+    - selected_uats: Related UAT IDs to reference (up to 5)
+    - opportunity_id, milestone_id: Optional tracking identifiers
+    
+    WORKFLOW:
+    1. Retrieves all wizard data from session
+    2. Calls ado_client.create_work_item_from_issue() with complete data
+    3. Extracts feature and UAT details for display
+    4. Generates response data with work item information
+    5. Renders success page or error template
+    
+    AZURE DEVOPS INTEGRATION:
+    - Creates work item in 'Unified Action Tracker Test' project
+    - Work item type: 'Action'
+    - Includes custom fields: Customer Scenario, Opportunity ID, etc.
+    - Links to selected TFT Features and related UATs
+    
+    ERROR HANDLING:
+    - Comprehensive try-except with stack trace logging
+    - User-friendly error messages via flash notifications
+    - Renders error.html template with 500 status on failure
+    - All errors logged with [CREATE_UAT] prefix for debugging
+    
+    SUCCESS RESPONSE:
+    - Displays work item ID, URL, title, state
+    - Shows linked features and UATs
+    - Provides tracking information (opportunity/milestone IDs)
+    - Includes timestamp and confirmation message
+    
+    Returns:
+        Renders uat_created.html with work item details or error.html on failure
+    """
+    try:
+        print("\n[CREATE_UAT] Starting UAT creation...")
+        current_issue = session.get('current_issue', '')
+        wizard_title = session.get('wizard_title', 'Untitled Issue')
+        
+        # Generate unique identifiers for display purposes
+        import random
+        current_date = datetime.now().strftime("%Y%m%d")
+        current_datetime = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        ticket_number = random.randint(1000, 9999)
+        
+        wizard_data = session.get('original_wizard_data', {})
+        print(f"[CREATE_UAT] Wizard data keys: {list(wizard_data.keys())}")
+        print(f"[CREATE_UAT] Creating work item in Azure DevOps...")
+        ado_result = ado_client.create_work_item_from_issue(wizard_data)
+        
+        # Get selected feature IDs
+        selected_feature_ids = wizard_data.get('selected_features', [])
+        
+        # Look up feature details from temp_storage
+        selected_features_details = []
+        evaluation_id = session.get('evaluation_id')
+        if evaluation_id and evaluation_id in temp_storage:
+            eval_data = temp_storage[evaluation_id]
+            tft_features = eval_data.get('search_results', {}).get('tft_features', [])
+            
+            # Find the matching features
+            for feature_id in selected_feature_ids:
+                for feature in tft_features:
+                    if str(feature.get('id')) == str(feature_id):
+                        selected_features_details.append({
+                            'id': feature.get('id'),
+                            'title': feature.get('title', 'Unknown Feature')
+                        })
+                        break
+        
+        response_data = {
+            'issue': current_issue, 'current_date': current_date,
+            'current_datetime': current_datetime, 'ticket_number': ticket_number,
+            'ado_success': ado_result['success'],
+            'opportunity_id': wizard_data.get('opportunity_id', ''),
+            'milestone_id': wizard_data.get('milestone_id', ''),
+            'selected_features': selected_features_details,
+            'selected_uats': wizard_data.get('selected_uats', [])
+        }
+        
+        if ado_result['success']:
+            response_data.update({
+                'work_item_id': ado_result['work_item_id'], 'work_item_url': ado_result['url'],
+                'work_item_title': ado_result['title'], 'work_item_state': ado_result['state'],
+                'assigned_to': ado_result.get('assigned_to', 'ACR Accelerate Blockers Help')
+            })
+            flash(f"Work item #{ado_result['work_item_id']} created successfully!", 'success')
+        else:
+            response_data['ado_error'] = ado_result['error']
+            flash(f"Warning: Failed to create work item: {ado_result['error']}", 'warning')
+        
+        print(f"[CREATE_UAT] UAT creation completed successfully")
+        return render_template('uat_created.html', **response_data)
+        
+    except Exception as e:
+        print(f"[CREATE_UAT] ❌ CRITICAL ERROR during UAT creation: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error creating UAT: {str(e)}", 'error')
+        return render_template('error.html', error=str(e)), 500
 
 @app.route('/admin')
 def admin():
-    """Admin page to view all issues in database"""
-    issues = tracker.data.get('issues_actions', [])
-    return render_template('admin.html', issues=issues)
+    """Admin page to view all corrections in database"""
+    corrections_file = 'corrections.json'
+    corrections_data = {"corrections": []}
+    
+    if os.path.exists(corrections_file):
+        try:
+            with open(corrections_file, 'r', encoding='utf-8') as f:
+                corrections_data = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            pass
+    
+    corrections = corrections_data.get('corrections', [])
+    return render_template('admin.html', corrections=corrections)
+
+@app.route('/admin/delete_correction/<int:index>', methods=['POST'])
+def delete_correction(index):
+    """Delete a correction from corrections.json"""
+    corrections_file = 'corrections.json'
+    
+    try:
+        with open(corrections_file, 'r', encoding='utf-8') as f:
+            corrections_data = json.load(f)
+        
+        corrections = corrections_data.get('corrections', [])
+        
+        if 0 <= index < len(corrections):
+            deleted_correction = corrections.pop(index)
+            
+            # Save back to file
+            with open(corrections_file, 'w', encoding='utf-8') as f:
+                json.dump(corrections_data, f, indent=2, ensure_ascii=False)
+            
+            flash(f'Successfully deleted correction for: "{deleted_correction.get("original_text", "")}"', 'success')
+        else:
+            flash('Invalid correction index', 'error')
+    
+    except Exception as e:
+        flash(f'Error deleting correction: {str(e)}', 'error')
+    
+    return redirect(url_for('admin'))
 
 @app.route('/cancel')
 def cancel():
@@ -589,13 +979,15 @@ def start_processing():
         from enhanced_matching import EnhancedMatcher
         matcher = EnhancedMatcher(tracker)
         
-        print(f"DEBUG: About to call analyze_context_for_evaluation")
         evaluation_data = matcher.analyze_context_for_evaluation(title, description, impact)
-        print(f"DEBUG: Context evaluation completed successfully")
         
         # Store evaluation data temporarily
         evaluation_id = str(uuid.uuid4())
         temp_storage[evaluation_id] = evaluation_data
+        
+        # CRITICAL: Store evaluation_id in session so process_uat_input can find it later
+        session['evaluation_id'] = evaluation_id
+        print(f"[CONTEXT EVAL] Stored evaluation_id in session: {evaluation_id}")
         
         # Redirect to summary page for user review
         return redirect(url_for('context_summary', eval_id=evaluation_id))
@@ -653,15 +1045,7 @@ def processing_status(process_id):
         session['wizard_title'] = wizard_data.get('title', 'Unknown Issue')
         session['results_id'] = results_id  # Store ID instead of data
         
-        print(f"[DEBUG] PROCESSING_STATUS: Set session results_id = {results_id}")
-        
         total_matches = results.get('total_matches', 0)
-        
-        print(f"[DEBUG] Results structure keys: {list(results.keys())}")
-        print(f"[DEBUG] total_matches value: {total_matches}")
-        print(f"[DEBUG] UAT items count: {len(results.get('uat_items', []))}")
-        print(f"[DEBUG] Feature items count: {len(results.get('feature_items', []))}")
-        print(f"[DEBUG] All items count: {len(results.get('all_items', []))}")
         
         if total_matches > 0:
             # Found matches - redirect to results page
@@ -1342,14 +1726,6 @@ def evaluate_context():
         # Get evaluation data from temporary storage
         evaluation_data = temp_storage[evaluation_id]
         
-        # [DEBUG] Check what data we're passing to the template
-        context_data = evaluation_data['context_analysis']
-        print(f"[DEBUG] Context data keys: {list(context_data.keys())}")
-        print(f"[DEBUG] Category: '{context_data.get('category', 'MISSING')}'")
-        print(f"[DEBUG] Intent: '{context_data.get('intent', 'MISSING')}'")
-        print(f"[DEBUG] Confidence: '{context_data.get('confidence', 'MISSING')}'")
-        print(f"[DEBUG] Business Impact: '{context_data.get('business_impact', 'MISSING')}'")
-        
         # Check if this is a reanalyzed version
         is_reanalyzed = evaluation_data['context_analysis'].get('reanalyzed', False)
         corrections_applied = evaluation_data['context_analysis'].get('corrections_applied', {})
@@ -1622,8 +1998,17 @@ def evaluate_context():
                             'progress_percent': percent, 'current_task': task
                         })
                     
+                    print("\n" + "#"*80)
+                    print("[APP.PY] BACKGROUND THREAD: Starting approved search process")
+                    print(f"[APP.PY] Process ID: {process_id}")
+                    print("[APP.PY] About to call matcher.continue_intelligent_search_after_approval()")
+                    print("#"*80 + "\n")
+                    
                     matcher = EnhancedMatcher(tracker)
                     search_results = matcher.continue_intelligent_search_after_approval(evaluation_data, progress_update)
+                    
+                    print("\n[APP.PY] BACKGROUND THREAD: Search completed successfully")
+                    print("#"*80 + "\n")
                     
                     # Extract the actual results structure (same as other search paths)
                     if 'results' in search_results:
@@ -1637,11 +2022,6 @@ def evaluate_context():
                         'enhanced_results': results,
                         'timestamp': time.time()
                     }
-                    
-                    print(f"[DEBUG] APPROVED SEARCH: Stored results with ID = {results_id}")
-                    print(f"[DEBUG] APPROVED SEARCH: Results keys = {list(results.keys())}")
-                    print(f"[DEBUG] APPROVED SEARCH: Total matches = {results.get('total_matches', 0)}")
-                    print(f"[DEBUG] APPROVED SEARCH: UAT items = {len(results.get('uat_items', []))}")
                     
                     # Also store for backward compatibility with /results route
                     temp_storage[f"{process_id}_results"] = results
@@ -1677,17 +2057,6 @@ def quick_ica():
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         impact = request.form.get('impact', '').strip()
-        
-        # DEBUG: Show what data is being submitted for analysis
-        print("=" * 80)
-        print("[DEBUG] QUICK ICA SUBMISSION DATA:")
-        print(f"[DEBUG] Title: '{title}'")
-        print(f"📄 Description: '{description}'")
-        print(f"💼 Impact: '{impact}'")
-        print(f"📏 Title length: {len(title)} chars")
-        print(f"📏 Description length: {len(description)} chars")
-        print(f"📏 Impact length: {len(impact)} chars")
-        print("=" * 80)
         
         if not title or not description:
             flash('Title and description are required for ICA analysis', 'error')
@@ -1815,37 +2184,6 @@ if __name__ == '__main__':
     print("="*80)
     
     # Health check for AI services - TEMPORARILY DISABLED FOR TESTING
-    print("\nSkipping health check for now...")
-    # try:
-    #     from hybrid_context_analyzer import HybridContextAnalyzer
-    #     from ai_config import get_config, validate_config
-    #     
-    #     # Try to validate configuration
-    #     config = get_config()
-    #     azure_config = config.azure_openai
-    #     
-    #     if azure_config.endpoint and azure_config.api_key:
-    #         print(f"[OK] Azure OpenAI Endpoint configured: {azure_config.endpoint}")
-    #         print(f"[OK] Deployment: {azure_config.classification_deployment}")
-    #         print(f"[OK] API Version: {azure_config.api_version}")
-    #         
-    #         # Try to initialize analyzer to test connection
-    #         try:
-    #             test_analyzer = HybridContextAnalyzer(use_ai=True)
-    #             print("[OK] AI services initialized successfully")
-    #             print(f"[OK] System Mode: AI-Powered (High Confidence)")
-    #         except Exception as e:
-    #             print(f"[WARNING] AI initialization warning: {str(e)}")
-    #             print(f"[WARNING] System Mode: Pattern Matching Fallback")
-    #             print(f"          The system will use pattern-based analysis (50-90% confidence)")
-    #             print(f"          This is functional but not optimal. Check Azure OpenAI configuration.")
-    #     else:
-    #         print("[WARNING] Azure OpenAI not configured (missing endpoint or API key)")
-    #         print("[WARNING] System Mode: Pattern Matching Only")
-    # except Exception as e:
-    #     print(f"[WARNING] Health check error: {e}")
-    #     print(f"[WARNING] System will attempt to start anyway...")
-    
     print("="*80)
     port = 5002
     print(f"\nNavigate to http://127.0.0.1:{port} to access the application\n")

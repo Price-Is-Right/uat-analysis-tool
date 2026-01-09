@@ -234,26 +234,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let fetchStarted = false;
     
     // =========================================================================
-    // EARLY OVERLAY DISPLAY
+    // DELAYED OVERLAY DISPLAY
     // =========================================================================
-    // Show overlay after 1 second if search hasn't completed.
-    // This ensures users see feedback during:
-    // - Authentication popup delays
-    // - Long-running backend operations (embeddings, WIQL queries)
-    // - Network delays
+    // Show overlay only after all animated steps complete (when waiting for redirect).
+    // This prevents the overlay from appearing during Feature search authentication.
+    // The overlay will show when checkAndRedirect() is called after all steps finish.
     // =========================================================================
-    setTimeout(() => {
-        if (!searchCompleted) {
-            console.log('Showing overlay after 1 second - search still in progress');
-            const overlay = document.getElementById('finalizingOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-                console.log('Overlay display set to flex');
-            } else {
-                console.error('Could not find overlay element!');
-            }
-        }
-    }, 1000);
     
     // =========================================================================
     // BACKGROUND SEARCH EXECUTION
@@ -307,12 +293,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    let overlayShown = false;
     function checkAndRedirect() {
         if (searchCompleted) {
             // Search is done, redirect immediately
             console.log('Search completed, redirecting to results');
             window.location.href = '/search_results?eval_id=' + evalId;
         } else {
+            // Show overlay now that animations are complete and we're waiting for backend
+            if (!overlayShown) {
+                console.log('All animations complete, showing overlay while waiting for search');
+                const overlay = document.getElementById('finalizingOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                }
+                overlayShown = true;
+            }
             // Keep waiting and checking
             console.log('Still waiting for search to complete...');
             setTimeout(checkAndRedirect, 500);

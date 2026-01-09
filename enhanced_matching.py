@@ -137,7 +137,7 @@ class EnhancedMatchingConfig:
     UAT_BASE_URL = f"https://dev.azure.com/{UAT_ORGANIZATION}"
     
     # Technical Feedback Azure DevOps Configuration (for searching existing Features)
-    TFT_ORGANIZATION = "unifiedactiontracker"
+    TFT_ORGANIZATION = "acrblockers"
     TFT_PROJECT = "Technical Feedback"
     TFT_BASE_URL = f"https://dev.azure.com/{TFT_ORGANIZATION}"
     
@@ -146,29 +146,105 @@ class EnhancedMatchingConfig:
     # Azure DevOps scope for authentication
     ADO_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
     
+    # Cached credentials to avoid re-authentication
+    _uat_credential = None
+    _uat_token = None
+    _tft_credential = None
+    _tft_token = None
+    
     @staticmethod
-    def get_ado_credential():
+    def get_uat_credential():
         """
-        Get Azure credential for Azure DevOps API access.
+        Get Azure credential for UAT organization (unifiedactiontracker) access.
         
-        Development: Uses Azure CLI credential (requires 'az login')
-        Production: TODO - Switch to Service Principal authentication
+        Uses InteractiveBrowserCredential for proper permissions, with caching
+        so authentication only happens once.
         
         Returns:
-            Tuple of (credential, token) for Azure DevOps authentication
+            Tuple of (credential, token) for UAT Azure DevOps authentication
         """
-        from azure.identity import AzureCliCredential, DefaultAzureCredential
+        from azure.identity import AzureCliCredential, DefaultAzureCredential, InteractiveBrowserCredential
+        
+        # Return cached credential if available
+        if EnhancedMatchingConfig._uat_credential is not None and EnhancedMatchingConfig._uat_token is not None:
+            return EnhancedMatchingConfig._uat_credential, EnhancedMatchingConfig._uat_token
         
         try:
-            credential = AzureCliCredential()
+            # Use Interactive Browser first for proper cross-org permissions
+            print("🔐 [UAT Auth] Using Interactive Browser credential (one-time login)...")
+            credential = InteractiveBrowserCredential()
             token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+            print("✅ [UAT Auth] Authentication successful (cached for session)")
+            # Cache the credential for reuse
+            EnhancedMatchingConfig._uat_credential = credential
+            EnhancedMatchingConfig._uat_token = token.token
             return credential, token.token
         except Exception as e:
-            print(f"[WARNING] Azure CLI credential failed: {e}")
-            print("[INFO] Make sure you're logged in: az login")
-            credential = DefaultAzureCredential()
-            token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
-            return credential, token.token
+            print(f"[WARNING] Interactive Browser credential failed: {e}")
+            print("[INFO] Trying Azure CLI credential...")
+            try:
+                credential = AzureCliCredential()
+                token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+                print("✅ [UAT Auth] Authentication successful")
+                EnhancedMatchingConfig._uat_credential = credential
+                EnhancedMatchingConfig._uat_token = token.token
+                return credential, token.token
+            except Exception as cli_error:
+                print(f"⚠️  Azure CLI credential failed: {cli_error}")
+                print("[INFO] Trying default credential...")
+                credential = DefaultAzureCredential()
+                token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+                EnhancedMatchingConfig._uat_credential = credential
+                EnhancedMatchingConfig._uat_token = token.token
+                return credential, token.token
+    
+    @staticmethod
+    def get_tft_credential():
+        """
+        Get Azure credential for TFT organization (acrblockers) access.
+        
+        Reuses the cached UAT credential if available (same Microsoft account),
+        otherwise creates a new InteractiveBrowserCredential.
+        
+        Returns:
+            Tuple of (credential, token) for TFT Azure DevOps authentication
+        """
+        from azure.identity import InteractiveBrowserCredential
+        
+        # First check if TFT credential is already cached
+        if EnhancedMatchingConfig._tft_credential is not None and EnhancedMatchingConfig._tft_token is not None:
+            print("🔐 [TFT Auth] Reusing cached TFT credential...")
+            return EnhancedMatchingConfig._tft_credential, EnhancedMatchingConfig._tft_token
+        
+        # Check if we can reuse the UAT credential (same account)
+        # NOTE: This might not work if organizations are in different tenants
+        if EnhancedMatchingConfig._uat_credential is not None:
+            print("🔐 [TFT Auth] Checking if UAT credential works for TFT org...")
+            try:
+                token = EnhancedMatchingConfig._uat_credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+                print("✅ [TFT Auth] Token obtained from UAT credential")
+                # Test if this token actually works by checking if it's for the right tenant
+                # If the credential was initialized without tenant_id, it might prompt again later
+                # Cache it as TFT credential too
+                EnhancedMatchingConfig._tft_credential = EnhancedMatchingConfig._uat_credential
+                EnhancedMatchingConfig._tft_token = token.token
+                print("✅ [TFT Auth] UAT credential reused successfully")
+                return EnhancedMatchingConfig._uat_credential, token.token
+            except Exception as e:
+                print(f"⚠️  [TFT Auth] Cannot reuse UAT credential for TFT: {e}")
+                print("    This is normal if orgs are in different tenants")
+                # Fall through to create new credential
+        
+        # Create new credential with Microsoft tenant ID (for acrblockers org)
+        print("🔐 [TFT Auth] Using Interactive Browser credential...")
+        tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47"  # Microsoft tenant
+        credential = InteractiveBrowserCredential(tenant_id=tenant_id)
+        token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
+        print("✅ [TFT Auth] Authentication successful (cached for session)")
+        # Cache the credential
+        EnhancedMatchingConfig._tft_credential = credential
+        EnhancedMatchingConfig._tft_token = token.token
+        return credential, token.token
     
     # AI Analysis Configuration Parameters
     MIN_DESCRIPTION_WORDS = 5      # Minimum words required in description
@@ -612,34 +688,58 @@ class AzureDevOpsSearcher:
         """
         Initialize the Azure DevOps searcher with authentication and date filtering.
         
-        Sets up PAT token authentication and calculates the cutoff date for searching
-        work items within the configured lookback period.
+        Sets up separate credentials for UAT and TFT organizations to prevent
+        dual authentication prompts. Reuses cached credentials if available.
         """
         self.config = EnhancedMatchingConfig()
-        # Get Azure credential and token
-        self.credential, self.token = self.config.get_ado_credential()
-        self.headers = self._get_headers()
+        # Check if credentials are already cached from app startup or previous instance
+        if EnhancedMatchingConfig._uat_credential is not None and EnhancedMatchingConfig._uat_token is not None:
+            print("🔐 [UAT Auth] Reusing cached credential from previous authentication...")
+            self.uat_credential = EnhancedMatchingConfig._uat_credential
+            self.uat_token = EnhancedMatchingConfig._uat_token
+        else:
+            # Get UAT credential and token (for UAT searches) - will cache for next time
+            self.uat_credential, self.uat_token = self.config.get_uat_credential()
+        # TFT credential will be lazy-loaded when needed (for Feature searches)
+        self.tft_credential = None
+        self.tft_token = None
         self.cutoff_date = datetime.now() - timedelta(days=30 * self.config.LOOKBACK_MONTHS)
     
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self, org: str = 'uat') -> Dict[str, str]:
         """
         Generate authentication headers for Azure DevOps API calls.
         
-        Uses Azure credential (CLI or Service Principal) to obtain access token
-        for Azure DevOps REST API authentication.
+        Uses appropriate credential based on organization (UAT or TFT) to prevent
+        dual authentication prompts.
+        
+        Args:
+            org (str): Organization type - 'uat' for UAT searches, 'tft' for Feature searches
         
         Returns:
             Dict[str, str]: HTTP headers including Authorization, Content-Type, and Accept
         """
-        # Refresh token if needed
-        try:
-            _, self.token = self.config.get_ado_credential()
-        except Exception as e:
-            print(f"[ERROR] Token refresh failed: {e}")
+        if org == 'tft':
+            # Check if TFT credential is already cached from initialization
+            if self.tft_credential is None or self.tft_token is None:
+                # Check if we already have it cached globally before prompting
+                if EnhancedMatchingConfig._tft_credential is not None and EnhancedMatchingConfig._tft_token is not None:
+                    print("🔐 [TFT Auth] Using globally cached TFT credential...")
+                    self.tft_credential = EnhancedMatchingConfig._tft_credential
+                    self.tft_token = EnhancedMatchingConfig._tft_token
+                else:
+                    try:
+                        self.tft_credential, self.tft_token = self.config.get_tft_credential()
+                    except Exception as e:
+                        print(f"[ERROR] TFT credential initialization failed: {e}")
+                        raise
+            token = self.tft_token
+        else:
+            # Use UAT credentials (default)
+            token = self.uat_token
         
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.token}',
+            'Authorization': f'Bearer {token}',
             'Accept': 'application/json'
         }
     
@@ -658,41 +758,147 @@ class AzureDevOpsSearcher:
         Returns:
             List[Dict]: List of similar work items with metadata
         """
+        print("\n" + "#"*80)
+        print("[ADO SEARCHER] 🎯 SEARCH_UAT_ITEMS() EXECUTED 🎯")
+        print(f"[ADO SEARCHER] Title: {title[:100]}...")
+        print(f"[ADO SEARCHER] Description length: {len(description) if description else 0} chars")
+        print("#"*80)
+        
         try:
-            print("[SEARCH] Starting FAST UAT search (max 30 seconds)...")
+            print("[SEARCH] Starting simple UAT search (date + title keywords)...")
             start_time = time.time()
             
-            # SIMPLE FAST SEARCH - limit to recent items only for speed
-            print("[SEARCH] Using simple recent items search for speed...")
-            recent_matches = self._search_recent_items(title, description, days=90)
-            if recent_matches:
-                elapsed = time.time() - start_time
-                print(f"✅ FAST UAT search completed in {elapsed:.1f}s - Found {len(recent_matches)} matches")
-                return recent_matches
+            # SIMPLE QUERY - just like the user's screenshot:
+            # Created Date > 6/1/2025, Work Item Type = Actions, Title Contains key terms
+            from datetime import datetime, timedelta
+            cutoff_date = datetime.now() - timedelta(days=240)  # ~8 months
+            cutoff_date_str = cutoff_date.strftime('%Y-%m-%d')
             
-            # Fallback: Try key terms but with timeout protection
-            print("[SEARCH] Trying key terms search with timeout protection...")
-            try:
-                key_term_matches = self._search_by_key_terms(title, description)
-                if key_term_matches:
-                    elapsed = time.time() - start_time
-                    print(f"✅ Key terms search completed in {elapsed:.1f}s - Found {len(key_term_matches)} matches")
-                    return key_term_matches
-            except Exception as key_error:
-                print(f"[WARNING] Key terms search failed: {key_error}")
+            # Extract key terms from title (words 4+ chars, skip common words)
+            title_lower = title.lower()
+            stop_words = {'the', 'and', 'for', 'with', 'from', 'that', 'this', 'where', 'when', 'what', 'how', 'azure', 'microsoft'}
+            title_words = [word for word in title_lower.split() if len(word) > 3 and word not in stop_words]
             
-            # Final fallback: Basic keyword search
-            print("[SEARCH] Final fallback: Basic keyword search...")
-            keyword_matches = self._search_by_keywords(title, description)
+            # Use top 3 key terms
+            key_terms = title_words[:3]
             
+            if key_terms:
+                # Build simple CONTAINS query - ALL terms must match
+                contains_clause = " AND ".join([f"[System.Title] CONTAINS '{term}'" for term in key_terms])
+                
+                wiql_query = f"""
+                SELECT [System.Id], [System.Title], [System.Description], [System.CreatedDate], [System.State]
+                FROM workitems 
+                WHERE [System.TeamProject] = '{self.config.UAT_PROJECT}'
+                AND [System.WorkItemType] = 'Actions'
+                AND [System.State] <> 'Removed'
+                AND [System.CreatedDate] > '{cutoff_date_str}'
+                AND ({contains_clause})
+                ORDER BY [System.CreatedDate] DESC
+                """
+            else:
+                # Fallback - just date + work item type
+                wiql_query = f"""
+                SELECT [System.Id], [System.Title], [System.Description], [System.CreatedDate], [System.State]
+                FROM workitems 
+                WHERE [System.TeamProject] = '{self.config.UAT_PROJECT}'
+                AND [System.WorkItemType] = 'Actions'
+                AND [System.State] <> 'Removed'
+                AND [System.CreatedDate] > '{cutoff_date_str}'
+                ORDER BY [System.CreatedDate] DESC
+                """
+            
+            print(f"[SEARCH] Simple Query: CreatedDate > {cutoff_date_str}, Type=Actions, Title Contains: {key_terms}")
+            
+            wiql_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
+            response = requests.post(wiql_url, headers=self._get_headers('uat'), json={"query": wiql_query})
+            
+            if response.status_code != 200:
+                print(f"[ERROR] UAT search failed: {response.status_code}")
+                return []
+            
+            work_items = response.json().get('workItems', [])
             elapsed = time.time() - start_time
-            print(f"✅ UAT search completed in {elapsed:.1f}s - Found {len(keyword_matches)} matches")
-            return keyword_matches
+            print(f"✅ Simple UAT search completed in {elapsed:.1f}s - Found {len(work_items)} matches")
+            
+            if not work_items:
+                return []
+            
+            # Get details for matches (limit to reasonable number)
+            print(f"[SEARCH] Fetching details for {min(len(work_items), 100)} work items...")
+            return self._get_work_item_details_batch(work_items[:100], title)
             
         except Exception as e:
             print(f"❌ CRITICAL ERROR in UAT search: {str(e)}")
             import traceback
             print(f"❌ Full traceback: {traceback.format_exc()}")
+            return []
+    
+    def _get_work_item_details_batch(self, work_items: List[Dict], query_title: str = "") -> List[Dict]:
+        """Get work item details in batch with similarity scoring based on title match"""
+        try:
+            if not work_items:
+                return []
+            
+            results = []
+            work_item_ids = [item['id'] for item in work_items if 'id' in item]
+            
+            # Batch fetch for performance
+            batch_size = 50
+            for i in range(0, len(work_item_ids), batch_size):
+                batch_ids = work_item_ids[i:i + batch_size]
+                ids_param = ','.join(map(str, batch_ids))
+                
+                detail_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/workitems"
+                detail_params = {
+                    'ids': ids_param,
+                    'fields': 'System.Id,System.Title,System.Description,System.State,System.CreatedDate',
+                    'api-version': '7.0'
+                }
+                
+                detail_response = requests.get(detail_url, headers=self._get_headers('uat'), params=detail_params)
+                
+                if detail_response.status_code != 200:
+                    continue
+                
+                batch_work_items = detail_response.json().get('value', [])
+                
+                for work_item in batch_work_items:
+                    fields = work_item.get('fields', {})
+                    work_item_id = work_item.get('id')
+                    
+                    # Extract title and description from work item fields
+                    uat_title = fields.get('System.Title', '')
+                    uat_description = fields.get('System.Description', '')
+                    
+                    # Strip HTML tags from description for clean display
+                    # Azure DevOps stores descriptions as HTML, which needs cleaning for search results
+                    clean_description = re.sub(r'<[^>]+>', '', uat_description)  # Remove HTML tags like <div>, <p>, etc.
+                    clean_description = re.sub(r'\s+', ' ', clean_description).strip()  # Normalize whitespace
+                    
+                    # Calculate actual title similarity using SequenceMatcher (Python's difflib)
+                    # This provides accurate similarity scores from 0.0 (no match) to 1.0 (exact match)
+                    # SequenceMatcher uses the Ratcliff-Obershelp algorithm for sequence comparison
+                    title_similarity = SequenceMatcher(None, query_title.lower(), uat_title.lower()).ratio()
+                    
+                    # Build result dictionary with all relevant work item information
+                    results.append({
+                        'id': work_item_id,
+                        'title': uat_title,
+                        'description': clean_description[:500],  # Truncate long descriptions
+                        'similarity': round(title_similarity, 2),  # Actual calculated similarity (not hardcoded)
+                        'source': 'UAT',
+                        'url': f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_workitems/edit/{work_item_id}",
+                        'created_date': fields.get('System.CreatedDate', ''),
+                        'work_item_type': 'Actions',
+                        'state': fields.get('System.State', ''),
+                        'match_reasoning': f'Title match: {int(title_similarity * 100)}%'  # User-friendly percentage
+                    })
+            
+            return results
+            
+        except Exception as e:
+            print(f"[ERROR] Batch work item fetch failed: {e}")
             return []
     
     def _search_by_key_terms(self, title: str, description: str) -> List[Dict]:
@@ -732,23 +938,31 @@ class AzureDevOpsSearcher:
             if not search_terms:
                 return []
             
-            # Build WIQL query to find all items containing any of these terms
+            # Use 240-day (8 month) cutoff to match production query
+            from datetime import datetime, timedelta
+            cutoff_date = datetime.now() - timedelta(days=240)
+            cutoff_date_str = cutoff_date.strftime('%Y-%m-%d')
+            
+            # Build WIQL query with AND matching (all terms must appear) and date filter
             contains_clauses = []
-            for term in search_terms[:10]:  # Limit to top 10 terms for query performance
+            for term in search_terms[:5]:  # Use top 5 most important terms with AND
                 term_escaped = term.replace("'", "''")
-                contains_clauses.append(f"[System.Title] CONTAINS '{term_escaped}' OR [System.Description] CONTAINS '{term_escaped}'")
+                contains_clauses.append(f"([System.Title] CONTAINS '{term_escaped}' OR [System.Description] CONTAINS '{term_escaped}')")
             
             wiql_query = f"""
             SELECT [System.Id], [System.Title], [System.Description], [System.CreatedDate], [System.WorkItemType], [System.State]
             FROM workitems 
             WHERE [System.TeamProject] = '{self.config.UAT_PROJECT}'
             AND [System.WorkItemType] = 'Actions'
-            AND ({' OR '.join(contains_clauses)})
+            AND [System.CreatedDate] >= '{cutoff_date_str}'
+            AND ({' AND '.join(contains_clauses)})
             ORDER BY [System.CreatedDate] DESC
             """
             
+            print(f"[SEARCH] Key terms search: Using 240-day filter + AND matching for {len(search_terms[:5])} terms")
+            
             wiql_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
-            response = requests.post(wiql_url, headers=self.headers, json={"query": wiql_query})
+            response = requests.post(wiql_url, headers=self._get_headers('uat'), json={"query": wiql_query})
             
             if response.status_code == 200:
                 work_items = response.json().get('workItems', [])
@@ -783,7 +997,7 @@ class AzureDevOpsSearcher:
                 """
                 
                 wiql_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
-                response = requests.post(wiql_url, headers=self.headers, json={"query": wiql_query})
+                response = requests.post(wiql_url, headers=self._get_headers('uat'), json={"query": wiql_query})
                 
                 if response.status_code == 200:
                     work_items = response.json().get('workItems', [])
@@ -1283,7 +1497,7 @@ class AzureDevOpsSearcher:
             """
             
             wiql_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
-            response = requests.post(wiql_url, headers=self.headers, json={"query": wiql_query})
+            response = requests.post(wiql_url, headers=self._get_headers('uat'), json={"query": wiql_query})
             
             if response.status_code != 200:
                 return []
@@ -1303,19 +1517,32 @@ class AzureDevOpsSearcher:
             print(f"Semantic title search failed: {e}")
             return []
     
-    def _search_recent_items(self, title: str, description: str, days: int = 90) -> List[Dict]:
-        """Search recent items with similarity scoring"""
+    def _search_recent_items(self, title: str, description: str, days: int = 240) -> List[Dict]:
+        """Search recent items with similarity scoring (last 8 months to match production query)"""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
             cutoff_date_str = cutoff_date.strftime('%Y-%m-%d')
             
             # Extract key terms from title for targeted search
-            title_words = [word.lower() for word in title.split() if len(word) > 3]
-            key_terms = title_words[:3]  # Use top 3 meaningful words
+            # Use STRICTER matching - require words 4+ chars and filter common words
+            title_lower = title.lower()
+            title_words = [word for word in title_lower.split() if len(word) > 3 
+                          and word not in ['the', 'and', 'for', 'with', 'from', 'that', 'this', 
+                                          'where', 'when', 'what', 'how', 'azure', 'support']]
+            
+            # Extract meaningful phrases (2-3 word combinations that appear together)
+            key_phrases = []
+            for i in range(len(title_words) - 1):
+                phrase = f"{title_words[i]} {title_words[i+1]}"
+                if len(phrase) > 8:  # Meaningful phrases only
+                    key_phrases.append(phrase)
+            
+            # Use phrases if available, otherwise use top words
+            key_terms = key_phrases[:2] if key_phrases else title_words[:3]
             
             if key_terms:
-                # Build CONTAINS clause for key terms
-                contains_clause = " OR ".join([f"[System.Title] CONTAINS '{term}'" for term in key_terms])
+                # Build CONTAINS clause for key terms - ALL terms must match (AND not OR)
+                contains_clause = " AND ".join([f"[System.Title] CONTAINS '{term}'" for term in key_terms])
                 
                 wiql_query = f"""
                 SELECT [System.Id], [System.Title], [System.Description], [System.CreatedDate], [System.WorkItemType], [System.State]
@@ -1337,22 +1564,25 @@ class AzureDevOpsSearcher:
                 ORDER BY [System.CreatedDate] DESC
                 """
             
+            print(f"[SEARCH] Using {days}-day filter with key terms: {key_terms}")
+            print(f"[SEARCH] WIQL Query Preview: ...WHERE CreatedDate >= '{cutoff_date_str}' AND Title CONTAINS...")
+            
             wiql_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
-            response = requests.post(wiql_url, headers=self.headers, json={"query": wiql_query})
+            response = requests.post(wiql_url, headers=self._get_headers('uat'), json={"query": wiql_query})
             
             if response.status_code != 200:
                 print(f"Recent search failed: {response.status_code}")
                 return []
             
             work_items = response.json().get('workItems', [])
+            print(f"[SEARCH] Query returned {len(work_items)} work items (before similarity scoring)")
             if not work_items:
                 return []
             
-            print(f"Processing {len(work_items)} recent items...")
-            
-            # Limit to reasonable number for fast processing
-            limited_items = work_items[:2000]  # Process max 2000 items for speed
-            return self._get_work_item_details(limited_items, title, description)
+            # Limit to reasonable number for processing
+            max_to_process = min(500, len(work_items))
+            print(f"[SEARCH] Processing top {max_to_process} of {len(work_items)} items with semantic scoring...")
+            return self._get_work_item_details_with_semantic_scoring(work_items[:max_to_process], title, self._analyze_title_semantics(title), description)
             
         except Exception as e:
             print(f"Recent search failed: {e}")
@@ -1385,7 +1615,7 @@ class AzureDevOpsSearcher:
             """
             
             wiql_url = f"{self.config.UAT_BASE_URL}/{quote(self.config.UAT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
-            response = requests.post(wiql_url, headers=self.headers, json={"query": wiql_query})
+            response = requests.post(wiql_url, headers=self._get_headers('uat'), json={"query": wiql_query})
             
             if response.status_code != 200:
                 return []
@@ -1431,7 +1661,7 @@ class AzureDevOpsSearcher:
                     'api-version': '7.0'
                 }
                 
-                detail_response = requests.get(detail_url, headers=self.headers, params=detail_params)
+                detail_response = requests.get(detail_url, headers=self._get_headers('uat'), params=detail_params)
                 
                 if detail_response.status_code != 200:
                     continue
@@ -1619,7 +1849,7 @@ class AzureDevOpsSearcher:
             wiql_url = f"{self.config.TFT_BASE_URL}/{quote(self.config.TFT_PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
             wiql_response = requests.post(
                 wiql_url,
-                headers=self.headers,
+                headers=self._get_headers('tft'),
                 json={"query": wiql_query}
             )
             
@@ -1642,7 +1872,7 @@ class AzureDevOpsSearcher:
             
             # Get work item details
             batch_url = f"{self.config.TFT_BASE_URL}/_apis/wit/workitems?ids={','.join(work_item_ids)}&api-version={self.config.API_VERSION}"
-            batch_response = requests.get(batch_url, headers=self.headers)
+            batch_response = requests.get(batch_url, headers=self._get_headers('tft'))
             
             if batch_response.status_code != 200:
                 print(f"TFT Batch request failed: {batch_response.status_code}")
@@ -1968,11 +2198,15 @@ class EnhancedMatcher:
         try:
             if strategy.get('prioritize_uats', True):
                 print("SMART ROUTING: Prioritizing UAT search (context indicates user issue similarity)")
+                
                 uat_items = self.ado_searcher.search_uat_items(title, enhanced_search_terms)
+                
                 results['uat_items'] = self._apply_context_scoring(uat_items, context_analysis)
             else:
                 print("SMART ROUTING: Standard UAT search")
+                
                 uat_items = self.ado_searcher.search_uat_items(title, description)
+                
                 results['uat_items'] = uat_items
         except Exception as e:
             print(f"Warning: Error in intelligent UAT search: {e}")
@@ -2334,7 +2568,9 @@ class EnhancedMatcher:
             if approved_strategy.get('prioritize_uats', True):
                 print("[ROUTING] APPROVED ROUTING: Prioritizing UAT search (user confirmed user issue context)")
                 print(f"[SEARCH] Searching with enhanced terms: {enhanced_search_terms[:100]}...")
+                
                 uat_items = self.ado_searcher.search_uat_items(title, enhanced_search_terms)
+                
                 print(f"✅ UAT search returned {len(uat_items)} items")
                 results['uat_items'] = uat_items
             else:
