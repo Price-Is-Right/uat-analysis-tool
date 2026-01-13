@@ -95,6 +95,20 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
 # =============================================================================
+# API INTEGRATION - Teams Bot Support (v4.0)
+# =============================================================================
+
+# Enable CORS for API endpoints (allows Teams bot to call APIs)
+from flask_cors import CORS
+
+# Enable CORS for /api/* endpoints only
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# Register API blueprint
+from api import api_bp
+app.register_blueprint(api_bp)
+
+# =============================================================================
 # TEMPORARY DATA STORAGE SYSTEM
 # High-performance in-memory storage for large analysis results
 # =============================================================================
