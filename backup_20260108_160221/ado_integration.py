@@ -88,8 +88,7 @@ class AzureDevOpsConfig:
                 print("✅ Authentication successful (cached)")
                 AzureDevOpsConfig._cached_credential = EnhancedMatchingConfig._uat_credential
                 return EnhancedMatchingConfig._uat_credential
-        except Exception as reuse_error:
-            print(f"⚠️  Could not reuse cached credential: {reuse_error}")
+        except:
             pass  # Fall through to create new credential
         
         # Return our own cached credential if available

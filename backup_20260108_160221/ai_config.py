@@ -4,10 +4,6 @@ Centralized configuration for Azure OpenAI, embeddings, LLM classification, and 
 Designed for modular agent-based architecture
 """
 
-# Load environment variables from .env file FIRST
-from dotenv import load_dotenv
-load_dotenv()
-
 import os
 from typing import Optional, Dict, Any
 from dataclasses import dataclass, field
