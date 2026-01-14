@@ -1911,13 +1911,44 @@ class IntelligentContextAnalyzer:
             r'\b(copilot\s*studio)\b',
             # Security & Compliance
             r'\b(sentinel)\b',
+            # =====================================================================
+            # DEFENDER PRODUCT FAMILY REGEX - CRITICAL BUG FIX
+            # =====================================================================
+            # Captures full product variants including "for" suffix
+            # 
+            # Bug: Previous pattern used non-capturing groups (?:...) OUTSIDE
+            #      the main capturing group (), causing only "defender" to match.
+            # 
+            # Before: r'\b(defender)\b(?:\s+for\s+databases)?'
+            #         Input: "defender for databases"
+            #         Captured: "defender" only ❌
+            # 
+            # After:  r'\b(defender(?:\s+for\s+databases)?)\b'
+            #         Input: "defender for databases"
+            #         Captured: "defender for databases" ✅
+            # 
+            # Pattern breakdown:
+            # - \b(defender...)\b:  Main capturing group (returns matched text)
+            # - (?:\s+...)?:        Non-capturing group for optional suffix
+            # - (?:for\s+)?:        Optional "for" keyword
+            # - databases?:         "database" or "databases" (handles plurals)
+            # 
+            # Result: Captures full product name for accurate variant detection
+            # Impact: Teams Bot now shows "Defender for Databases" instead of "defender"
+            # =====================================================================
             r'\b(defender(?:\s+(?:for\s+)?(?:endpoint|identity|cloud\s+apps|office\s*365|databases?|servers?|containers?|devops|storage|key\s+vault|app\s+service|apis?|iot))?)\b',
             r'\b(entra|azure\s+ad|active\s+directory)\b',
             r'\b(purview)\b',
             r'\b(intune)\b',
             r'\b(endpoint\s+manager)\b',
             r'\b(information\s+protection)\b',
-            # Azure Services
+            # =====================================================================
+            # AZURE SERVICES REGEX - Same capturing group fix as Defender
+            # =====================================================================
+            # Captures "Azure" + optional service name (e.g., "Azure SQL Database")
+            # The optional service name is INSIDE the main capturing group
+            # This ensures we get "azure sql" not just "azure"
+            # =====================================================================
             r'\b(azure(?:\s+(?:storage|sql|cosmos|synapse|databricks|functions|app\s+service|kubernetes|aks|monitor|log\s+analytics|data\s+factory|devops))?)\b',
             r'\b(logic\s*apps)\b',
             r'\b(event\s*(?:hub|grid))\b',
@@ -1927,13 +1958,27 @@ class IntelligentContextAnalyzer:
             r'\b(synapse)\b',
             r'\b(databricks)\b',
             r'\b(openai|azure\s+openai)\b',
+            # =====================================================================
+            # COPILOT PRODUCT FAMILY REGEX - Same capturing group fix
+            # =====================================================================
+            # Captures variants like "Copilot for Microsoft 365" or just "Copilot"
+            # Pattern ensures full variant is captured, not just base "copilot"
+            # =====================================================================
             r'\b(copilot(?:\s+(?:for\s+)?(?:microsoft\s+365|m365|security|dynamics))?)\b',
             r'\b(cognitive\s+services)\b',
             # Developer & DevOps
+            # =====================================================================
+            # GITHUB/VISUAL STUDIO/DYNAMICS REGEX - Same capturing group pattern
+            # =====================================================================
+            # All use the same fix: optional suffix INSIDE capturing group
+            # =====================================================================
+            # GitHub pattern - captures "github" or "github copilot" or "github actions"
             r'\b(github(?:\s+(?:copilot|actions|advanced\s+security))?)\b',
+            # Visual Studio pattern - captures "visual studio" or "visual studio code"
             r'\b(visual\s+studio(?:\s+(?:code|online))?)\b',
             r'\b(azure\s+devops)\b',
             # Dynamics & CRM
+            # Dynamics pattern - captures "dynamics 365" or variants like "dynamics 365 sales"
             r'\b(dynamics\s*365(?:\s+(?:sales|customer\s+service|field\s+service))?)\b',
             # Connectors & Integration
             r'\b(connector)\b',
@@ -1941,11 +1986,14 @@ class IntelligentContextAnalyzer:
             r'\b(api\s+management)\b'
         ]
         
+        # Execute all patterns and collect matched terms
+        # re.findall returns list of captured groups (content in parentheses)
         detected_terms = []
         for pattern in product_patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             detected_terms.extend(matches)
         
+        # Log detected terms for debugging
         with open('C:/Projects/Hack/debug_ica.log', 'a', encoding='utf-8') as f:
             f.write(f"\n[DEBUG ICA] All detected terms from patterns: {detected_terms}\n")
             f.flush()
@@ -1954,13 +2002,32 @@ class IntelligentContextAnalyzer:
         if not detected_terms:
             return result
             
-        # Fetch Microsoft product knowledge dynamically (with caching)
+        # =====================================================================
+        # PRODUCT KNOWLEDGE LOOKUP
+        # =====================================================================
+        # Fetch Microsoft product database (cached for performance)
+        # Contains: title, description, URL, category for each product
+        # =====================================================================
         microsoft_products = self._fetch_microsoft_products()
         print(f"[DEBUG ICA] microsoft_products dictionary keys: {list(microsoft_products.keys())[:10]}...")
         
+        # Process each unique detected term
         for term in set(detected_terms):
             term_clean = term.lower().strip()
             print(f"[DEBUG ICA] Processing term: '{term}' -> cleaned: '{term_clean}'")
+            
+            # =====================================================================
+            # PRODUCT NORMALIZATION FOR LOOKUP
+            # =====================================================================
+            # Problem: Detected term might be specific variant but knowledge base
+            #          uses base product name as key
+            # Example: Detected "defender for databases" but DB key is "defender"
+            # 
+            # Solution: Try both specific term and normalized base term
+            # - "defender for databases" -> try "defender for databases" then "defender"
+            # - "azure sql" -> try "azure sql" then "sql"
+            # - "copilot for microsoft 365" -> try full then "copilot"
+            # =====================================================================
             
             # Normalize product variations to base product name for lookup
             # e.g., "defender for databases" -> "defender"
@@ -1974,18 +2041,27 @@ class IntelligentContextAnalyzer:
                 if term_clean not in microsoft_products:
                     base_term = term_clean.replace("azure ", "").strip()
             
-            # Try both the specific term and the base term
+            # Try both the specific term and the base term for database lookup
             lookup_term = term_clean if term_clean in microsoft_products else base_term
             
             if lookup_term in microsoft_products:
                 product_data = microsoft_products[lookup_term]
                 
-                # Use the full matched term for display (more specific)
+                # =====================================================================
+                # DISPLAY NAME CONSTRUCTION
+                # =====================================================================
+                # Priority: Use the FULL matched term for display (more specific)
+                # - Detected "defender for databases" -> Display "Defender For Databases"
+                # - NOT just "Microsoft Defender" (too generic)
+                # 
+                # Fallback: Use title from database if specific term not different
+                # =====================================================================
                 display_name = term_clean if term_clean != lookup_term else product_data.get("title", term_clean)
                 
+                # Build product information object for context analysis
                 product_info = {
-                    "name": term_clean,  # Keep full term (e.g., "defender for databases")
-                    "title": display_name.title(),  # Capitalize properly
+                    "name": term_clean,  # Full matched term (e.g., "defender for databases")
+                    "title": display_name.title(),  # Properly capitalized display name
                     "description": product_data["description"][:300] + "..." if len(product_data["description"]) > 300 else product_data["description"],
                     "url": product_data.get("url", "https://learn.microsoft.com"),
                     "is_microsoft_product": True,

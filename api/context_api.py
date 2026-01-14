@@ -78,12 +78,23 @@ def analyze_context():
         # Perform context analysis
         evaluation_data = matcher.analyze_context_for_evaluation(title, description, impact)
         
+        # =====================================================================
+        # PRODUCT DETECTION EXTRACTION
+        # =====================================================================
+        # Extract detected Microsoft products from the context analysis response.
+        # Products can come from multiple sources:
+        # 1. pattern_reasoning.microsoft_products - Regex-based pattern matching
+        #    (most specific, includes variants like "Defender for Databases")
+        # 2. domain_entities.technologies - General tech keywords
+        # 3. domain_entities.azure_services - Azure service names
+        # =====================================================================
+        
         # Extract context analysis from evaluation_data
         context_analysis = evaluation_data.get('context_analysis', {})
         
         # Extract detected products from multiple sources
         domain_entities = context_analysis.get('domain_entities', {})
-        # pattern_reasoning is inside context_analysis
+        # pattern_reasoning is inside context_analysis and contains the regex-matched products
         pattern_reasoning = context_analysis.get('pattern_reasoning', {})
         detected_products = []
         
@@ -91,6 +102,22 @@ def analyze_context():
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         print(f"[DEBUG API {timestamp}] NEW CODE LOADED - domain_entities received: {domain_entities}")
         print(f"[DEBUG API {timestamp}] pattern_reasoning keys: {pattern_reasoning.keys() if pattern_reasoning else 'None'}")
+        
+        # =====================================================================
+        # SMART PRODUCT FILTERING
+        # =====================================================================
+        # Problem: Pattern matching detects both generic products ("Microsoft Defender")
+        #          and specific variants ("Defender for Databases"). We want to show
+        #          only the most specific products to avoid confusion.
+        # 
+        # Solution: Filter products based on specificity:
+        #   - SPECIFIC: Contains " for " (e.g., "Defender for Endpoint")
+        #               or special suffixes (" Studio", " Apps")
+        #   - GENERIC: Base product names (e.g., "Microsoft Defender", "Azure")
+        # 
+        # If specific variants exist, return ONLY those (user cares about the variant).
+        # If no specific variants, return generic products (better than nothing).
+        # =====================================================================
         
         # First, get Microsoft products from pattern_reasoning (these are the official detected products)
         microsoft_products = pattern_reasoning.get('microsoft_products', [])
@@ -137,9 +164,42 @@ def analyze_context():
         
         print(f"[DEBUG API] Combined detected_products: {detected_products}")
         
-        # Remove duplicates with smart normalization (handle plurals, case, etc.)
+        # =====================================================================
+        # DEDUPLICATION WITH PLURAL NORMALIZATION
+        # =====================================================================
+        # Problem: Pattern matching can detect both singular and plural forms
+        #          of the same product, causing duplicates in the results.
+        # 
+        # Examples:
+        #   - "Defender for Databases" and "Defender for Database" (plural vs singular)
+        #   - "azure databases" and "azure database"
+        # 
+        # Solution: Normalize by:
+        #   1. Convert to lowercase (case insensitive comparison)
+        #   2. Strip whitespace (remove leading/trailing spaces)
+        #   3. Remove trailing 's' (normalize plurals)
+        #   4. Track in set to prevent duplicates
+        # 
+        # Example Flow:
+        #   Input: ["Defender for Databases", "Defender for Database", "Azure SQL"]
+        #   Normalized: ["defender for database", "defender for database", "azure sql"]
+        #   Deduplicated: ["Defender for Databases", "Azure SQL"]
+        #   (First occurrence kept, subsequent duplicates skipped)
+        # 
+        # Result: Teams Bot shows clean product list without duplicates
+        # =====================================================================
+        
         def normalize_product_name(name):
-            """Normalize product name for deduplication"""
+            """
+            Normalize product name for deduplication.
+            
+            Handles:
+            - Case insensitivity ("Defender" == "defender")
+            - Plural variations ("Databases" == "Database")
+            
+            Returns:
+                Normalized lowercase string without trailing 's'
+            """
             normalized = str(name).lower().strip()
             # Normalize common plural variations
             normalized = normalized.rstrip('s')  # Remove trailing 's' for plural forms
