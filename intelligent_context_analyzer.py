@@ -1911,14 +1911,14 @@ class IntelligentContextAnalyzer:
             r'\b(copilot\s*studio)\b',
             # Security & Compliance
             r'\b(sentinel)\b',
-            r'\b(defender)\b(?:\s+(?:for\s+)?(?:endpoint|identity|cloud\s+apps|office\s*365))?',
+            r'\b(defender(?:\s+(?:for\s+)?(?:endpoint|identity|cloud\s+apps|office\s*365|databases?|servers?|containers?|devops|storage|key\s+vault|app\s+service|apis?|iot))?)\b',
             r'\b(entra|azure\s+ad|active\s+directory)\b',
             r'\b(purview)\b',
             r'\b(intune)\b',
             r'\b(endpoint\s+manager)\b',
             r'\b(information\s+protection)\b',
             # Azure Services
-            r'\b(azure)\b(?:\s+(?:storage|sql|cosmos|synapse|databricks|functions|app\s+service|kubernetes|aks|monitor|log\s+analytics|data\s+factory|devops))?',
+            r'\b(azure(?:\s+(?:storage|sql|cosmos|synapse|databricks|functions|app\s+service|kubernetes|aks|monitor|log\s+analytics|data\s+factory|devops))?)\b',
             r'\b(logic\s*apps)\b',
             r'\b(event\s*(?:hub|grid))\b',
             r'\b(service\s*bus)\b',
@@ -1927,14 +1927,14 @@ class IntelligentContextAnalyzer:
             r'\b(synapse)\b',
             r'\b(databricks)\b',
             r'\b(openai|azure\s+openai)\b',
-            r'\b(copilot)\b(?:\s+(?:for\s+)?(?:microsoft\s+365|m365|security|dynamics))?',
+            r'\b(copilot(?:\s+(?:for\s+)?(?:microsoft\s+365|m365|security|dynamics))?)\b',
             r'\b(cognitive\s+services)\b',
             # Developer & DevOps
-            r'\b(github)\b(?:\s+(?:copilot|actions|advanced\s+security))?',
-            r'\b(visual\s+studio)\b(?:\s+(?:code|online))?',
+            r'\b(github(?:\s+(?:copilot|actions|advanced\s+security))?)\b',
+            r'\b(visual\s+studio(?:\s+(?:code|online))?)\b',
             r'\b(azure\s+devops)\b',
             # Dynamics & CRM
-            r'\b(dynamics\s*365)\b(?:\s+(?:sales|customer\s+service|field\s+service))?',
+            r'\b(dynamics\s*365(?:\s+(?:sales|customer\s+service|field\s+service))?)\b',
             # Connectors & Integration
             r'\b(connector)\b',
             r'\b(logic\s+apps)\b',
@@ -1946,20 +1946,46 @@ class IntelligentContextAnalyzer:
             matches = re.findall(pattern, text, re.IGNORECASE)
             detected_terms.extend(matches)
         
+        with open('C:/Projects/Hack/debug_ica.log', 'a', encoding='utf-8') as f:
+            f.write(f"\n[DEBUG ICA] All detected terms from patterns: {detected_terms}\n")
+            f.flush()
+        print(f"[DEBUG ICA] All detected terms from patterns: {detected_terms}")
+        
         if not detected_terms:
             return result
             
         # Fetch Microsoft product knowledge dynamically (with caching)
         microsoft_products = self._fetch_microsoft_products()
+        print(f"[DEBUG ICA] microsoft_products dictionary keys: {list(microsoft_products.keys())[:10]}...")
         
         for term in set(detected_terms):
             term_clean = term.lower().strip()
-            if term_clean in microsoft_products:
-                product_data = microsoft_products[term_clean]
+            print(f"[DEBUG ICA] Processing term: '{term}' -> cleaned: '{term_clean}'")
+            
+            # Normalize product variations to base product name for lookup
+            # e.g., "defender for databases" -> "defender"
+            base_term = term_clean
+            if term_clean.startswith("defender for "):
+                base_term = "defender"
+            elif term_clean.startswith("copilot for "):
+                base_term = "copilot"
+            elif term_clean.startswith("azure "):
+                # Keep "azure openai" as-is, normalize others
+                if term_clean not in microsoft_products:
+                    base_term = term_clean.replace("azure ", "").strip()
+            
+            # Try both the specific term and the base term
+            lookup_term = term_clean if term_clean in microsoft_products else base_term
+            
+            if lookup_term in microsoft_products:
+                product_data = microsoft_products[lookup_term]
+                
+                # Use the full matched term for display (more specific)
+                display_name = term_clean if term_clean != lookup_term else product_data.get("title", term_clean)
                 
                 product_info = {
-                    "name": term_clean,
-                    "title": product_data["title"],
+                    "name": term_clean,  # Keep full term (e.g., "defender for databases")
+                    "title": display_name.title(),  # Capitalize properly
                     "description": product_data["description"][:300] + "..." if len(product_data["description"]) > 300 else product_data["description"],
                     "url": product_data.get("url", "https://learn.microsoft.com"),
                     "is_microsoft_product": True,
@@ -1967,7 +1993,7 @@ class IntelligentContextAnalyzer:
                 }
                 
                 result["detected_products"].append(product_info)
-                result["reasoning"].append(f"[OK] Identified Microsoft product '{term}': {product_data['title']}")
+                result["reasoning"].append(f"[OK] Identified Microsoft product '{term}': {display_name}")
             else:
                 # Check if it could be a Microsoft product but not in our database
                 if any(ms_indicator in text.lower() for ms_indicator in ["microsoft", "office", "365", "m365"]):

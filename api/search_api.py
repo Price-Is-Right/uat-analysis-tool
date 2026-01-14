@@ -18,6 +18,75 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def _generate_smart_search_query(title, description, services, technologies, key_concepts, semantic_keywords, category, intent, reasoning):
+    """
+    Use LLM to generate an intelligent Microsoft Learn search query.
+    
+    Instead of blindly concatenating terms, this understands the actual need
+    and generates targeted search queries.
+    """
+    try:
+        from openai import AzureOpenAI
+        
+        client = AzureOpenAI(
+            azure_endpoint=os.environ.get('AZURE_OPENAI_ENDPOINT'),
+            api_key=os.environ.get('AZURE_OPENAI_API_KEY'),
+            api_version="2024-08-01-preview"
+        )
+        
+        # Build context for LLM
+        context_parts = []
+        if services:
+            context_parts.append(f"Azure Services: {', '.join(services[:3])}")
+        if technologies:
+            context_parts.append(f"Technologies: {', '.join(technologies[:2])}")
+        if reasoning:
+            context_parts.append(f"Analysis: {reasoning[:200]}")
+        
+        prompt = f"""Generate a concise, effective Microsoft Learn search query (3-5 words max) for this Azure issue.
+
+ISSUE TITLE: {title[:150]}
+DESCRIPTION: {description[:300]}
+
+{chr(10).join(context_parts)}
+
+RULES:
+- Focus on the ACTUAL NEED (e.g., "connector", "integration", "migration", "availability")
+- Use official Azure service names (e.g., "Cosmos DB" not "CosmosDB")
+- Remove filler words, partial phrases, location names
+- For connectivity/integration: include "connector" or "SDK" or "integration"
+- For features: use the service name (e.g., "Route Server" not "capability")
+- For availability: include "regions" or "availability"
+- For capacity: include "quota" or "capacity"
+
+EXAMPLES:
+- "CosmosDB to Spark in Korea" → "Cosmos DB Spark connector"
+- "need XDR capabilities" → "Microsoft Defender XDR capabilities"
+- "service not available in region" → "Azure service regional availability"
+
+Generate ONLY the search query (3-5 words), nothing else:"""
+
+        response = client.chat.completions.create(
+            model='gpt-4o-02',  # Use the correct deployment name
+            messages=[
+                {"role": "system", "content": "You are a Microsoft Learn documentation search expert. Generate concise, effective search queries."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=50
+        )
+        
+        smart_query = response.choices[0].message.content.strip()
+        smart_query = smart_query.strip('"').strip("'")
+        
+        print(f"[SMART SEARCH] AI-generated query: '{smart_query}'")
+        return smart_query
+        
+    except Exception as e:
+        print(f"[SMART SEARCH] Query generation failed: {e}, using title")
+        return title
+
 @api_bp.route('/search/resources', methods=['POST'])
 def search_resources():
     """
@@ -30,7 +99,11 @@ def search_resources():
         # Get request data
         data = request.get_json()
         
+        print(f"[SEARCH API] ===== RESOURCE SEARCH REQUEST =====")
+        print(f"[SEARCH API] Raw request data: {data}")
+        
         if not data:
+            print(f"[SEARCH API] ERROR: No JSON data provided")
             return jsonify({
                 'error': 'No JSON data provided',
                 'status': 'error'
@@ -42,9 +115,13 @@ def search_resources():
         category = data.get('category', '')
         intent = data.get('intent', '')
         domain_entities = data.get('domain_entities', {})
+        detected_products = data.get('detected_products', [])  # From context analysis API
+        
+        print(f"[SEARCH API] Extracted - title: '{title}', description length: {len(description)}")
         
         # Validate required fields
         if not title or not description:
+            print(f"[SEARCH API] ERROR: Missing required fields - title: {bool(title)}, description: {bool(description)}")
             return jsonify({
                 'error': 'Title and description are required',
                 'status': 'error'
@@ -53,17 +130,114 @@ def search_resources():
         # Import search service
         from search_service import ResourceSearchService
         
+        # Extract context for smart query generation
+        services = domain_entities.get('services', [])
+        technologies = domain_entities.get('technologies', [])
+        microsoft_products = domain_entities.get('microsoft_products', [])
+        products = domain_entities.get('products', [])
+        key_concepts = data.get('key_concepts', [])
+        semantic_keywords = data.get('semantic_keywords', [])
+        reasoning = data.get('reasoning', '')
+        
+        # Prioritize detected_products from context API over domain_entities
+        # detected_products contains the smart Microsoft product detection
+        if detected_products:
+            all_services = detected_products + services + technologies
+        else:
+            # Fallback: Extract products from title if not provided
+            # This helps when bot doesn't pass detected_products
+            print("[SEARCH API] No detected_products provided, extracting from title...")
+            title_products = []
+            title_lower = title.lower()
+            
+            # Common Microsoft product patterns
+            if 'defender' in title_lower:
+                if 'database' in title_lower:
+                    title_products.append('Defender for Databases')
+                elif 'endpoint' in title_lower:
+                    title_products.append('Defender for Endpoint')
+                else:
+                    title_products.append('Microsoft Defender')
+            if 'sentinel' in title_lower:
+                title_products.append('Microsoft Sentinel')
+            if 'azure' in title_lower:
+                # Extract Azure service name
+                words = title.split()
+                for i, word in enumerate(words):
+                    if word.lower() == 'azure' and i + 1 < len(words):
+                        title_products.append(f"Azure {words[i+1]}")
+                        break
+            
+            all_services = title_products + services + technologies + microsoft_products + products
+            print(f"[SEARCH API] Extracted from title: {title_products}")
+        
+        # Generate AI-powered search query
+        smart_query = _generate_smart_search_query(
+            title=title,
+            description=description,
+            services=all_services[:5],  # Limit to top 5
+            technologies=technologies[:3],
+            key_concepts=key_concepts,
+            semantic_keywords=semantic_keywords,
+            category=category,
+            intent=intent,
+            reasoning=reasoning
+        )
+        
+        print(f"[RESOURCE SEARCH] Original title: {title}")
+        print(f"[RESOURCE SEARCH] AI-enhanced query: {smart_query}")
+        print(f"[RESOURCE SEARCH] Category: {category}, Intent: {intent}")
+        print(f"[RESOURCE SEARCH] Services: {all_services[:5]}")
+        print(f"[RESOURCE SEARCH] DEBUG - detected_products received: {detected_products}")
+        print(f"[RESOURCE SEARCH] DEBUG - domain_entities: {domain_entities}")
+        print(f"[RESOURCE SEARCH] DEBUG - all_services combined: {all_services}")
+        
         # Create search service instance
         search_service = ResourceSearchService(use_deep_search=False)
         
-        # Perform comprehensive search
+        print(f"[RESOURCE SEARCH] Calling search_service.search_all()...")
+        
+        # Perform comprehensive search with AI-enhanced query
         search_results = search_service.search_all(
-            title=title,
+            title=smart_query,  # Use AI-enhanced query instead of raw title
             description=description,
             category=category,
             intent=intent,
             domain_entities=domain_entities
         )
+        
+        print(f"[RESOURCE SEARCH] Search completed. Results:")
+        print(f"[RESOURCE SEARCH]   - learn_docs: {len(search_results.learn_docs)} found")
+        print(f"[RESOURCE SEARCH]   - similar_products: {len(search_results.similar_products)} found")
+        print(f"[RESOURCE SEARCH]   - regional_options: {len(search_results.regional_options)} found")
+        
+        # Add Microsoft Learn documentation (search_service returns empty learn_docs)
+        from search_service import SearchResult
+        learn_docs = []
+        
+        if all_services:
+            # Create documentation links for detected services/products
+            for idx, service in enumerate(all_services[:3]):  # Top 3
+                service_slug = service.lower().replace(' ', '-').replace('microsoft-', '').replace('azure-', '')
+                learn_docs.append(SearchResult(
+                    title=f"{service} Documentation",
+                    url=f"https://learn.microsoft.com/en-us/search/?terms={service.replace(' ', '+')}",
+                    snippet=f"Official Microsoft Learn documentation and guides for {service}",
+                    source="learn",
+                    relevance_score=0.9 - (idx * 0.1)
+                ))
+        
+        # Add general search link with AI-enhanced query
+        learn_docs.append(SearchResult(
+            title=f"Search Microsoft Learn: {smart_query}",
+            url=f"https://learn.microsoft.com/en-us/search/?terms={smart_query.replace(' ', '+')}",
+            snippet=f"Comprehensive search results for: {smart_query}",
+            source="learn",
+            relevance_score=0.8
+        ))
+        
+        search_results.learn_docs = learn_docs
+        print(f"[RESOURCE SEARCH] Added {len(learn_docs)} Microsoft Learn documentation links")
         
         # Convert results to JSON-serializable format
         response = {
