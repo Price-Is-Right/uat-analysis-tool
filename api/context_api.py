@@ -175,13 +175,40 @@ def analyze_context():
                 detected_products.extend(generic_products)
                 print(f"[DEBUG API] No specific variants, using {len(generic_products)} generic products")
         
-        # If no Microsoft products found, fall back to domain_entities
-        # ⚠️ CRITICAL FIX (Jan 16 2026): NEVER use domain_entities for products
-        # The domain_entities contains keywords/concepts, NOT actual product names
-        # ONLY use microsoft_products from the AI detection - if empty, show nothing
+        # If no Microsoft products found, use domain_entities with smart filtering
+        # ⚠️ CRITICAL FIX (Jan 16 2026): Domain entities DOES contain correct Azure services
+        # BUT we need to filter out action verbs and validate they're real services
         if not detected_products:
-            print(f"[DEBUG API] No Microsoft products detected - NOT falling back to domain_entities")
-            # Don't fall back to domain_entities - it contains keywords, not products
+            print(f"[DEBUG API] No Microsoft products, checking domain_entities for Azure services")
+            
+            # Common verbs and actions to exclude (NOT product names)
+            excluded_terms = {
+                'migrate', 'create', 'deploy', 'configure', 'setup', 'install',
+                'update', 'upgrade', 'delete', 'remove', 'scale', 'monitor',
+                'import', 'export', 'recovery', 'backup'
+            }
+            
+            # Combine azure_services from domain_entities with filtering
+            if 'azure_services' in domain_entities and isinstance(domain_entities['azure_services'], list):
+                print(f"[DEBUG API] azure_services contains: {domain_entities['azure_services']}")
+                for item in domain_entities['azure_services']:
+                    item_lower = str(item).lower().strip()
+                    
+                    # Skip single-word action verbs
+                    if item_lower in excluded_terms:
+                        print(f"[DEBUG API] Skipping excluded term: {item}")
+                        continue
+                    
+                    # Skip if it's ONLY an action verb with no service name
+                    # e.g., skip "migrate" but allow "azure migrate" or "migration service"
+                    if item_lower in excluded_terms and 'azure' not in item_lower:
+                        print(f"[DEBUG API] Skipping action verb: {item}")
+                        continue
+                    
+                    # Valid Azure service - add it with proper capitalization
+                    # Convert to title case for display
+                    detected_products.append(item.title() if isinstance(item, str) else item)
+                    print(f"[DEBUG API] Added Azure service: {item}")
         
         print(f"[DEBUG API] Combined detected_products: {detected_products}")
         

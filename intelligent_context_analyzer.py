@@ -1726,12 +1726,20 @@ class IntelligentContextAnalyzer:
         
         # Extract Azure services from static list (fallback)
         # ⚠️ BUG FIX (Jan 16 2026): Use word boundary matching to avoid partial matches
-        # Problem: "migrate" in "migrate to Azure" matched "migrate" service
-        # Solution: Only match complete service names with word boundaries
+        # AND filter out action verbs that aren't actually services
         text_lower = text.lower()
+        
+        # Action verbs to exclude from azure_services list
+        excluded_verbs = {'migrate', 'import', 'export', 'recovery', 'backup'}
+        
         for category, services in self.azure_services.items():
             for service in services:
                 service_lower = service.lower()
+                
+                # Skip if it's a single-word action verb (not a real service name)
+                if service_lower in excluded_verbs:
+                    continue
+                
                 # Use word boundary regex for exact matching
                 # This prevents "migrate" from matching in "migrate to Azure"
                 pattern = r'\b' + re.escape(service_lower) + r'\b'
