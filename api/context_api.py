@@ -176,50 +176,12 @@ def analyze_context():
                 print(f"[DEBUG API] No specific variants, using {len(generic_products)} generic products")
         
         # If no Microsoft products found, fall back to domain_entities
+        # ⚠️ CRITICAL FIX (Jan 16 2026): NEVER use domain_entities for products
+        # The domain_entities contains keywords/concepts, NOT actual product names
+        # ONLY use microsoft_products from the AI detection - if empty, show nothing
         if not detected_products:
-            # ⚠️ BUG FIX (Jan 16 2026): Filter out invalid product keywords
-            # Problem: domain_entities['azure_services'] contains partial matches like:
-            #   - "migrate" (from "migrate to Azure Route Server")
-            #   - "vpn gateway" (generic term, not the actual product)
-            # Solution: Only use terms that look like real Azure product names
-            #   - Must contain "Azure" OR be in a known product list
-            #   - Filter out common verbs/actions (migrate, create, deploy)
-            #   - Filter out generic infrastructure terms without "Azure" prefix
-            
-            # Common verbs and actions to exclude (NOT product names)
-            excluded_terms = {
-                'migrate', 'create', 'deploy', 'configure', 'setup', 'install',
-                'update', 'upgrade', 'delete', 'remove', 'scale', 'monitor'
-            }
-            
-            # Generic terms that need "Azure" prefix to be valid products
-            needs_azure_prefix = {
-                'vpn', 'gateway', 'firewall', 'load balancer', 'database',
-                'storage', 'network', 'server', 'virtual machine', 'vm'
-            }
-            
-            # Combine services, products, and technologies into detected_products with filtering
-            for key in ['azure_services', 'services', 'products']:
-                if key in domain_entities and isinstance(domain_entities[key], list):
-                    print(f"[DEBUG API] Key '{key}' contains: {domain_entities[key]}")
-                    for item in domain_entities[key]:
-                        item_lower = str(item).lower().strip()
-                        
-                        # Skip excluded action verbs
-                        if item_lower in excluded_terms:
-                            print(f"[DEBUG API] Skipping excluded term: {item}")
-                            continue
-                        
-                        # Check if generic term needs Azure prefix
-                        needs_prefix = any(term in item_lower for term in needs_azure_prefix)
-                        has_azure = 'azure' in item_lower or 'microsoft' in item_lower
-                        
-                        if needs_prefix and not has_azure:
-                            print(f"[DEBUG API] Skipping generic term without Azure prefix: {item}")
-                            continue
-                        
-                        # Valid product - add it
-                        detected_products.append(item)
+            print(f"[DEBUG API] No Microsoft products detected - NOT falling back to domain_entities")
+            # Don't fall back to domain_entities - it contains keywords, not products
         
         print(f"[DEBUG API] Combined detected_products: {detected_products}")
         
