@@ -17,10 +17,13 @@ Write-Host "   Endpoint: $env:AZURE_OPENAI_ENDPOINT" -ForegroundColor Gray
 Write-Host "   Classification Model: $env:AZURE_OPENAI_CLASSIFICATION_DEPLOYMENT" -ForegroundColor Gray
 Write-Host "   Embedding Model: $env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT" -ForegroundColor Gray
 
-# Stop any existing Python processes
-Write-Host "`n[2/4] Stopping any existing Python processes..." -ForegroundColor Yellow
-Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 2
+# Check for existing Python processes (but don't stop them aggressively)
+Write-Host "`n[2/4] Checking for existing Python processes..." -ForegroundColor Yellow
+$pythonProcesses = Get-Process python -ErrorAction SilentlyContinue
+if ($pythonProcesses) {
+    Write-Host "   Found $($pythonProcesses.Count) Python process(es) running" -ForegroundColor Gray
+}
+Start-Sleep -Seconds 1
 
 # Verify Python is available
 Write-Host "`n[3/4] Verifying Python installation..." -ForegroundColor Yellow

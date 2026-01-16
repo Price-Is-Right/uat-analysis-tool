@@ -1,13 +1,61 @@
 {
-  "33596badb8422769c8c972e90789e22c564bf51e05535f5a83dca67a5063c661": {
+  "9f067f3ce8c0e95f96fd9b9a28a4865bd85dde6ceebc970fc14c8f61a0d461ed": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is explicitly requesting an enhancement to the Azure Batch service to enable on-demand autoscale initiation, which is currently not supported. This aligns with a feature_request and intent=requesting_feature. The stated impact indicates a high business impact due to the need to work around the current limitations."
+    },
+    "created_at": "2026-01-14T09:37:11.032832",
+    "ttl_days": 7,
+    "hits": 3
+  },
+  "aa05ba7d6281fd2e6de51134434c2726c32b850616e0fcf59a84967382d727c0": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting a specific enhancement to Azure Batch to enable immediate autoscale initiation while preserving the AutoScale formula. This is a clear feature request as they are asking for a new capability that is not currently available. The stated impact indicates a high business need due to customer demand responsiveness."
+    },
+    "created_at": "2026-01-14T10:27:54.074712",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "d9070b1a2448baab907f5a9411a053df75f583e7113a23fc2759c01bfe2225c2": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.9,
+      "reasoning": "The customer is requesting specific capabilities (first-party agents like Researcher and Analyst) to be enabled in GCC environments. This aligns with a feature_request and intent=requesting_feature. The stated impact highlights operational efficiency and modernization goals, indicating a high business impact. While compliance is mentioned, the primary focus is on enabling specific features rather than seeking compliance support."
+    },
+    "created_at": "2026-01-14T11:03:40.373682",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "5f506e2614e860a094cdcad7c74ff3b74a258ba49f9a9f34617ad06127668c0f": {
     "data": {
       "category": "technical_support",
       "intent": "troubleshooting",
       "business_impact": "high",
       "confidence": 0.95,
-      "reasoning": "The inquiry mentions testing the Azure OpenAI connection, which suggests a technical issue or validation process. The stated impact is high, and the context indicates troubleshooting is required to resolve the connection issue."
+      "reasoning": "The customer is reporting a technical issue where User Experience Sync storage fails to attach, causing sessions to fall back to temporary profiles. This is a clear technical problem requiring troubleshooting. The issue impacts all Frontline Shared Cloud PCs and Cloud Apps, indicating a high business impact due to the widespread nature of the problem."
     },
-    "created_at": "2026-01-09T09:24:19.229768",
+    "created_at": "2026-01-14T13:08:25.018847",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "bd72e0a75f4d877a61f72bc967d0b576b9ed3f9143771a6972d107cec0c50282": {
+    "data": {
+      "category": "technical_support",
+      "intent": "troubleshooting",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is reporting a technical issue where User Experience Sync storage fails to attach, causing sessions to fall back to temporary profiles. This is a clear technical problem requiring troubleshooting. The issue impacts all Frontline Shared Cloud PCs and Cloud Apps, indicating a high business impact due to the widespread nature of the problem."
+    },
+    "created_at": "2026-01-14T13:08:35.287222",
     "ttl_days": 7,
     "hits": 0
   },
@@ -17,81 +65,69 @@
       "intent": "requesting_feature",
       "business_impact": "critical",
       "confidence": 0.95,
-      "reasoning": "The customer is explicitly requesting a specific feature (session-level context injection in AVD) to address a critical functional gap compared to AWS AppStream 2.0. They are not asking about timelines or roadmap plans but are instead seeking a solution to enable this functionality. The stated impact is critical as it blocks a high-value PoC and risks losing a competitive opportunity. The classification aligns with the feature_request category and requesting_feature intent."
+      "reasoning": "The customer is explicitly requesting a specific feature (session-level context injection in AVD) to address a functional gap compared to AWS AppStream 2.0. They are not asking about timelines or roadmap plans but are instead seeking a solution to enable a critical capability. The stated impact is critical as it blocks a high-value PoC and risks losing a competitive opportunity. The classification aligns with the provided pattern analysis and the explicit request for a feature."
     },
-    "created_at": "2026-01-09T09:38:27.605979",
+    "created_at": "2026-01-16T08:16:01.407826",
     "ttl_days": 7,
     "hits": 0
   },
-  "eda283869a1db1b6839e1aa43aafd65e5c81e2ef57c74a1b6b0fe46cfd66eb49": {
+  "11fc4f5e7a630e2ef18fcb804b1fc8f13cec9c3db687b65cff117b014031b40b": {
     "data": {
-      "category": "capacity",
-      "intent": "capacity_request",
-      "business_impact": "high",
-      "confidence": 0.95,
-      "reasoning": "The customer is explicitly requesting capacity for an App Service Plan (SKU B1 for Linux) and mentions a blocked capacity request. This aligns with the 'capacity' category and 'capacity_request' intent. The stated impact and the need for future capacity requests indicate a high business impact."
-    },
-    "created_at": "2026-01-09T09:41:02.126525",
-    "ttl_days": 7,
-    "hits": 0
-  },
-  "f0e34d823fafc904d28ae92d1e030fae043696552c569db3b1365cb77d3547bc": {
-    "data": {
-      "category": "data_sovereignty",
-      "intent": "sovereignty_concern",
+      "category": "technical_support",
+      "intent": "reporting_issue",
       "business_impact": "critical",
       "confidence": 0.95,
-      "reasoning": "The customer is expressing concerns about data residency requirements and the availability of speech-to-text models in Europe. This aligns with data sovereignty issues. The stated impact is critical due to potential revenue loss and loss of customer confidence."
+      "reasoning": "The customer is reporting a technical issue with Azure OpenAI's content filters causing false positives, which is impacting production usage and has a significant financial impact. The issue has been reproduced and escalated, indicating it is a technical problem requiring support. The critical business impact is due to the stated potential loss of a $45,000 monthly purchase."
     },
-    "created_at": "2026-01-09T09:44:55.976652",
+    "created_at": "2026-01-16T08:18:05.336570",
     "ttl_days": 7,
     "hits": 0
   },
-  "4b339150da19556bd5195e660dfcc11ca9f3f44cb6cfe6cadecc710550c95ac4": {
-    "data": {
-      "category": "retirements",
-      "intent": "escalation_request",
-      "business_impact": "critical",
-      "confidence": 0.95,
-      "reasoning": "The inquiry is focused on the retirement of Azure Virtual Machines and the associated financial impact due to inconsistencies in retirement announcements. The customer is seeking clarification and resolution, which aligns with an escalation request under the retirements category. The stated financial impact of over $5 million makes this a critical business impact."
-    },
-    "created_at": "2026-01-09T09:47:47.298367",
-    "ttl_days": 7,
-    "hits": 0
-  },
-  "6ea4372346a7a3a9c6316dd9d662f3c5a3ad1bd70dccda8967c0f1f93afe3251": {
-    "data": {
-      "category": "business_desk",
-      "intent": "business_engagement",
-      "business_impact": "high",
-      "confidence": 0.9,
-      "reasoning": "The customer is requesting support from the Responsible AI (RAI) product team to address a business need involving client reassurance for AI image generation. This is a business engagement request rather than a technical issue or feature request. The stated impact of potential churn further emphasizes the business-critical nature of the inquiry."
-    },
-    "created_at": "2026-01-09T09:51:17.119233",
-    "ttl_days": 7,
-    "hits": 0
-  },
-  "c5104707d4f64cb623c4d53b79384d36a55df8c1156bb408da2798ae912ca218": {
+  "2cb5c188ee68d2f0392c76a7f5810b4e8c80e77d1a43dd108f0d942b8fa28eea": {
     "data": {
       "category": "feature_request",
       "intent": "requesting_feature",
       "business_impact": "high",
       "confidence": 0.95,
-      "reasoning": "The customer is requesting a specific capability to enhance security for Embed tokens, such as hiding the token from the browser's dev tools or restricting its usage outside the tenant. This aligns with a feature request rather than a roadmap inquiry, as they are not asking about timelines or planned features but are instead describing a gap in functionality they want addressed. The stated impact on multiple projects elevates the business impact to high."
+      "reasoning": "The customer explicitly requests a new capability (support for 32-bit ASNs in Azure Route Server) to enable their network topology and SDWAN integration. This is a feature request, not a roadmap inquiry, as they are not asking about timelines or planned features. The stated impact is significant but not critical, as it affects scalability and migration plans but does not indicate an immediate outage or failure."
     },
-    "created_at": "2026-01-09T09:53:00.978530",
+    "created_at": "2026-01-16T08:33:23.277084",
     "ttl_days": 7,
     "hits": 0
   },
-  "84adc9f751a83e9ef6eaa37517592d850cdc64fbc40f07a33c2d625a38cec2f4": {
+  "1fb256f7d3ecdb6f6e50589ecb813ffe1ac708c59cf0c5fa3444be6abddea58b": {
     "data": {
-      "category": "capacity",
-      "intent": "capacity_request",
-      "business_impact": "critical",
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
       "confidence": 0.95,
-      "reasoning": "The customer is requesting capacity in the UK West region to support their migration from IBM Cloud to Azure, with a critical business impact as they may move to AWS if the capacity is not created. The mention of retaining data in the UK region aligns with capacity_request, and the stated urgency makes the business impact critical."
+      "reasoning": "The customer explicitly requests a new capability (support for 32-bit ASNs in Azure Route Server) to enable their new network topology and SDWAN integration. This is a clear feature request. The stated impact is significant but not critical, as it affects scalability and migration plans, making the business impact high."
     },
-    "created_at": "2026-01-09T10:05:33.221595",
+    "created_at": "2026-01-16T08:39:05.724176",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "09178c66f03c07f8e121f1ba91af825550f1422acd7a7b44310e0436f86ca12a": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer explicitly requests a new capability (support for 32-bit ASNs in Azure Route Server). This is a feature request as they are asking for a specific functionality to be added. The stated impact is significant but not critical, as it affects their ability to scale and migrate workloads, but does not indicate an immediate outage or failure."
+    },
+    "created_at": "2026-01-16T09:04:16.935285",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "57439e315ec2493a307b115c46639aca3da36718714028b43952065a6c0bbed5": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer explicitly requests the implementation of support for 32-bit ASNs in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with the feature_request category and requesting_feature intent. The stated impact indicates a high business impact due to scalability and migration challenges if the feature is not implemented."
+    },
+    "created_at": "2026-01-16T08:57:29.693051",
     "ttl_days": 7,
     "hits": 0
   },
@@ -101,10 +137,10 @@
       "intent": "requesting_feature",
       "business_impact": "high",
       "confidence": 0.95,
-      "reasoning": "The customer is explicitly requesting the implementation of 32-bit ASN support in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with a feature request. The stated impact is significant but not critical, as it affects their migration plans and scalability but does not indicate an immediate outage or failure."
+      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with a feature request. The stated impact is significant, as it affects their ability to migrate workloads to Azure, but it is not critical as it does not indicate an immediate outage or failure."
     },
-    "created_at": "2026-01-09T10:10:43.796566",
+    "created_at": "2026-01-16T11:19:12.343801",
     "ttl_days": 7,
-    "hits": 0
+    "hits": 2
   }
 }

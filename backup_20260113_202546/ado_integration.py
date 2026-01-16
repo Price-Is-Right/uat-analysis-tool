@@ -97,29 +97,51 @@ class AzureDevOpsConfig:
             return AzureDevOpsConfig._cached_credential
         
         try:
-            # Use Interactive Browser first for proper permissions
-            print("🔐 Using Interactive Browser credential (one-time login)...")
-            credential = InteractiveBrowserCredential()
-            token = credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
-            print("✅ Authentication successful (cached for session)")
+            # Use InteractiveBrowserCredential for proper browser-based login
+            print("[AUTH] Using InteractiveBrowserCredential (browser login)...")
+            print("[AUTH] Browser should open for authentication...")
+            print("[AUTH] Please complete login within 60 seconds...")
+            
+            credential = InteractiveBrowserCredential(timeout=60)
+            
+            # Use a timeout for the token acquisition
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Authentication timed out after 60 seconds")
+            
+            # Set alarm for Windows (note: signal.alarm doesn't work on Windows)
+            # So we'll just try and catch any timeout from the credential itself
+            try:
+                token = credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
+            except KeyboardInterrupt:
+                raise TimeoutError("Authentication cancelled or timed out")
+                
+            print("[AUTH] Authentication successful (cached for session)")
             AzureDevOpsConfig._cached_credential = credential
             
             # CRITICAL: Also cache in EnhancedMatchingConfig so search doesn't prompt again
             from enhanced_matching import EnhancedMatchingConfig
             EnhancedMatchingConfig._uat_credential = credential
             EnhancedMatchingConfig._uat_token = token.token
-            print("✅ Credential shared with search services")
+            print("[AUTH] Credential shared with search services")
             
             return credential
         except Exception as e:
-            # Fallback to Azure CLI credential
-            print(f"⚠️  Interactive Browser credential failed: {e}")
+            # Authentication failed - allow app to run in limited mode
+            print(f"[WARNING] Azure authentication failed: {str(e)[:100]}")
+            print("[WARNING] Running in LIMITED MODE - Azure DevOps features unavailable")
+            print("[INFO] TFT/UAT search and work item creation will not work")
             
-            # DO NOT fallback to Azure CLI - it doesn't work for work item creation
-            # Azure CLI tokens cause "identity not materialized" errors
-            print("❌ Interactive Browser authentication is REQUIRED for work item creation")
-            print("💡 Please complete the browser login when prompted")
-            raise Exception("Interactive Browser authentication required. Please log in through the browser.")
+            # Return None to indicate no authentication
+            # App will need to handle this gracefully
+            AzureDevOpsConfig._cached_credential = None
+            return None
+            
+            # Return None to indicate no authentication
+            # App will need to handle this gracefully
+            AzureDevOpsConfig._cached_credential = None
+            return None
     
     @staticmethod
     def get_tft_credential():
@@ -162,7 +184,13 @@ class AzureDevOpsClient:
         """
         self.config = AzureDevOpsConfig()
         self.credential = self.config.get_credential()
-        self.headers = self._get_headers()
+        
+        # Handle None credential (limited mode)
+        if self.credential is None:
+            print("[WARNING] Azure DevOps client running in LIMITED MODE")
+            self.headers = {}
+        else:
+            self.headers = self._get_headers()
     
     def _get_headers(self) -> Dict[str, str]:
         """
@@ -184,8 +212,8 @@ class AzureDevOpsClient:
                 'Accept': 'application/json'
             }
         except Exception as e:
-            print(f"❌ Failed to get Azure DevOps token: {e}")
-            print("📝 Run 'az login' to authenticate with Azure CLI")
+            print(f"[ERROR] Failed to get Azure DevOps token: {e}")
+            print("[INFO] Run 'az login' to authenticate with Azure CLI")
             raise
     
     def test_connection(self) -> Dict:
@@ -388,40 +416,22 @@ class AzureDevOpsClient:
             print(f"[ADO DEBUG] selected_features: {issue_data.get('selected_features', [])}")
             print(f"[ADO DEBUG] selected_uats: {issue_data.get('selected_uats', [])}")
             
-            # ⚠️ DEMO FIX (Jan 16 2026): Check BOTH nested and top-level fields
-            # ORIGINAL ISSUE: Bot completion card showed blank URL, missing Category/Intent/Classification Reason
-            # ROOT CAUSE: Bot sends top-level fields, web app sends nested context_analysis
-            # FIX: Check both locations to support both calling patterns
-            # This fixes missing classification data in created UAT work items
-            category = None
-            intent = None
-            classification_reason = None
-            
             if context_analysis:
-                category = context_analysis.get('category')
-                intent = context_analysis.get('intent')
-                classification_reason = context_analysis.get('reasoning') or context_analysis.get('classification_reason')
-            
-            # Fall back to top-level fields if not in context_analysis
-            if not category:
-                category = issue_data.get('category', 'Unknown')
-            if not intent:
-                intent = issue_data.get('intent', 'Unknown')
-            if not classification_reason:
-                classification_reason = issue_data.get('classification_reason', '')
-            
-            # Add Category and Intent with proper formatting
-            if category and category != 'Unknown':
+                # Add Category and Intent with proper formatting
+                category = context_analysis.get('category', 'Unknown')
+                intent = context_analysis.get('intent', 'Unknown')
+                
+                # Convert underscored values to readable format
                 category_display = category.replace('_', ' ').title()
-                scenario_data_parts.append(f"<strong>Category:</strong> {category_display}")
-            
-            if intent and intent != 'Unknown':
                 intent_display = intent.replace('_', ' ').title()
+                
+                scenario_data_parts.append(f"<strong>Category:</strong> {category_display}")
                 scenario_data_parts.append(f"<strong>Intent:</strong> {intent_display}")
-            
-            # Add classification reasoning
-            if classification_reason:
-                scenario_data_parts.append(f"<strong>Classification Reason:</strong> {classification_reason}")
+                
+                # Add reasoning/why we classified it this way
+                reasoning = context_analysis.get('reasoning', '')
+                if reasoning:
+                    scenario_data_parts.append(f"<strong>Classification Reason:</strong> {reasoning}")
             
             # Add selected features if present (with links)
             selected_features = issue_data.get('selected_features', [])

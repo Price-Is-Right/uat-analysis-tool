@@ -244,52 +244,34 @@ class HybridContextAnalyzer:
         - AI service errors → Logs error, falls back to patterns
         - Pattern analyzer always works (no external dependencies)
         """
-        print("[DEBUG HYBRID 1] HybridContextAnalyzer.__init__() starting...", flush=True)
         # Always initialize pattern matcher (baseline + fallback)
-        print("[DEBUG HYBRID 2] Creating IntelligentContextAnalyzer...", flush=True)
         self.pattern_analyzer = IntelligentContextAnalyzer()
-        print("[DEBUG HYBRID 3] IntelligentContextAnalyzer created.", flush=True)
         
         # AI configuration
         self.use_ai = use_ai
-        print("[DEBUG HYBRID 4] Getting AI config...", flush=True)
         self.config = get_config()
-        print("[DEBUG HYBRID 5] AI config loaded.", flush=True)
         
         # Load corrections for learning (Phase 1 - Corrective Learning System)
-        print("[DEBUG HYBRID 6] Loading corrections...", flush=True)
         self.corrections_data = self._load_corrections()
         print(f"[HybridAnalyzer] Loaded {len(self.corrections_data.get('corrections', []))} corrections for learning")
-        print("[DEBUG HYBRID 7] Corrections loaded.", flush=True)
         
         # Initialize AI services if enabled
         if self.use_ai:
-            print("[DEBUG HYBRID 8] use_ai=True, initializing AI services...", flush=True)
             try:
-                print("[DEBUG HYBRID 9] Validating config...", flush=True)
                 validate_config()
-                print("[DEBUG HYBRID 10] Config validated. Creating LLMClassifier...", flush=True)
                 
                 self.llm_classifier = LLMClassifier()
-                print("[DEBUG HYBRID 11] LLMClassifier created. Creating EmbeddingService...", flush=True)
                 self.embedding_service = EmbeddingService()
-                print("[DEBUG HYBRID 12] EmbeddingService created. Creating VectorSearchService...", flush=True)
                 self.vector_search = VectorSearchService()
-                print("[DEBUG HYBRID 13] VectorSearchService created!", flush=True)
                 
                 print("[HybridAnalyzer] AI services initialized successfully")
                 print(f"[HybridAnalyzer] Mode: AI-powered with pattern features")
-                print("[DEBUG HYBRID 14] AI services initialization complete!", flush=True)
             except Exception as e:
                 print(f"[HybridAnalyzer] AI initialization failed: {e}")
                 print("[HybridAnalyzer] Falling back to pattern matching only")
                 self.use_ai = False
-                print("[DEBUG HYBRID 15] Fell back to pattern-only mode.", flush=True)
         else:
             print("[HybridAnalyzer] Mode: Pattern matching only (AI disabled)")
-            print("[DEBUG HYBRID 16] AI disabled by parameter.", flush=True)
-        
-        print("[DEBUG HYBRID 17] HybridContextAnalyzer.__init__() completed successfully!", flush=True)
     
     def _load_corrections(self) -> Dict:
         """
@@ -470,25 +452,18 @@ class HybridContextAnalyzer:
         print(f"Title: {title[:70]}...")
         print(f"Mode: {'AI-Powered' if self.use_ai else 'Pattern Only'}")
         print(f"{'='*80}\n")
-        print(f"[DEBUG TRACE 1] Starting pattern matching analysis...", flush=True)
         
         # STEP 1: Run pattern matching (always, provides features)
         print("📊 Step 1: Pattern Matching Analysis...")
-        print(f"[DEBUG TRACE 2] About to call pattern_analyzer.analyze_context...", flush=True)
         pattern_result = self.pattern_analyzer.analyze_context(title, description, impact)
-        print(f"[DEBUG TRACE 3] Pattern analysis complete!", flush=True)
         
         # Extract pattern features
-        print(f"[DEBUG TRACE 4] Extracting pattern features...", flush=True)
         pattern_features = self._extract_pattern_features(pattern_result)
-        print(f"[DEBUG TRACE 5] Pattern features extracted!", flush=True)
         
         # Find relevant corrections (NEW for Phase 1)
-        print(f"[DEBUG TRACE 6] Finding relevant corrections...", flush=True)
         combined_text = f"{title} {description} {impact}"
         relevant_corrections = self._find_relevant_corrections(combined_text)
         pattern_features["relevant_corrections"] = relevant_corrections
-        print(f"[DEBUG TRACE 7] Corrections found: {len(relevant_corrections)}", flush=True)
         
         if relevant_corrections:
             print(f"   ℹ️ Found {len(relevant_corrections)} relevant corrections from past feedback")
@@ -500,7 +475,6 @@ class HybridContextAnalyzer:
         print(f"   ✓ Pattern Category: {pattern_category}")
         print(f"   ✓ Pattern Intent: {pattern_intent}")
         print(f"   ✓ Pattern Confidence: {pattern_confidence:.2f}")
-        print(f"[DEBUG TRACE 8] Pattern analysis complete, moving to step 2...", flush=True)
         
         # STEP 2: Search for similar issues (if enabled)
         similar_issues = []
@@ -533,6 +507,9 @@ class HybridContextAnalyzer:
                     use_cache=True
                 )
                 
+                print(f"[DEBUG HYBRID] LLM result: category={llm_result.category}, intent={llm_result.intent}")
+                print(f"[DEBUG HYBRID] LLM detected_products: {getattr(llm_result, 'detected_products', 'N/A')}")
+                
                 # Check if LLM and patterns agree
                 agreement = (
                     llm_result.category == pattern_category and
@@ -551,6 +528,11 @@ class HybridContextAnalyzer:
                 urgency = pattern_result.urgency_level if hasattr(pattern_result, 'urgency_level') else "medium"
                 tech_complex = pattern_result.technical_complexity if hasattr(pattern_result, 'technical_complexity') else "medium"
                 domain_ents = pattern_result.domain_entities if hasattr(pattern_result, 'domain_entities') else {}
+                
+                print(f"[DEBUG HYBRID] domain_ents from pattern_result: {domain_ents}")
+                print(f"[DEBUG HYBRID] domain_ents keys: {domain_ents.keys() if domain_ents else 'None'}")
+                if 'microsoft_products' in domain_ents:
+                    print(f"[DEBUG HYBRID] microsoft_products in domain_ents: {domain_ents['microsoft_products']}")
                 
                 # Keep pattern's original reasoning for step-by-step display
                 pattern_reasoning = pattern_result.reasoning if hasattr(pattern_result, 'reasoning') else {}
@@ -612,6 +594,9 @@ class HybridContextAnalyzer:
         tech_complex = pattern_result.technical_complexity if hasattr(pattern_result, 'technical_complexity') else "medium"
         ctx_summary = pattern_result.context_summary if hasattr(pattern_result, 'context_summary') else ""
         domain_ents = pattern_result.domain_entities if hasattr(pattern_result, 'domain_entities') else {}
+        
+        print(f"[DEBUG HYBRID FALLBACK] domain_ents: {domain_ents}")
+        print(f"[DEBUG HYBRID FALLBACK] domain_ents keys: {domain_ents.keys() if domain_ents else 'None'}")
         
         result = HybridAnalysisResult(
             category=pattern_category,

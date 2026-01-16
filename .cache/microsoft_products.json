@@ -1,12 +1,14 @@
 {
-  "timestamp": "2026-01-09T09:19:39.059332",
+  "timestamp": "2026-01-16T09:26:35.138240",
   "data": {
-    "kusto query language (kql) overview - kusto": {
-      "title": "Kusto Query Language (KQL) overview - Kusto",
-      "description": "...ectors. data ingested from external sources into user-defined custom tables, using custom-created data connectors and some types of out-of-the-box connectors. data created by Microsoft Sentinel itself, resulting from the analyses it creates and performs - for example, alerts, incidents, and UEBA-related information. data uploaded to Microsoft.",
+    "what is microsoft sentinel siem?": {
+      "title": "What is Microsoft Sentinel SIEM?",
+      "description": "...ud-native SIEM solution that delivers scalable, cost-efficient security across multicloud and multiplatform environmentsMicrosoft Sentinel SIEM empowers analysts to anticipate and stop attacks across clouds and platforms, faster and with greater precision. Enable out of the box security content Microsoft Sentinel provides security content.",
       "category": "security",
-      "url": "https://learn.microsoft.com/en-us/kusto/query/",
-      "aliases": []
+      "url": "https://learn.microsoft.com/en-us/azure/sentinel/overview",
+      "aliases": [
+        "what is sentinel siem?"
+      ]
     },
     "intune documentation - microsoft intune": {
       "title": "Microsoft Intune documentation - Microsoft Intune",

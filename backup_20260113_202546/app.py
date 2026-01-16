@@ -244,8 +244,13 @@ def nl2br(s):
 
 # Initialize Azure DevOps client for work item creation
 # This will authenticate once and share the credential with search services
-ado_client = AzureDevOpsClient()
-print("✅ All Azure DevOps services authenticated and ready")
+try:
+    ado_client = AzureDevOpsClient()
+    print("[INFO] All Azure DevOps services authenticated and ready")
+except Exception as e:
+    print(f"[WARNING] Azure DevOps authentication failed: {str(e)[:100]}")
+    print("[WARNING] Running in LIMITED MODE - TFT/UAT features unavailable")
+    ado_client = None
 
 class IssueTracker:
     def __init__(self, data_file: str = "issues_actions.json"):
@@ -858,12 +863,9 @@ def start_processing():
         
         # Perform context analysis for evaluation
         from enhanced_matching import EnhancedMatcher
-        print("[DEBUG WEB 1] About to create EnhancedMatcher...", flush=True)
         matcher = EnhancedMatcher(tracker)
-        print("[DEBUG WEB 2] EnhancedMatcher created. Starting analysis...", flush=True)
         
         evaluation_data = matcher.analyze_context_for_evaluation(title, description, impact)
-        print("[DEBUG WEB 3] Analysis completed successfully!", flush=True)
         
         # Store evaluation data temporarily
         evaluation_id = str(uuid.uuid4())

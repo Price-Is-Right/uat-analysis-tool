@@ -1,5 +1,9 @@
 # Quick Start Guide
 
+## ⚠️ IMPORTANT: VS Code Terminal Issue
+**For bot testing, use standalone PowerShell windows (not VS Code terminals).**  
+Flask servers exit immediately in VS Code integrated terminals. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for details.
+
 ## Starting the Application
 
 ### Option 1: Using PowerShell Commands

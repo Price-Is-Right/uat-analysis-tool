@@ -166,22 +166,15 @@ class EnhancedMatchingConfig:
         from azure.identity import AzureCliCredential, DefaultAzureCredential, InteractiveBrowserCredential
         
         # Return cached credential if available
-        print("[DEBUG AUTH 1] Checking for cached UAT credential...", flush=True)
         if EnhancedMatchingConfig._uat_credential is not None and EnhancedMatchingConfig._uat_token is not None:
-            print("🔐 [UAT Auth] Reusing cached credential from previous authentication...", flush=True)
-            print("[DEBUG AUTH 2] Returning cached credential...", flush=True)
             return EnhancedMatchingConfig._uat_credential, EnhancedMatchingConfig._uat_token
         
-        print("[DEBUG AUTH 3] No cached credential found. Creating new credential...", flush=True)
         try:
             # Use Interactive Browser first for proper cross-org permissions
-            print("🔐 [UAT Auth] Using Interactive Browser credential (one-time login)...", flush=True)
-            print("[DEBUG AUTH 4] Creating InteractiveBrowserCredential object...", flush=True)
+            print("🔐 [UAT Auth] Using Interactive Browser credential (one-time login)...")
             credential = InteractiveBrowserCredential()
-            print("[DEBUG AUTH 5] Calling get_token()...", flush=True)
             token = credential.get_token(EnhancedMatchingConfig.ADO_SCOPE)
-            print("[DEBUG AUTH 6] get_token() returned successfully!", flush=True)
-            print("✅ [UAT Auth] Authentication successful (cached for session)", flush=True)
+            print("✅ [UAT Auth] Authentication successful (cached for session)")
             # Cache the credential for reuse
             EnhancedMatchingConfig._uat_credential = credential
             EnhancedMatchingConfig._uat_token = token.token
@@ -698,27 +691,19 @@ class AzureDevOpsSearcher:
         Sets up separate credentials for UAT and TFT organizations to prevent
         dual authentication prompts. Reuses cached credentials if available.
         """
-        print("[DEBUG ADO 1] AzureDevOpsSearcher.__init__() starting...", flush=True)
         self.config = EnhancedMatchingConfig()
-        print("[DEBUG ADO 2] EnhancedMatchingConfig created. Checking for cached credentials...", flush=True)
         # Check if credentials are already cached from app startup or previous instance
         if EnhancedMatchingConfig._uat_credential is not None and EnhancedMatchingConfig._uat_token is not None:
-            print("🔐 [UAT Auth] Reusing cached credential from previous authentication...", flush=True)
-            print("[DEBUG ADO 3] Using cached UAT credential...", flush=True)
+            print("🔐 [UAT Auth] Reusing cached credential from previous authentication...")
             self.uat_credential = EnhancedMatchingConfig._uat_credential
             self.uat_token = EnhancedMatchingConfig._uat_token
-            print("[DEBUG ADO 4] Cached credential assigned to instance.", flush=True)
         else:
             # Get UAT credential and token (for UAT searches) - will cache for next time
-            print("[DEBUG ADO 5] No cached credential found. Calling get_uat_credential()...", flush=True)
             self.uat_credential, self.uat_token = self.config.get_uat_credential()
-            print("[DEBUG ADO 6] get_uat_credential() returned successfully!", flush=True)
         # TFT credential will be lazy-loaded when needed (for Feature searches)
         self.tft_credential = None
         self.tft_token = None
-        print("[DEBUG ADO 7] Setting cutoff date...", flush=True)
         self.cutoff_date = datetime.now() - timedelta(days=30 * self.config.LOOKBACK_MONTHS)
-        print("[DEBUG ADO 8] AzureDevOpsSearcher.__init__() completed successfully!", flush=True)
     
     def _get_headers(self, org: str = 'uat') -> Dict[str, str]:
         """
@@ -1951,17 +1936,11 @@ class EnhancedMatcher:
         Args:
             issue_tracker: Instance of the local issue tracking system
         """
-        print("[DEBUG MATCHER 1] EnhancedMatcher.__init__() starting...", flush=True)
         self.issue_tracker = issue_tracker
-        print("[DEBUG MATCHER 2] issue_tracker assigned.", flush=True)
         self.progress_tracker = ProgressTracker()
-        print("[DEBUG MATCHER 3] ProgressTracker created.", flush=True)
         self.ai_analyzer = AIAnalyzer()
-        print("[DEBUG MATCHER 4] AIAnalyzer created. About to create AzureDevOpsSearcher...", flush=True)
         self.ado_searcher = AzureDevOpsSearcher()
-        print("[DEBUG MATCHER 5] AzureDevOpsSearcher created! About to create HybridContextAnalyzer...", flush=True)
         self.context_analyzer = HybridContextAnalyzer()
-        print("[DEBUG MATCHER 6] EnhancedMatcher.__init__() completed successfully!", flush=True)
     
     def start_matching_process(self, wizard_data: Dict) -> Dict:
         """
