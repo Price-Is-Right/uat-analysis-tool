@@ -127,6 +127,20 @@ def analyze_context():
         microsoft_products = pattern_reasoning.get('microsoft_products', [])
         print(f"[DEBUG API] microsoft_products from pattern_reasoning: {microsoft_products}")
         
+        # ⚠️ BUG FIX (Jan 16 2026): Also check step_by_step for microsoft_products_detected
+        # The intelligent analyzer stores products in step_by_step_reasoning["microsoft_products_detected"]
+        # but the comprehensive_reasoning dict puts them under "microsoft_products"
+        if not microsoft_products and isinstance(pattern_reasoning, dict):
+            # Try alternative locations where products might be stored
+            if 'step_by_step' in pattern_reasoning:
+                # Pattern reasoning is the comprehensive reasoning format
+                microsoft_products = pattern_reasoning.get('microsoft_products', [])
+            elif 'microsoft_products_detected' in pattern_reasoning:
+                # Direct access to step_by_step format
+                microsoft_products = pattern_reasoning.get('microsoft_products_detected', [])
+            
+            print(f"[DEBUG API] After fallback check, microsoft_products: {microsoft_products}")
+        
         if microsoft_products:
             # Smart filtering: Prioritize specific variants over generic base products
             # E.g., "Defender for Databases" is more specific than "Microsoft Defender"
@@ -135,6 +149,9 @@ def analyze_context():
             
             for product in microsoft_products:
                 if isinstance(product, dict):
+                    # ⚠️ BUG FIX (Jan 16 2026): Use 'title' field for proper product names
+                    # The 'name' field contains lowercase matched terms like "migrate", "vpn gateway"
+                    # The 'title' field contains proper capitalized names like "Azure Route Server"
                     product_name = product.get('title', product.get('name', ''))
                     if product_name:
                         # Check if this is a specific variant (contains "for" or has multiple words)
@@ -160,11 +177,49 @@ def analyze_context():
         
         # If no Microsoft products found, fall back to domain_entities
         if not detected_products:
-            # Combine services, products, and technologies into detected_products
-            for key in ['azure_services', 'services', 'products', 'technologies']:
+            # ⚠️ BUG FIX (Jan 16 2026): Filter out invalid product keywords
+            # Problem: domain_entities['azure_services'] contains partial matches like:
+            #   - "migrate" (from "migrate to Azure Route Server")
+            #   - "vpn gateway" (generic term, not the actual product)
+            # Solution: Only use terms that look like real Azure product names
+            #   - Must contain "Azure" OR be in a known product list
+            #   - Filter out common verbs/actions (migrate, create, deploy)
+            #   - Filter out generic infrastructure terms without "Azure" prefix
+            
+            # Common verbs and actions to exclude (NOT product names)
+            excluded_terms = {
+                'migrate', 'create', 'deploy', 'configure', 'setup', 'install',
+                'update', 'upgrade', 'delete', 'remove', 'scale', 'monitor'
+            }
+            
+            # Generic terms that need "Azure" prefix to be valid products
+            needs_azure_prefix = {
+                'vpn', 'gateway', 'firewall', 'load balancer', 'database',
+                'storage', 'network', 'server', 'virtual machine', 'vm'
+            }
+            
+            # Combine services, products, and technologies into detected_products with filtering
+            for key in ['azure_services', 'services', 'products']:
                 if key in domain_entities and isinstance(domain_entities[key], list):
                     print(f"[DEBUG API] Key '{key}' contains: {domain_entities[key]}")
-                    detected_products.extend(domain_entities[key])
+                    for item in domain_entities[key]:
+                        item_lower = str(item).lower().strip()
+                        
+                        # Skip excluded action verbs
+                        if item_lower in excluded_terms:
+                            print(f"[DEBUG API] Skipping excluded term: {item}")
+                            continue
+                        
+                        # Check if generic term needs Azure prefix
+                        needs_prefix = any(term in item_lower for term in needs_azure_prefix)
+                        has_azure = 'azure' in item_lower or 'microsoft' in item_lower
+                        
+                        if needs_prefix and not has_azure:
+                            print(f"[DEBUG API] Skipping generic term without Azure prefix: {item}")
+                            continue
+                        
+                        # Valid product - add it
+                        detected_products.append(item)
         
         print(f"[DEBUG API] Combined detected_products: {detected_products}")
         
