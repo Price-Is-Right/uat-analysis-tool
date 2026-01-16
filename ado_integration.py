@@ -397,7 +397,9 @@ class AzureDevOpsClient:
             intent = None
             classification_reason = None
             
-            if context_analysis:
+            # ⚠️ BUG FIX (Jan 16 2026): Handle None context_analysis properly
+            # Previous code called .get() on None causing AttributeError
+            if context_analysis and isinstance(context_analysis, dict):
                 category = context_analysis.get('category')
                 intent = context_analysis.get('intent')
                 classification_reason = context_analysis.get('reasoning') or context_analysis.get('classification_reason')
