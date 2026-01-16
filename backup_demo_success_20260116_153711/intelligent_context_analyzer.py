@@ -1724,25 +1724,12 @@ class IntelligentContextAnalyzer:
             except Exception as e:
                 self.logger.warning(f"Enhanced service discovery failed: {e}")
         
-        # Extract Azure services from static list (fallback when live APIs unavailable)
-        # =====================================================================
-        # INTELLIGENT SERVICE MATCHING WITH VERB FILTERING (Jan 16 2026)
-        # =====================================================================
-        # Problem: Simple substring matching would match action verbs in context
-        # Example: "migrate to Azure Route Server" would incorrectly match "migrate"
-        #
-        # Solution 1: Word boundary regex matching (matches complete words only)
-        # Solution 2: Exclude single-word action verbs from the service list
-        #
-        # Excluded verbs: migrate, import, export, recovery, backup (when standalone)
-        # Allowed services: "azure migrate", "site recovery", "azure backup" (full names)
-        #
-        # This ensures only real service names are extracted from the text,
-        # not action verbs that happen to be in our service taxonomy.
-        # =====================================================================
+        # Extract Azure services from static list (fallback)
+        # ⚠️ BUG FIX (Jan 16 2026): Use word boundary matching to avoid partial matches
+        # AND filter out action verbs that aren't actually services
         text_lower = text.lower()
         
-        # Action verbs to exclude from azure_services list (not real services when standalone)
+        # Action verbs to exclude from azure_services list
         excluded_verbs = {'migrate', 'import', 'export', 'recovery', 'backup'}
         
         for category, services in self.azure_services.items():
@@ -2007,26 +1994,11 @@ class IntelligentContextAnalyzer:
             r'\b(endpoint\s+manager)\b',
             r'\b(information\s+protection)\b',
             # =====================================================================
-            # AZURE SERVICES REGEX - FULLY DYNAMIC DETECTION (Jan 16 2026)
+            # AZURE SERVICES REGEX - Dynamic multi-word matching
             # =====================================================================
-            # Pattern: r'\b(azure\s+(?:[a-z]+\s+){0,2}[a-z]+)\b'
-            # 
-            # This flexible pattern captures "Azure" followed by 1-3 words.
-            # NO HARDCODED service names - works for ANY Azure service!
-            #
-            # Examples of what this matches:
-            #   ✅ "Azure Route Server" (3 words)
-            #   ✅ "Azure SQL Database" (3 words)
-            #   ✅ "Azure API Management" (3 words)
-            #   ✅ "Azure Functions" (2 words)
-            #   ✅ "Azure OpenAI" (2 words)
-            #   ✅ "Azure Migrate" (2 words - the actual service, not the verb)
-            #
-            # Action verbs are filtered out later in context_api.py,
-            # so "migrate" alone won't show up, but "Azure Migrate" will.
-            #
-            # This ensures the system adapts to new Azure services automatically
-            # without requiring code changes for each new service Microsoft releases.
+            # Captures "Azure" + any following service name (1-3 words)
+            # Examples: "Azure SQL", "Azure Route Server", "Azure API Management"
+            # This is flexible to detect ANY Azure service, not just hardcoded ones
             # =====================================================================
             r'\b(azure\s+(?:[a-z]+\s+){0,2}[a-z]+)\b',  # Azure + up to 3 words
             r'\b(logic\s*apps)\b',

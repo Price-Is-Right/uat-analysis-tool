@@ -123,24 +123,6 @@ def analyze_context():
         # If no specific variants, return generic products (better than nothing).
         # =====================================================================
         
-        # =====================================================================
-        # INTELLIGENT PRODUCT DETECTION WITH SMART FILTERING
-        # =====================================================================
-        # Products come from TWO sources:
-        # 1. pattern_reasoning.microsoft_products - AI-detected Microsoft products
-        #    (includes full names like "Defender for Databases", "Azure Route Server")
-        # 2. domain_entities.azure_services - Dynamically extracted Azure services
-        #    (fallback when AI detection is empty)
-        #
-        # CRITICAL: We filter OUT action verbs that aren't real services:
-        # - "migrate" (action verb) → EXCLUDED
-        # - "Azure Migrate" (actual service) → INCLUDED
-        # - "route server" / "Azure Route Server" (actual service) → INCLUDED
-        #
-        # This ensures detected products show ONLY real Azure/Microsoft services,
-        # not keywords or action verbs from the issue description.
-        # =====================================================================
-        
         # First, get Microsoft products from pattern_reasoning (these are the official detected products)
         microsoft_products = pattern_reasoning.get('microsoft_products', [])
         print(f"[DEBUG API] microsoft_products from pattern_reasoning: {microsoft_products}")
@@ -194,14 +176,8 @@ def analyze_context():
                 print(f"[DEBUG API] No specific variants, using {len(generic_products)} generic products")
         
         # If no Microsoft products found, use domain_entities with smart filtering
-        # ⚠️ CRITICAL FILTERING LOGIC (Jan 16 2026):
-        # Domain entities contains correctly detected Azure services BUT also has action verbs
-        # Example from domain_entities.azure_services:
-        #   ✅ "route server", "azure route server" (real services)
-        #   ❌ "migrate", "import", "export" (action verbs, not services)
-        #
-        # Solution: Filter out single-word action verbs while keeping multi-word services
-        # This allows dynamic detection of ANY Azure service without hardcoding
+        # ⚠️ CRITICAL FIX (Jan 16 2026): Domain entities DOES contain correct Azure services
+        # BUT we need to filter out action verbs and validate they're real services
         if not detected_products:
             print(f"[DEBUG API] No Microsoft products, checking domain_entities for Azure services")
             

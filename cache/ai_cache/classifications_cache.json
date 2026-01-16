@@ -137,10 +137,82 @@
       "intent": "requesting_feature",
       "business_impact": "high",
       "confidence": 0.95,
-      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with a feature request. The stated impact is significant, as it affects their ability to migrate workloads to Azure, but it is not critical as it does not indicate an immediate outage or failure."
+      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with a feature request. The stated impact is significant but not critical, as it affects their ability to scale and migrate workloads, but does not indicate an immediate outage or failure."
     },
-    "created_at": "2026-01-16T11:19:12.343801",
+    "created_at": "2026-01-16T13:56:59.946300",
     "ttl_days": 7,
-    "hits": 2
+    "hits": 0
+  },
+  "3a19cbd0faebc49abf8573a271d09eb61f259b9b6427db239d2c08b821200f63": {
+    "data": {
+      "category": "capacity",
+      "intent": "capacity_request",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting capacity allocation to upgrade their Azure AI Search instance in the East US region, which is currently blocked due to regional capacity constraints. This is a critical issue as it impacts a $300M MACC renewal and involves executive escalations. The request is clearly about capacity allocation, making the category 'capacity' and the intent 'capacity_request'."
+    },
+    "created_at": "2026-01-16T11:39:56.430441",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "4b38fee4beadc72b5a2d49706c9613f7e8b523143e5361859a3a31ba174bce92": {
+    "data": {
+      "category": "capacity",
+      "intent": "capacity_request",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting capacity allocation to upgrade their Azure AI Search instance in the East US region, which is currently blocked due to regional capacity constraints. This is a capacity-related issue with a critical business impact due to the MACC renewal and the operational dependency on the service. The request aligns with the intent of capacity_request."
+    },
+    "created_at": "2026-01-16T14:43:01.854229",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "d924ee681e5d3f1890da5264818bb2a9a7cf74645354a93133209b1b13865cd9": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is explicitly requesting the implementation of 32-bit ASN support in Azure Route Server, which is a specific capability they need for their SDWAN integration and migration plans. This aligns with the feature_request category and requesting_feature intent. The stated impact and involvement of multiple regions suggest a high business impact."
+    },
+    "created_at": "2026-01-16T13:33:29.056189",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "543f731dad496ceafc7fee7d35c65b92a2fffb4ab4b603947e18abeb931da2e0": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing capability they need to implement their new network topology. This aligns with a feature request. The stated impact is significant, as it affects their ability to migrate workloads to Azure, but it is not critical as it does not indicate an immediate outage or failure."
+    },
+    "created_at": "2026-01-16T14:11:24.956669",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "5670387f0f337fa3312b33c881c850be081fd648dc8413599fef77cdedd76012": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing feature they need to implement their new network topology. The stated impact is critical as it affects their ability to migrate workloads to Azure. This aligns with the feature_request category and requesting_feature intent."
+    },
+    "created_at": "2026-01-16T14:17:27.953935",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "10c7ab6fd31aa98e4edf9857955ae79718ade386b575e4a6b794414006df19a0": {
+    "data": {
+      "category": "capacity",
+      "intent": "capacity_request",
+      "business_impact": "medium",
+      "confidence": 0.9,
+      "reasoning": "The inquiry explicitly mentions a capacity request for App Service Plan, which aligns with the capacity category and intent. The stated impact is not critical or high, so medium is assigned. The legacy system's pattern match also supports this classification."
+    },
+    "created_at": "2026-01-16T14:32:43.588691",
+    "ttl_days": 7,
+    "hits": 0
   }
 }

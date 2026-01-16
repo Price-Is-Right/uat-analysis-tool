@@ -123,24 +123,6 @@ def analyze_context():
         # If no specific variants, return generic products (better than nothing).
         # =====================================================================
         
-        # =====================================================================
-        # INTELLIGENT PRODUCT DETECTION WITH SMART FILTERING
-        # =====================================================================
-        # Products come from TWO sources:
-        # 1. pattern_reasoning.microsoft_products - AI-detected Microsoft products
-        #    (includes full names like "Defender for Databases", "Azure Route Server")
-        # 2. domain_entities.azure_services - Dynamically extracted Azure services
-        #    (fallback when AI detection is empty)
-        #
-        # CRITICAL: We filter OUT action verbs that aren't real services:
-        # - "migrate" (action verb) → EXCLUDED
-        # - "Azure Migrate" (actual service) → INCLUDED
-        # - "route server" / "Azure Route Server" (actual service) → INCLUDED
-        #
-        # This ensures detected products show ONLY real Azure/Microsoft services,
-        # not keywords or action verbs from the issue description.
-        # =====================================================================
-        
         # First, get Microsoft products from pattern_reasoning (these are the official detected products)
         microsoft_products = pattern_reasoning.get('microsoft_products', [])
         print(f"[DEBUG API] microsoft_products from pattern_reasoning: {microsoft_products}")
@@ -193,46 +175,51 @@ def analyze_context():
                 detected_products.extend(generic_products)
                 print(f"[DEBUG API] No specific variants, using {len(generic_products)} generic products")
         
-        # If no Microsoft products found, use domain_entities with smart filtering
-        # ⚠️ CRITICAL FILTERING LOGIC (Jan 16 2026):
-        # Domain entities contains correctly detected Azure services BUT also has action verbs
-        # Example from domain_entities.azure_services:
-        #   ✅ "route server", "azure route server" (real services)
-        #   ❌ "migrate", "import", "export" (action verbs, not services)
-        #
-        # Solution: Filter out single-word action verbs while keeping multi-word services
-        # This allows dynamic detection of ANY Azure service without hardcoding
+        # If no Microsoft products found, fall back to domain_entities
         if not detected_products:
-            print(f"[DEBUG API] No Microsoft products, checking domain_entities for Azure services")
+            # ⚠️ BUG FIX (Jan 16 2026): Filter out invalid product keywords
+            # Problem: domain_entities['azure_services'] contains partial matches like:
+            #   - "migrate" (from "migrate to Azure Route Server")
+            #   - "vpn gateway" (generic term, not the actual product)
+            # Solution: Only use terms that look like real Azure product names
+            #   - Must contain "Azure" OR be in a known product list
+            #   - Filter out common verbs/actions (migrate, create, deploy)
+            #   - Filter out generic infrastructure terms without "Azure" prefix
             
             # Common verbs and actions to exclude (NOT product names)
             excluded_terms = {
                 'migrate', 'create', 'deploy', 'configure', 'setup', 'install',
-                'update', 'upgrade', 'delete', 'remove', 'scale', 'monitor',
-                'import', 'export', 'recovery', 'backup'
+                'update', 'upgrade', 'delete', 'remove', 'scale', 'monitor'
             }
             
-            # Combine azure_services from domain_entities with filtering
-            if 'azure_services' in domain_entities and isinstance(domain_entities['azure_services'], list):
-                print(f"[DEBUG API] azure_services contains: {domain_entities['azure_services']}")
-                for item in domain_entities['azure_services']:
-                    item_lower = str(item).lower().strip()
-                    
-                    # Skip single-word action verbs
-                    if item_lower in excluded_terms:
-                        print(f"[DEBUG API] Skipping excluded term: {item}")
-                        continue
-                    
-                    # Skip if it's ONLY an action verb with no service name
-                    # e.g., skip "migrate" but allow "azure migrate" or "migration service"
-                    if item_lower in excluded_terms and 'azure' not in item_lower:
-                        print(f"[DEBUG API] Skipping action verb: {item}")
-                        continue
-                    
-                    # Valid Azure service - add it with proper capitalization
-                    # Convert to title case for display
-                    detected_products.append(item.title() if isinstance(item, str) else item)
-                    print(f"[DEBUG API] Added Azure service: {item}")
+            # Generic terms that need "Azure" prefix to be valid products
+            needs_azure_prefix = {
+                'vpn', 'gateway', 'firewall', 'load balancer', 'database',
+                'storage', 'network', 'server', 'virtual machine', 'vm'
+            }
+            
+            # Combine services, products, and technologies into detected_products with filtering
+            for key in ['azure_services', 'services', 'products']:
+                if key in domain_entities and isinstance(domain_entities[key], list):
+                    print(f"[DEBUG API] Key '{key}' contains: {domain_entities[key]}")
+                    for item in domain_entities[key]:
+                        item_lower = str(item).lower().strip()
+                        
+                        # Skip excluded action verbs
+                        if item_lower in excluded_terms:
+                            print(f"[DEBUG API] Skipping excluded term: {item}")
+                            continue
+                        
+                        # Check if generic term needs Azure prefix
+                        needs_prefix = any(term in item_lower for term in needs_azure_prefix)
+                        has_azure = 'azure' in item_lower or 'microsoft' in item_lower
+                        
+                        if needs_prefix and not has_azure:
+                            print(f"[DEBUG API] Skipping generic term without Azure prefix: {item}")
+                            continue
+                        
+                        # Valid product - add it
+                        detected_products.append(item)
         
         print(f"[DEBUG API] Combined detected_products: {detected_products}")
         

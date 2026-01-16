@@ -1091,7 +1091,7 @@ class IntelligentContextAnalyzer:
             "mobile": ["mobile", "notification", "maps"],
             "iot": ["iot", "devices", "timeseriesinsights", "digitaltwins"],
             "media": ["media", "video", "streaming", "teams"],
-            "migration": ["azure migrate", "site recovery", "database migration service"],
+            "migration": ["migrate", "recovery", "import", "export"],
             "modern_work": ["microsoft365", "office365", "teams", "sharepoint", "onedrive", "outlook", "exchange", "copilot", "viva", "power", "whiteboard", "planner", "project", "visio", "yammer", "delve", "sway", "forms", "bookings", "loop"]
         }
         
@@ -1132,7 +1132,7 @@ class IntelligentContextAnalyzer:
             "security": ["defender for cloud", "sentinel", "security center", "key vault", "active directory", "entra id", "defender for office 365", "defender for identity"],
             "compute": ["virtual machines", "app service", "functions", "container instances", "kubernetes service", "azure local"],
             "storage": ["storage accounts", "blob storage", "file storage", "disk storage", "backup"],
-            "networking": ["virtual network", "load balancer", "application gateway", "vpn gateway", "route server", "azure route server", "cdn", "expressroute", "firewall", "bastion"],
+            "networking": ["virtual network", "load balancer", "application gateway", "vpn gateway", "cdn"],
             "database": ["sql database", "cosmos db", "mysql", "postgresql", "synapse analytics"],
             "ai_ml": ["cognitive services", "machine learning", "openai", "computer vision", "speech services", "azure openai", "copilot", "copilot for microsoft 365", "copilot studio"],
             "analytics": ["synapse analytics", "data factory", "stream analytics", "power bi", "databricks", "delta sharing", "viva insights", "workplace analytics", "microsoft fabric", "fabric"],
@@ -1143,7 +1143,7 @@ class IntelligentContextAnalyzer:
             "mobile": ["notification hubs", "mobile apps", "maps"],
             "iot": ["iot hub", "iot central", "digital twins"],
             "media": ["media services", "video indexer", "stream", "teams live events"],
-            "migration": ["azure migrate", "site recovery", "database migration service", "azure backup"],
+            "migration": ["migrate", "site recovery", "backup"],
             "modern_work": ["microsoft 365", "office 365", "teams", "sharepoint", "onedrive", "outlook", "exchange", "copilot for microsoft 365", "viva suite", "viva engage", "viva learning", "viva goals", "viva topics", "viva connections", "power platform", "power apps", "power automate", "power bi", "copilot studio", "microsoft whiteboard", "microsoft planner", "microsoft project", "microsoft visio", "yammer", "delve", "sway", "forms", "bookings", "to do", "whiteboard", "loop"]
         }
     
@@ -1684,12 +1684,12 @@ class IntelligentContextAnalyzer:
         # Enhanced service discovery using Microsoft Learn
         if self.microsoft_docs_available:
             try:
-                # ⚠️ BUG FIX (Jan 16 2026): Use flexible patterns for AI-driven service detection
-                # Let the AI identify services - these patterns just extract potential candidates
+                # Extract potential service names from text
                 service_patterns = [
-                    r'\b(azure\s+\w+(?:\s+\w+)?)\b',  # Azure + 1-2 words (azure sql, azure route server)
-                    r'\b(microsoft\s+\w+)\b',  # Microsoft + 1 word
-                    r'\b(fabric|synapse|databricks|openai|purview)\b',  # Known services without prefix
+                    r'\b(fabric|synapse|databricks|openai|copilot|purview)\b',
+                    r'\b(azure\s+\w+)',
+                    r'\b(microsoft\s+\w+)',
+                    r'\b(\w+\s+service)'
                 ]
                 
                 potential_services = []
@@ -1697,21 +1697,8 @@ class IntelligentContextAnalyzer:
                     matches = re.findall(pattern, text, re.IGNORECASE)
                     potential_services.extend([match.strip() for match in matches if isinstance(match, str)])
                 
-                # Filter out action verbs and generic terms
-                action_verbs = {'azure migrate', 'azure create', 'azure deploy', 'azure configure', 'azure update'}
-                filtered_services = []
-                for service in set(potential_services):
-                    service_lower = service.lower()
-                    # Skip if it's just an action verb
-                    if service_lower in action_verbs:
-                        continue
-                    # Skip if it's a single word without Azure/Microsoft prefix
-                    if ' ' not in service and service_lower not in ['fabric', 'synapse', 'databricks', 'openai', 'purview']:
-                        continue
-                    filtered_services.append(service)
-                
                 # Look up discovered services in Microsoft documentation
-                for service in filtered_services:
+                for service in set(potential_services):
                     service_info = self._lookup_service_in_microsoft_docs(service)
                     if service_info.get('found_in_docs'):
                         entities["discovered_services"].append(service)
@@ -1724,39 +1711,10 @@ class IntelligentContextAnalyzer:
             except Exception as e:
                 self.logger.warning(f"Enhanced service discovery failed: {e}")
         
-        # Extract Azure services from static list (fallback when live APIs unavailable)
-        # =====================================================================
-        # INTELLIGENT SERVICE MATCHING WITH VERB FILTERING (Jan 16 2026)
-        # =====================================================================
-        # Problem: Simple substring matching would match action verbs in context
-        # Example: "migrate to Azure Route Server" would incorrectly match "migrate"
-        #
-        # Solution 1: Word boundary regex matching (matches complete words only)
-        # Solution 2: Exclude single-word action verbs from the service list
-        #
-        # Excluded verbs: migrate, import, export, recovery, backup (when standalone)
-        # Allowed services: "azure migrate", "site recovery", "azure backup" (full names)
-        #
-        # This ensures only real service names are extracted from the text,
-        # not action verbs that happen to be in our service taxonomy.
-        # =====================================================================
-        text_lower = text.lower()
-        
-        # Action verbs to exclude from azure_services list (not real services when standalone)
-        excluded_verbs = {'migrate', 'import', 'export', 'recovery', 'backup'}
-        
+        # Extract Azure services from static list (fallback)
         for category, services in self.azure_services.items():
             for service in services:
-                service_lower = service.lower()
-                
-                # Skip if it's a single-word action verb (not a real service name)
-                if service_lower in excluded_verbs:
-                    continue
-                
-                # Use word boundary regex for exact matching
-                # This prevents "migrate" from matching in "migrate to Azure"
-                pattern = r'\b' + re.escape(service_lower) + r'\b'
-                if re.search(pattern, text_lower):
+                if service in text:
                     entities["azure_services"].append(service)
                     entities["technical_areas"].append(category)
         
@@ -2007,28 +1965,13 @@ class IntelligentContextAnalyzer:
             r'\b(endpoint\s+manager)\b',
             r'\b(information\s+protection)\b',
             # =====================================================================
-            # AZURE SERVICES REGEX - FULLY DYNAMIC DETECTION (Jan 16 2026)
+            # AZURE SERVICES REGEX - Same capturing group fix as Defender
             # =====================================================================
-            # Pattern: r'\b(azure\s+(?:[a-z]+\s+){0,2}[a-z]+)\b'
-            # 
-            # This flexible pattern captures "Azure" followed by 1-3 words.
-            # NO HARDCODED service names - works for ANY Azure service!
-            #
-            # Examples of what this matches:
-            #   ✅ "Azure Route Server" (3 words)
-            #   ✅ "Azure SQL Database" (3 words)
-            #   ✅ "Azure API Management" (3 words)
-            #   ✅ "Azure Functions" (2 words)
-            #   ✅ "Azure OpenAI" (2 words)
-            #   ✅ "Azure Migrate" (2 words - the actual service, not the verb)
-            #
-            # Action verbs are filtered out later in context_api.py,
-            # so "migrate" alone won't show up, but "Azure Migrate" will.
-            #
-            # This ensures the system adapts to new Azure services automatically
-            # without requiring code changes for each new service Microsoft releases.
+            # Captures "Azure" + optional service name (e.g., "Azure SQL Database")
+            # The optional service name is INSIDE the main capturing group
+            # This ensures we get "azure sql" not just "azure"
             # =====================================================================
-            r'\b(azure\s+(?:[a-z]+\s+){0,2}[a-z]+)\b',  # Azure + up to 3 words
+            r'\b(azure(?:\s+(?:storage|sql|cosmos|synapse|databricks|functions|app\s+service|kubernetes|aks|monitor|log\s+analytics|data\s+factory|devops))?)\b',
             r'\b(logic\s*apps)\b',
             r'\b(event\s*(?:hub|grid))\b',
             r'\b(service\s*bus)\b',
