@@ -137,10 +137,12 @@ The GCS system is an AI-powered platform for managing Unified Action Tracker (UA
 **Responsibilities:**
 - Route requests to appropriate microservices
 - Handle authentication and authorization
+- Log all requests/responses for security audit
 - Aggregate responses from multiple agents
-- Manage shared data access (Blob Storage, App Insights)
+- Manage shared data access (Blob Storage, App Insights, Log Analytics)
 - Provide consistent API contracts
 - Handle retries and circuit breaking
+- Track correlation IDs for distributed tracing
 
 **Technology:** FastAPI (Python) or Azure API Management
 
@@ -188,27 +190,29 @@ Each agent is an independent, containerized microservice with a specific respons
 **Deployment:** Azure Container App
 
 #### C. Routing Agent 🆕 (New)
-**Purpose:** Intelligent routing of UATs to appropriate teams
+**Purpose:** Intelligent auto-routing of inbound UATs to teams or back to submitters
 **Capabilities:**
-- Team assignment (support, capacity, dev, marketing)
-- Priority calculation
-- SLA determination
-- Escalation rules
-- Load balancing across team members
+- Auto-route to specific groups (support, capacity, dev, marketing)
+- Route back to submitter for additional information
+- Priority calculation and SLA determination
+- Escalation rules and load balancing
+- Routing decision logging and audit trail
 **Input:** `{ "uat": {...}, "analysis": {...}, "context": {...} }`
-**Output:** `{ "team": "support", "priority": "high", "sla_hours": 24, "assignee": "..." }`
-**Technology:** Rule engine + ML classification
+**Output:** `{ "route_to": "support" | "submitter", "reason": "...", "priority": "high", "sla_hours": 24, "assignee": "..." }`
+**Technology:** Rules Agent integration + ML classification
 **Deployment:** Azure Container App
 
 #### D. Rules Agent 🆕 (New)
-**Purpose:** Business rules and policy enforcement
+**Purpose:** Business rules, policy enforcement, and intelligent auto-routing
 **Capabilities:**
-- Validation rules
+- Auto-routing inbound UATs to specific groups
+- Route back to submitter for more information
+- Validation rules and data quality enforcement
 - Approval workflows
 - Policy compliance checks
-- Data quality enforcement
+- Future: UAT-to-Feature linking across ADO projects
 **Input:** `{ "action": "...", "data": {...}, "context": {...} }`
-**Output:** `{ "valid": true, "violations": [], "recommendations": [...] }`
+**Output:** `{ "valid": true, "routing_decision": {...}, "violations": [], "recommendations": [...] }`
 **Technology:** Python rules engine (durable-rules or similar)
 **Deployment:** Azure Container App
 
@@ -241,11 +245,13 @@ Each agent is an independent, containerized microservice with a specific respons
 **Source:** `ado_integration.py`
 **Purpose:** Azure DevOps work item management
 **Capabilities:**
-- Create work items
+- Create work items (UATs)
 - Update work items
-- Query work items
-- Link related items
-**Technology:** Azure DevOps REST API
+- Query work items across projects
+- Link related items (UAT-to-UAT, UAT-to-Feature)
+- Cross-project relationship management
+- Future: Link UATs to Features in separate ADO projects for engineering submission
+**Technology:** Azure DevOps REST API 7.0
 **Deployment:** Azure Container App
 
 #### H. LLM Classifier Agent ✅ (Existing Logic)
@@ -295,17 +301,37 @@ gcs-data/
 - Multi-app access
 - Easy backup and migration
 
-#### B. Application Insights (Metrics & Monitoring)
-**Purpose:** Real-time metrics, dashboards, and alerting
+#### B. Application Insights + Log Analytics (Monitoring & Security)
+**Purpose:** Real-time metrics, comprehensive logging, security audit trail, and troubleshooting
 
 **What's Tracked:**
-- Events: SubmissionReceived, AnalysisCompleted, UATCreated, SearchCompleted
-- Metrics: UAT creation rate, search performance, confidence scores
-- Dependencies: Azure OpenAI API calls, ADO API calls
-- Performance: Response times, error rates
-- Custom queries: KQL-based analytics
+- **Events:** SubmissionReceived, AnalysisCompleted, UATCreated, SearchCompleted
+- **Metrics:** UAT creation rate, search performance, confidence scores
+- **Dependencies:** Azure OpenAI API calls, ADO API calls, external services
+- **Performance:** Response times, error rates, resource utilization
+- **Security:** Authentication attempts, authorization decisions, data access
+- **Audit Trail:** All user actions, routing decisions, rule executions
+- **Errors & Exceptions:** Full stack traces, context, remediation
+- **Custom queries:** KQL-based analytics for troubleshooting and compliance
 
-**Retention:** 90 days default (extendable to 730 days)
+**Log Analytics Workspace:**
+- **Purpose:** Centralized log aggregation and analysis
+- **Sources:** All Container Apps, API Gateway, agents, web apps
+- **Retention:** 730 days (2 years) for security compliance and trend analysis
+- **Security Features:**
+  - Role-Based Access Control (RBAC)
+  - Audit logs for all queries and access
+  - Integration with Azure Sentinel (optional for advanced threat detection)
+  - Compliance dashboard templates
+
+**Logging Levels by Component:**
+- **Production:** INFO level with detailed structured logs
+- **Security Events:** Always logged regardless of level
+- **API Gateway:** All requests/responses (sanitized sensitive data)
+- **Agents:** Input/output, processing time, errors
+- **Web Apps:** User actions, session events, errors
+
+**Retention:** 730 days (2 years) - configured for long-term analytics and security compliance
 
 #### C. Azure OpenAI (AI Services)
 **Resource:** `OpenAI-bp-NorthCentral` (existing)
@@ -521,6 +547,275 @@ async def on_message(context: TurnContext):
 ```
 
 **No web app changes required!**
+
+---
+
+## Logging & Security Strategy
+
+### Comprehensive Activity Tracking
+
+**All system activity is logged for:**
+- Troubleshooting and debugging
+- Security compliance and audit trails
+- Performance analysis and optimization
+- User behavior analytics
+- Incident response and forensics
+
+### Log Analytics Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Log Analytics Workspace                  │
+│                  (Central log aggregation)                   │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+         ┌──────────────────┼──────────────────┐
+         │                  │                  │
+    ┌────▼─────┐      ┌────▼─────┐      ┌────▼─────┐
+    │ Container│      │   API    │      │   Web    │
+    │   Apps   │      │ Gateway  │      │   Apps   │
+    │  Logs    │      │  Logs    │      │  Logs    │
+    └──────────┘      └──────────┘      └──────────┘
+         │                  │                  │
+    ┌────▼─────────────────▼──────────────────▼─────┐
+    │        Application Insights Telemetry          │
+    │     (Metrics, Events, Dependencies, Traces)    │
+    └────────────────────────────────────────────────┘
+```
+
+### What Gets Logged
+
+**1. Security & Compliance Logs:**
+- Authentication attempts (success/failure)
+- Authorization decisions (allowed/denied)
+- Data access (who, what, when)
+- Configuration changes
+- Privilege escalations
+- API key usage
+- Cross-service calls
+
+**2. Application Logs:**
+- User submissions (sanitized)
+- AI analysis requests and results
+- Search queries and results
+- Routing decisions with reasoning
+- Rule executions and outcomes
+- Work item creation/updates
+- Notifications sent
+
+**3. System Logs:**
+- Container startup/shutdown
+- Health check results
+- Resource utilization (CPU, memory)
+- Network connectivity
+- Service dependencies
+- Cache hit/miss rates
+
+**4. Error & Exception Logs:**
+- Full stack traces
+- Request context (headers, payload)
+- User context (session, identity)
+- Environment state
+- Related events timeline
+
+### Structured Logging Format
+
+**All logs use JSON format for easy parsing:**
+```json
+{
+  "timestamp": "2026-01-17T10:30:00.000Z",
+  "level": "INFO",
+  "service": "context-analyzer",
+  "operation": "analyze_issue",
+  "user_id": "user@microsoft.com",
+  "session_id": "abc123",
+  "correlation_id": "xyz789",
+  "duration_ms": 1250,
+  "status": "success",
+  "details": {
+    "products_detected": ["Azure Route Server"],
+    "confidence": 0.85
+  },
+  "security": {
+    "authentication": "AzureAD",
+    "authorization": "RBAC"
+  }
+}
+```
+
+### Security Audit Requirements
+
+**For Security Testing & Compliance:**
+
+1. **Authentication Logging:**
+   - Every login attempt (success/failure)
+   - Token generation and validation
+   - Session creation/termination
+   - Multi-factor authentication events
+
+2. **Authorization Logging:**
+   - Every access control decision
+   - Role assignments and changes
+   - Permission grants/revocations
+   - Resource access attempts
+
+3. **Data Access Logging:**
+   - Read operations on sensitive data
+   - Write/update/delete operations
+   - Data export/download events
+   - Cross-tenant data access
+
+4. **Configuration Changes:**
+   - Agent configuration updates
+   - Rule changes
+   - Route modifications
+   - Secret rotation events
+
+5. **Anomaly Detection:**
+   - Unusual access patterns
+   - High-volume requests from single user
+   - Failed authentication spikes
+   - Privilege escalation attempts
+
+### KQL Queries for Security Analysis
+
+**Failed Authentication Attempts:**
+```kql
+AppTraces
+| where TimeGenerated > ago(24h)
+| where Message contains "authentication_failed"
+| summarize FailureCount = count() by UserId, bin(TimeGenerated, 5m)
+| where FailureCount > 5
+```
+
+**Unauthorized Access Attempts:**
+```kql
+AppTraces
+| where TimeGenerated > ago(7d)
+| where SeverityLevel == 2  // Warning
+| where Message contains "authorization_denied"
+| project TimeGenerated, UserId, Resource, Reason
+```
+
+**Data Access Audit Trail:**
+```kql
+customEvents
+| where name == "DataAccess"
+| extend UserId = tostring(customDimensions.user_id)
+| extend Resource = tostring(customDimensions.resource)
+| extend Action = tostring(customDimensions.action)
+| project timestamp, UserId, Resource, Action
+| order by timestamp desc
+```
+
+### Integration with Azure Security Services
+
+**Optional (Recommended for Production):**
+
+1. **Azure Sentinel** - SIEM and SOAR
+   - Automated threat detection
+   - Security incident response
+   - Advanced analytics and ML-based detection
+
+2. **Microsoft Defender for Cloud** - Security posture management
+   - Container security scanning
+   - Vulnerability assessment
+   - Compliance monitoring
+
+3. **Azure Key Vault Monitoring** - Secret access tracking
+   - Who accessed which secrets
+   - When secrets were rotated
+   - Failed access attempts
+
+### Troubleshooting Capabilities
+
+**Distributed Tracing:**
+- Correlation IDs across all services
+- End-to-end request tracking
+- Performance bottleneck identification
+- Dependency mapping
+
+**Log Search & Analysis:**
+- Full-text search across all logs
+- Time-range filtering
+- Service/component filtering
+- Error pattern detection
+- Performance trend analysis
+
+**Dashboards:**
+- Real-time system health
+- Security event monitoring
+- Performance metrics
+- User activity trends
+- Error rate tracking
+
+### Compliance Reporting
+
+**Built-in Reports:**
+- Authentication audit report
+- Data access report
+- Configuration change report
+- Security incident report
+- Performance SLA report
+
+**Export Capabilities:**
+- CSV export for compliance reviews
+- JSON export for automated processing
+- Integration with Power BI for executive dashboards
+- API access for custom integrations
+
+---
+
+## Future Capabilities (Designed For, Not Yet Implemented)
+
+### UAT-to-Feature Linking
+**Requirement:** Link multiple UATs to Features in separate ADO project for engineering submission
+
+**Architecture Support:**
+- ADO Integration Agent designed for cross-project operations
+- Supports work item relationships across projects
+- Blob Storage tracks linkages in JSON format
+- Analytics Agent can report on linked items
+
+**Implementation Path:**
+```python
+# ADO Integration Agent - Future Enhancement
+@app.post("/link-to-feature")
+def link_uat_to_feature(uat_id: str, feature_id: str, target_project: str):
+    # Create work item relationship
+    ado_client.create_relation(
+        source_id=uat_id,
+        target_id=feature_id,
+        relation_type="Related",
+        target_project=target_project
+    )
+    # Track in Blob Storage for analytics
+    linkage_data = {
+        "uat_id": uat_id,
+        "feature_id": feature_id,
+        "target_project": target_project,
+        "linked_at": datetime.now()
+    }
+    blob_client.upload_blob(f"linkages/{uat_id}-{feature_id}.json", json.dumps(linkage_data))
+```
+
+### Engineering Group Monitoring
+**Requirement:** Submit and monitor linked UATs with engineering groups
+
+**Architecture Support:**
+- Communications Agent sends notifications to engineering teams
+- Analytics Agent tracks submission status and progress
+- Triage Web App displays engineering group views
+- API Gateway provides endpoints for engineering integrations
+
+### Cross-Project Analytics
+**Requirement:** 2-year analytics across UATs and linked Features
+
+**Architecture Support:**
+- Application Insights configured for 730-day retention
+- Blob Storage retains all data indefinitely
+- Analytics Agent can query across projects
+- KQL queries support cross-project correlation
 
 ---
 

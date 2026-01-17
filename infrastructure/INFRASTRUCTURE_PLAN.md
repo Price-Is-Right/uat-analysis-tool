@@ -228,20 +228,30 @@ az storage container create \
   --auth-mode login
 ```
 
-### Step 4: Create Application Insights
+### 4. Create Log Analytics Workspace & Application Insights
 ```bash
 # Create Log Analytics Workspace first
 az monitor log-analytics workspace create \
   --resource-group rg-gcs-dev \
   --workspace-name log-gcs-dev \
-  --location northcentralus
+  --location northcentralus \
+  --retention-time 730 \
+  --tags Environment=Development Project=GCS Purpose="Centralized logging and security audit"
 
-# Create App Insights
+# Create App Insights linked to Log Analytics
 az monitor app-insights component create \
   --app appi-gcs-dev \
   --location northcentralus \
   --resource-group rg-gcs-dev \
-  --workspace log-gcs-dev
+  --workspace log-gcs-dev \
+  --retention-time 730
+
+# Enable diagnostic settings for comprehensive logging
+az monitor diagnostic-settings create \
+  --name gcs-diagnostics \
+  --resource <resource-id> \
+  --workspace log-gcs-dev \
+  --logs '[{"category":"Audit","enabled":true},{"category":"Security","enabled":true}]'
 ```
 
 ### Step 5: Create Container Registry
@@ -348,15 +358,17 @@ for filename in ['corrections.json', 'retirements.json', 'issues_actions.json']:
 | Resource | SKU/Tier | Estimated Cost |
 |----------|----------|----------------|
 | Storage Account | Standard LRS | $2-5/month |
-| Application Insights | Free tier | $0/month |
-| Container Registry | Basic | $5/month |
-| Container Apps Environment | Consumption | $0-20/month |
-| Container Apps (9 instances) | 0.5 CPU, 1GB RAM each | $20-40/month |
-| Key Vault | Standard | $0-1/month |
+| Log Analytics Workspace | 730-day retention, ~5GB/day | $30-60/month |
+| Application Insights | 730-day retention | $10-30/month |
+| Container Registry | Standard (performance) | $20/month |
+| Container Apps Environment | Consumption | $20-50/month |
+| Container Apps (9 instances) | 1 CPU, 2GB RAM each (performance) | $100-200/month |
+| Key Vault | Standard | $1-2/month |
+| Azure Sentinel (optional) | SIEM/SOAR for security | $0-50/month |
 | Azure OpenAI | Existing resource | $0 additional |
-| **Total** | | **$27-71/month** |
+| **Total** | | **$183-417/month** |
 
-**Note:** Actual costs depend on usage. Development typically at lower end.
+**Note:** Cost optimized for performance, 2-year analytics retention, and comprehensive security logging for compliance. Production costs will scale with usage. Azure Sentinel optional but recommended for production security monitoring.
 
 ---
 
