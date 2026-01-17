@@ -454,7 +454,7 @@ GCS/
 8. [ ] Write tests
 9. [ ] Create Dockerfile
 10. [ ] Deploy to Container Apps
-11. [ ] User acceptance testing
+11. [ ] Stakeholder acceptance testing
 
 **Deliverables:**
 - Triage web app deployed

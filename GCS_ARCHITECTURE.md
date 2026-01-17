@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-The GCS system is an AI-powered platform for managing User Acceptance Testing (UAT) events through intelligent analysis, automated triage, and multi-channel access. Built as a microservices architecture, it supports multiple web applications and can integrate with Microsoft 365 Copilot agents.
+The GCS system is an AI-powered platform for managing Unified Action Tracker (UAT) events through intelligent analysis, automated triage, and multi-channel access. Built as a microservices architecture, it supports multiple web applications and can integrate with Microsoft 365 Copilot agents.
 
 ---
 

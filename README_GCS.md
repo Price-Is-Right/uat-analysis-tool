@@ -5,7 +5,7 @@
 
 ## What is GCS?
 
-GCS is an intelligent platform that helps manage User Acceptance Testing (UAT) events through:
+GCS is an intelligent platform that helps manage Unified Action Tracker (UAT) events through:
 - **AI-powered analysis** of user-submitted issues
 - **Automated search** for relevant documentation
 - **Smart routing** to appropriate teams
