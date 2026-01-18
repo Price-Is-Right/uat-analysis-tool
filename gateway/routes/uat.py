@@ -1,86 +1,141 @@
 """
 UAT (Unified Action Tracker) API Routes
-Handles UAT management operations
+Phase 7: Routes requests to UAT Management microservice (port 8004)
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
-from typing import Optional, List, Dict
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
 from datetime import datetime
+import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-class UAT(BaseModel):
-    uat_id: Optional[str] = None
+# UAT Management service URL
+UAT_SERVICE_URL = "http://localhost:8004"
+
+# Request/Response Models
+class CreateUATRequest(BaseModel):
+    """Request for creating a UAT"""
     title: str
     description: str
-    category: str
-    priority: str
-    status: str
-    created_by: str
-    created_at: Optional[str] = None
+    impact: Optional[str] = ""
+    category: Optional[str] = "feature_request"
+    intent: Optional[str] = "new_feature"
+    classification_reason: Optional[str] = ""
+    selected_features: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    selected_uats: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    opportunity_id: Optional[str] = ""
+    milestone_id: Optional[str] = ""
 
-class UATResponse(BaseModel):
-    uat: UAT
-    message: str
+@router.post("/create")
+async def create_uat(request: CreateUATRequest):
+    """
+    Create a new UAT work item in Azure DevOps.
+    Routes to UAT Management service.
+    """
+    try:
+        logger.info(f"🔄 Routing UAT creation to UAT Management service...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{UAT_SERVICE_URL}/create",
+                json=request.dict()
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+        work_item_id = result.get('work_item_id', 'N/A')
+        logger.info(f"✅ UAT created: #{work_item_id}")
+        return result
+        
+    except httpx.HTTPError as e:
+        logger.error(f"❌ UAT Management service error: {e}")
+        raise HTTPException(status_code=503, detail=f"UAT Management service unavailable: {str(e)}")
 
-@router.post("/", response_model=UATResponse)
-async def create_uat(uat: UAT):
-    """
-    Create a new UAT
-    
-    Future: Routes to UAT Management Agent microservice
-    """
-    # TODO: Route to UAT Management Agent microservice
-    uat.uat_id = f"UAT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
-    uat.created_at = datetime.utcnow().isoformat()
-    
-    return UATResponse(
-        uat=uat,
-        message="UAT Management Agent not yet deployed (Phase 7)"
-    )
-
-@router.get("/{uat_id}")
-async def get_uat(uat_id: str):
-    """
-    Retrieve UAT by ID
-    
-    Future: Routes to UAT Management Agent microservice
-    """
-    # TODO: Route to UAT Management Agent microservice
-    return {
-        "uat_id": uat_id,
-        "message": "UAT retrieval not yet implemented (Phase 7)"
-    }
-
-@router.get("/")
+@router.get("/list")
 async def list_uats(
-    status: Optional[str] = Query(None),
-    category: Optional[str] = Query(None),
+    state: Optional[str] = Query(None),
+    assigned_to: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=100)
 ):
     """
-    List UATs with optional filters
-    
-    Future: Routes to UAT Management Agent microservice
+    List UAT work items with optional filters.
+    Routes to UAT Management service.
     """
-    # TODO: Route to UAT Management Agent microservice
-    return {
-        "uats": [],
-        "total": 0,
-        "filters": {"status": status, "category": category},
-        "message": "UAT listing not yet implemented (Phase 7)"
-    }
+    try:
+        logger.info(f"🔄 Routing UAT list to UAT Management service...")
+        
+        params = {"limit": limit}
+        if state:
+            params["state"] = state
+        if assigned_to:
+            params["assigned_to"] = assigned_to
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{UAT_SERVICE_URL}/list",
+                params=params
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+        total = result.get('total', 0)
+        logger.info(f"✅ Listed {total} UATs")
+        return result
+        
+    except httpx.HTTPError as e:
+        logger.error(f"❌ UAT Management service error: {e}")
+        raise HTTPException(status_code=503, detail=f"UAT Management service unavailable: {str(e)}")
 
-@router.put("/{uat_id}")
-async def update_uat(uat_id: str, uat: UAT):
+@router.get("/{work_item_id}")
+async def get_uat(work_item_id: int):
     """
-    Update existing UAT
-    
-    Future: Routes to UAT Management Agent microservice
+    Retrieve UAT work item by ID.
+    Routes to UAT Management service.
     """
-    # TODO: Route to UAT Management Agent microservice
-    return {
-        "uat_id": uat_id,
-        "message": "UAT update not yet implemented (Phase 7)"
-    }
+    try:
+        logger.info(f"🔄 Routing UAT retrieval to UAT Management service...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{UAT_SERVICE_URL}/{work_item_id}"
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+        logger.info(f"✅ Retrieved UAT #{work_item_id}")
+        return result
+        
+    except httpx.HTTPStatusError as e:
+        logger.error(f"❌ UAT Management service error: {e}")
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Work item {work_item_id} not found")
+        raise HTTPException(status_code=503, detail=f"UAT Management service unavailable: {str(e)}")
+
+@router.put("/{work_item_id}")
+async def update_uat(work_item_id: int, updates: Dict[str, Any]):
+    """
+    Update existing UAT work item.
+    Routes to UAT Management service.
+    """
+    try:
+        logger.info(f"🔄 Routing UAT update to UAT Management service...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.put(
+                f"{UAT_SERVICE_URL}/{work_item_id}",
+                json=updates
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+        logger.info(f"✅ Updated UAT #{work_item_id}")
+        return result
+        
+    except httpx.HTTPError as e:
+        logger.error(f"❌ UAT Management service error: {e}")
+        raise HTTPException(status_code=503, detail=f"UAT Management service unavailable: {str(e)}")

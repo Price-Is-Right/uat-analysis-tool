@@ -32,7 +32,7 @@ Last Updated: December 2025
 import requests
 import json
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from urllib.parse import quote
 from azure.identity import AzureCliCredential, DefaultAzureCredential, InteractiveBrowserCredential
 
@@ -551,6 +551,141 @@ class AzureDevOpsClient:
             return {
                 'success': False,
                 'error': f"Failed to create work item from issue data: {str(e)}"
+            }
+    
+    def get_work_item(self, work_item_id: int) -> Dict:
+        """
+        Retrieve a work item by ID.
+        
+        Args:
+            work_item_id: The ID of the work item to retrieve
+            
+        Returns:
+            Dict with work item data or error information
+        """
+        try:
+            url = f"{self.config.BASE_URL}/{quote(self.config.PROJECT)}/_apis/wit/workitems/{work_item_id}?api-version={self.config.API_VERSION}"
+            
+            response = requests.get(url, headers=self.headers)
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {
+                    'error': f"Failed to retrieve work item: {response.status_code} - {response.text}"
+                }
+                
+        except Exception as e:
+            return {
+                'error': f"Failed to retrieve work item: {str(e)}"
+            }
+    
+    def query_work_items(self, work_item_type: str = "Actions", state: Optional[str] = None, 
+                        assigned_to: Optional[str] = None, max_results: int = 50) -> list:
+        """
+        Query work items with optional filters.
+        
+        Args:
+            work_item_type: Type of work items to query (default: "Actions")
+            state: Filter by state (optional)
+            assigned_to: Filter by assignee (optional)
+            max_results: Maximum number of results to return
+            
+        Returns:
+            List of work items matching the criteria
+        """
+        try:
+            # Build WIQL query
+            query = f"SELECT [System.Id], [System.Title], [System.State], [System.CreatedDate], [System.AssignedTo] FROM WorkItems WHERE [System.TeamProject] = '{self.config.PROJECT}' AND [System.WorkItemType] = '{work_item_type}'"
+            
+            if state:
+                query += f" AND [System.State] = '{state}'"
+            if assigned_to:
+                query += f" AND [System.AssignedTo] = '{assigned_to}'"
+                
+            query += f" ORDER BY [System.CreatedDate] DESC"
+            
+            # Execute WIQL query
+            wiql_url = f"{self.config.BASE_URL}/{quote(self.config.PROJECT)}/_apis/wit/wiql?api-version={self.config.API_VERSION}"
+            wiql_response = requests.post(wiql_url, json={"query": query}, headers=self.headers)
+            
+            if wiql_response.status_code != 200:
+                return []
+            
+            wiql_result = wiql_response.json()
+            work_item_ids = [item['id'] for item in wiql_result.get('workItems', [])][:max_results]
+            
+            if not work_item_ids:
+                return []
+            
+            # Get full work item details
+            ids_param = ",".join(str(id) for id in work_item_ids)
+            details_url = f"{self.config.BASE_URL}/{quote(self.config.PROJECT)}/_apis/wit/workitems?ids={ids_param}&api-version={self.config.API_VERSION}"
+            details_response = requests.get(details_url, headers=self.headers)
+            
+            if details_response.status_code == 200:
+                return details_response.json().get('value', [])
+            else:
+                return []
+                
+        except Exception as e:
+            print(f"Error querying work items: {e}")
+            return []
+    
+    def update_work_item(self, work_item_id: int, updates: Dict[str, Any]) -> Dict:
+        """
+        Update a work item with the specified field changes.
+        
+        Args:
+            work_item_id: The ID of the work item to update
+            updates: Dictionary of field names to new values
+            
+        Returns:
+            Dict with success status and updated work item details
+        """
+        try:
+            # Build JSON Patch operations
+            operations = []
+            for field, value in updates.items():
+                # Ensure field has proper path format
+                if not field.startswith("/fields/"):
+                    if not field.startswith("System.") and not field.startswith("Custom.") and not field.startswith("Microsoft."):
+                        field = f"System.{field}"
+                    field = f"/fields/{field}"
+                else:
+                    # Strip /fields/ prefix if present, we'll add it back
+                    field = field.replace("/fields/", "")
+                    if not field.startswith("System.") and not field.startswith("Custom.") and not field.startswith("Microsoft."):
+                        field = f"System.{field}"
+                    field = f"/fields/{field}"
+                    
+                operations.append({
+                    "op": "add",
+                    "path": field,
+                    "value": value
+                })
+            
+            url = f"{self.config.BASE_URL}/{quote(self.config.PROJECT)}/_apis/wit/workitems/{work_item_id}?api-version={self.config.API_VERSION}"
+            
+            response = requests.patch(url, json=operations, headers=self.headers)
+            
+            if response.status_code == 200:
+                work_item = response.json()
+                return {
+                    'success': True,
+                    'work_item_id': work_item['id'],
+                    'work_item': work_item
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f"Failed to update work item: {response.status_code} - {response.text}"
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"Failed to update work item: {str(e)}"
             }
     
     def get_work_item_fields(self) -> Dict:

@@ -1,5 +1,5 @@
 # Start All GCS Services
-# Starts Context Analyzer, Search Service, Enhanced Matching, and API Gateway
+# Starts Context Analyzer, Search Service, Enhanced Matching, UAT Management, and API Gateway
 
 Write-Host "🚀 Starting GCS Services..." -ForegroundColor Green
 
@@ -72,6 +72,23 @@ try {
     Write-Host "✅ API Gateway is healthy!" -ForegroundColor Green
 } catch {
     Write-Host "❌ API Gateway failed to start!" -ForegroundColor Red
+    exit 1
+}
+
+# Start UAT Management Service on port 8004
+Write-Host "`n📋 Starting UAT Management Agent (port 8004)..." -ForegroundColor Cyan
+$uatServicePath = "C:\Projects\Hack\agents\uat-management"
+Start-Process python -ArgumentList "$uatServicePath\service.py" -NoNewWindow -WorkingDirectory $uatServicePath
+
+# Wait for UAT MaUAT Management: http://localhost:8004" -ForegroundColor White
+Write-Host "   - API Gateway: http://localhost:8000" -ForegroundColor White
+Write-Host "   - API Docs: http://localhost:8000/api/docs" -ForegroundColor White
+Write-Host "`n💡 To test services:" -ForegroundColor Yellow
+Write-Host '   # Context Analyzer:' -ForegroundColor Gray
+Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/analyze" -Method POST -Body ''{"title":"test","description":"test"}'' -ContentType "application/json"' -ForegroundColor White
+Write-Host '   # UAT Management:' -ForegroundColor Gray
+Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/uat/create" -Method POST -Body ''{"title":"Test UAT","description":"Test description
+    Write-Host "❌ UAT Management Service failed to start!" -ForegroundColor Red
     exit 1
 }
 
