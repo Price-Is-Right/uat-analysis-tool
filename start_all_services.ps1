@@ -1,5 +1,5 @@
 # Start All GCS Services
-# Starts Context Analyzer, Search Service, Enhanced Matching, UAT Management, and API Gateway
+# Starts Context Analyzer, Search Service, Enhanced Matching, UAT Management, LLM Classifier, and API Gateway
 
 Write-Host "🚀 Starting GCS Services..." -ForegroundColor Green
 
@@ -57,6 +57,42 @@ try {
     exit 1
 }
 
+# Start UAT Management Service on port 8004
+Write-Host "`n📋 Starting UAT Management Agent (port 8004)..." -ForegroundColor Cyan
+$uatServicePath = "C:\Projects\Hack\agents\uat-management"
+Start-Process python -ArgumentList "$uatServicePath\service.py" -NoNewWindow -WorkingDirectory $uatServicePath
+
+# Wait for UAT Management to start
+Write-Host "⏳ Waiting for UAT Management Service to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+
+# Test UAT Management Service health
+try {
+    $health = Invoke-WebRequest -Uri "http://localhost:8004/health" -Method GET -UseBasicParsing
+    Write-Host "✅ UAT Management Service is healthy!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ UAT Management Service failed to start!" -ForegroundColor Red
+    exit 1
+}
+
+# Start LLM Classifier Service on port 8005
+Write-Host "`n🤖 Starting LLM Classifier Agent (port 8005)..." -ForegroundColor Cyan
+$classifierServicePath = "C:\Projects\Hack\agents\llm-classifier"
+Start-Process python -ArgumentList "$classifierServicePath\service.py" -NoNewWindow -WorkingDirectory $classifierServicePath
+
+# Wait for LLM Classifier to start
+Write-Host "⏳ Waiting for LLM Classifier Service to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 8
+
+# Test LLM Classifier Service health
+try {
+    $health = Invoke-WebRequest -Uri "http://localhost:8005/health" -Method GET -UseBasicParsing
+    Write-Host "✅ LLM Classifier Service is healthy!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ LLM Classifier Service failed to start!" -ForegroundColor Red
+    exit 1
+}
+
 # Start API Gateway on port 8000
 Write-Host "`n🌐 Starting API Gateway (port 8000)..." -ForegroundColor Cyan
 $gatewayPath = "C:\Projects\Hack"
@@ -75,28 +111,13 @@ try {
     exit 1
 }
 
-# Start UAT Management Service on port 8004
-Write-Host "`n📋 Starting UAT Management Agent (port 8004)..." -ForegroundColor Cyan
-$uatServicePath = "C:\Projects\Hack\agents\uat-management"
-Start-Process python -ArgumentList "$uatServicePath\service.py" -NoNewWindow -WorkingDirectory $uatServicePath
-
-# Wait for UAT MaUAT Management: http://localhost:8004" -ForegroundColor White
-Write-Host "   - API Gateway: http://localhost:8000" -ForegroundColor White
-Write-Host "   - API Docs: http://localhost:8000/api/docs" -ForegroundColor White
-Write-Host "`n💡 To test services:" -ForegroundColor Yellow
-Write-Host '   # Context Analyzer:' -ForegroundColor Gray
-Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/analyze" -Method POST -Body ''{"title":"test","description":"test"}'' -ContentType "application/json"' -ForegroundColor White
-Write-Host '   # UAT Management:' -ForegroundColor Gray
-Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/uat/create" -Method POST -Body ''{"title":"Test UAT","description":"Test description
-    Write-Host "❌ UAT Management Service failed to start!" -ForegroundColor Red
-    exit 1
-}
-
 Write-Host "`n🎉 All services started successfully!" -ForegroundColor Green
 Write-Host "`n📍 Service URLs:" -ForegroundColor Cyan
 Write-Host "   - Context Analyzer: http://localhost:8001" -ForegroundColor White
 Write-Host "   - Search Service: http://localhost:8002" -ForegroundColor White
 Write-Host "   - Enhanced Matching: http://localhost:8003" -ForegroundColor White
+Write-Host "   - UAT Management: http://localhost:8004" -ForegroundColor White
+Write-Host "   - LLM Classifier: http://localhost:8005" -ForegroundColor White
 Write-Host "   - API Gateway: http://localhost:8000" -ForegroundColor White
 Write-Host "   - API Docs: http://localhost:8000/api/docs" -ForegroundColor White
 Write-Host "`n💡 To test services:" -ForegroundColor Yellow
@@ -106,3 +127,5 @@ Write-Host '   # Search Service:' -ForegroundColor Gray
 Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/search" -Method POST -Body ''{"title":"test","description":"test","category":"technical_support","intent":"reporting_issue","domain_entities":{}}'' -ContentType "application/json"' -ForegroundColor White
 Write-Host '   # Enhanced Matching:' -ForegroundColor Gray
 Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/matching/analyze-completeness" -Method POST -Body ''{"title":"test","description":"test"}'' -ContentType "application/json"' -ForegroundColor White
+Write-Host '   # LLM Classifier:' -ForegroundColor Gray
+Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/classify/classify" -Method POST -Body ''{"title":"test","description":"test"}'' -ContentType "application/json"' -ForegroundColor White

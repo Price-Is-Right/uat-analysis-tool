@@ -1,0 +1,74 @@
+{
+  "e5d18e27271aefec385588942570101e71898742e12e67683413dc25dd2c8784": {
+    "data": {
+      "category": "migration_modernization",
+      "intent": "need_migration_help",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer explicitly mentions needing help migrating System Center Virtual Machine Manager to Azure and is seeking tools and guidance for the migration process. This aligns with migration_modernization and the intent need_migration_help. The stated impact is high."
+    },
+    "created_at": "2026-01-17T21:00:45.212026",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "110e77cacc18dd9f67c5b53998dfe16f8ca1b719da706aeb0de1d61106842daa": {
+    "data": {
+      "category": "training_documentation",
+      "intent": "seeking_guidance",
+      "business_impact": "low",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting a demo to understand how to use Microsoft Planner for project management, which falls under training and documentation. The intent is seeking guidance as they are looking for help in understanding the tool."
+    },
+    "created_at": "2026-01-17T21:00:49.730503",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "597aa05e5a07bc306a32d169f666b10a06c3f3c962a97e535f0fe67a414e137e": {
+    "data": {
+      "category": "technical_support",
+      "intent": "configuration_help",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting assistance with setting up Azure AD B2C, which indicates a need for configuration help. The stated impact is high, and the inquiry is technical in nature."
+    },
+    "created_at": "2026-01-17T21:00:51.944015",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "f93dc1d1d6e964ac604f5793b7af2ec75c7513407649f374aadf4b1d529c0e4e": {
+    "data": {
+      "category": "cost_billing",
+      "intent": "seeking_guidance",
+      "business_impact": "medium",
+      "confidence": 0.95,
+      "reasoning": "The customer is asking for recommendations to optimize costs, which falls under cost_billing. The intent is seeking_guidance as they are looking for advice and recommendations rather than reporting an issue or requesting a feature."
+    },
+    "created_at": "2026-01-17T21:00:53.167940",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "656546037d8a430b3de9ca7a812a644ef3f67f9a0ae47a4408d9529b82350ff4": {
+    "data": {
+      "category": "compliance_regulatory",
+      "intent": "compliance_support",
+      "business_impact": "critical",
+      "confidence": 0.95,
+      "reasoning": "The customer is asking about compliance certifications specific to Azure in EU regions, which directly relates to compliance and regulatory concerns. The stated impact is critical, and the intent is to seek support regarding compliance requirements."
+    },
+    "created_at": "2026-01-17T21:00:54.402826",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "175f17a6627b5d4869fec2094518439f73af3f7b9eb10a18d6c0adfcf3b2e5ae": {
+    "data": {
+      "category": "technical_support",
+      "intent": "troubleshooting",
+      "business_impact": "low",
+      "confidence": 0.95,
+      "reasoning": "The inquiry involves testing cache functionality, which suggests a technical issue or verification process. The stated impact is low, and the context indicates troubleshooting rather than seeking guidance or requesting a feature."
+    },
+    "created_at": "2026-01-17T21:00:58.846870",
+    "ttl_days": 7,
+    "hits": 0
+  }
+}
