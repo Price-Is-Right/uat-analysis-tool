@@ -1,5 +1,5 @@
 # Start All GCS Services
-# Starts Context Analyzer, Search Service, Enhanced Matching, UAT Management, LLM Classifier, Embedding Service, and API Gateway
+# Starts all 8 microservices: Context, Search, Matching, UAT, Classifier, Embedding, Vector Search, and API Gateway
 
 Write-Host "🚀 Starting GCS Services..." -ForegroundColor Green
 
@@ -111,6 +111,24 @@ try {
     exit 1
 }
 
+# Start Vector Search Service on port 8007
+Write-Host "`n🔍 Starting Vector Search Agent (port 8007)..." -ForegroundColor Cyan
+$vectorSearchPath = "C:\Projects\Hack\agents\vector-search"
+Start-Process python -ArgumentList "$vectorSearchPath\service.py" -NoNewWindow -WorkingDirectory $vectorSearchPath
+
+# Wait for Vector Search to start
+Write-Host "⏳ Waiting for Vector Search Service to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+
+# Test Vector Search Service health
+try {
+    $health = Invoke-WebRequest -Uri "http://localhost:8007/health" -Method GET -UseBasicParsing
+    Write-Host "✅ Vector Search Service is healthy!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Vector Search Service failed to start!" -ForegroundColor Red
+    exit 1
+}
+
 # Start API Gateway on port 8000
 Write-Host "`n🌐 Starting API Gateway (port 8000)..." -ForegroundColor Cyan
 $gatewayPath = "C:\Projects\Hack"
@@ -137,6 +155,7 @@ Write-Host "   - Enhanced Matching: http://localhost:8003" -ForegroundColor Whit
 Write-Host "   - UAT Management: http://localhost:8004" -ForegroundColor White
 Write-Host "   - LLM Classifier: http://localhost:8005" -ForegroundColor White
 Write-Host "   - Embedding Service: http://localhost:8006" -ForegroundColor White
+Write-Host "   - Vector Search: http://localhost:8007" -ForegroundColor White
 Write-Host "   - API Gateway: http://localhost:8000" -ForegroundColor White
 Write-Host "   - API Docs: http://localhost:8000/api/docs" -ForegroundColor White
 Write-Host "`n💡 To test services:" -ForegroundColor Yellow
