@@ -122,7 +122,6 @@ async def health_check():
         "service": "gcs-api-gateway"
     }
 
-# API Info endpoint
 @app.get("/api/info")
 async def api_info():
     """API information and available routes"""
@@ -133,12 +132,13 @@ async def api_info():
         "routes": {
             "search": "/api/search",
             "analyze": "/api/analyze",
+            "matching": "/api/matching",
             "uat": "/api/uat",
             "context": "/api/context",
             "quality": "/api/quality",
             "ado": "/api/ado"
         },
-        "status": "Phase 3 - API Gateway Development"
+        "status": "Phase 6 - Enhanced Matching Microservice"
     }
 
 # Error handler
@@ -169,8 +169,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Import route modules (to be created)
-from gateway.routes import search, analyze, uat, context, quality, ado
+# Import route modules
+from gateway.routes import search, analyze, uat, context, quality, ado, matching
 
 # Register route blueprints
 app.include_router(search.router, prefix="/api/search", tags=["Search"])
@@ -179,6 +179,7 @@ app.include_router(uat.router, prefix="/api/uat", tags=["UAT Management"])
 app.include_router(context.router, prefix="/api/context", tags=["Context"])
 app.include_router(quality.router, prefix="/api/quality", tags=["Quality"])
 app.include_router(ado.router, prefix="/api/ado", tags=["Azure DevOps"])
+app.include_router(matching.router, prefix="/api/matching", tags=["Enhanced Matching"])
 
 if __name__ == "__main__":
     import uvicorn
