@@ -1,5 +1,5 @@
 # Start All GCS Services
-# Starts Context Analyzer, Search Service, Enhanced Matching, UAT Management, LLM Classifier, and API Gateway
+# Starts Context Analyzer, Search Service, Enhanced Matching, UAT Management, LLM Classifier, Embedding Service, and API Gateway
 
 Write-Host "🚀 Starting GCS Services..." -ForegroundColor Green
 
@@ -93,6 +93,24 @@ try {
     exit 1
 }
 
+# Start Embedding Service on port 8006
+Write-Host "`n🔤 Starting Embedding Service Agent (port 8006)..." -ForegroundColor Cyan
+$embeddingServicePath = "C:\Projects\Hack\agents\embedding-service"
+Start-Process python -ArgumentList "$embeddingServicePath\service.py" -NoNewWindow -WorkingDirectory $embeddingServicePath
+
+# Wait for Embedding Service to start
+Write-Host "⏳ Waiting for Embedding Service to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+
+# Test Embedding Service health
+try {
+    $health = Invoke-WebRequest -Uri "http://localhost:8006/health" -Method GET -UseBasicParsing
+    Write-Host "✅ Embedding Service is healthy!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Embedding Service failed to start!" -ForegroundColor Red
+    exit 1
+}
+
 # Start API Gateway on port 8000
 Write-Host "`n🌐 Starting API Gateway (port 8000)..." -ForegroundColor Cyan
 $gatewayPath = "C:\Projects\Hack"
@@ -118,6 +136,7 @@ Write-Host "   - Search Service: http://localhost:8002" -ForegroundColor White
 Write-Host "   - Enhanced Matching: http://localhost:8003" -ForegroundColor White
 Write-Host "   - UAT Management: http://localhost:8004" -ForegroundColor White
 Write-Host "   - LLM Classifier: http://localhost:8005" -ForegroundColor White
+Write-Host "   - Embedding Service: http://localhost:8006" -ForegroundColor White
 Write-Host "   - API Gateway: http://localhost:8000" -ForegroundColor White
 Write-Host "   - API Docs: http://localhost:8000/api/docs" -ForegroundColor White
 Write-Host "`n💡 To test services:" -ForegroundColor Yellow
@@ -129,3 +148,5 @@ Write-Host '   # Enhanced Matching:' -ForegroundColor Gray
 Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/matching/analyze-completeness" -Method POST -Body ''{"title":"test","description":"test"}'' -ContentType "application/json"' -ForegroundColor White
 Write-Host '   # LLM Classifier:' -ForegroundColor Gray
 Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/classify/classify" -Method POST -Body ''{"title":"test","description":"test"}'' -ContentType "application/json"' -ForegroundColor White
+Write-Host '   # Embedding Service:' -ForegroundColor Gray
+Write-Host '   Invoke-WebRequest -Uri "http://localhost:8000/api/embedding/embed" -Method POST -Body ''{"text":"test embedding"}'' -ContentType "application/json"' -ForegroundColor White

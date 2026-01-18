@@ -173,6 +173,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 from gateway.routes import search, analyze, uat, context, quality, ado
 from gateway.routes import matching
 from gateway.routes import classify
+from gateway.routes import embedding
 
 # Register route blueprints
 app.include_router(search.router, prefix="/api/search", tags=["Search"])
@@ -183,6 +184,7 @@ app.include_router(quality.router, prefix="/api/quality", tags=["Quality"])
 app.include_router(ado.router, prefix="/api/ado", tags=["Azure DevOps"])
 app.include_router(matching.router, prefix="/api/matching", tags=["Enhanced Matching"])
 app.include_router(classify.router, prefix="/api/classify", tags=["LLM Classification"])
+app.include_router(embedding.router, prefix="/api/embedding", tags=["Embeddings"])
 
 if __name__ == "__main__":
     import uvicorn
