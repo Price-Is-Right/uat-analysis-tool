@@ -130,7 +130,7 @@ class AIAnalyzer(MicroservicesClient):
         """
         debug_log(f"AIAnalyzer.analyze_completeness: title='{title[:50]}...', desc_len={len(description)}, impact_len={len(impact)}")
         client = cls()
-        return client._post("/api/matching/analyze_completeness", {
+        return client._post("/api/matching/analyze-completeness", {
             "title": title,
             "description": description,
             "impact": impact
@@ -167,8 +167,8 @@ class EnhancedMatcher(MicroservicesClient):
             "max_results": max_results
         })
     
-    def evaluate_context(self, title: str, description: str, impact: str = "") -> Dict:
-        """Evaluate context via microservice
+    def analyze_context_for_evaluation(self, title: str, description: str, impact: str = "") -> Dict:
+        """Evaluate context via microservice (matches original EnhancedMatcher.analyze_context_for_evaluation)
         
         Args:
             title: Issue title
@@ -178,12 +178,53 @@ class EnhancedMatcher(MicroservicesClient):
         Returns:
             Dict with context analysis, detected technologies, recommendations
         """
-        debug_log(f"EnhancedMatcher.evaluate_context: title='{title[:50]}...'")
-        return self._post("/api/matching/evaluate_context", {
+        debug_log(f"EnhancedMatcher.analyze_context_for_evaluation: title='{title[:50]}...'")
+        return self._post("/api/matching/analyze-context", {
             "title": title,
             "description": description,
             "impact": impact
         })
+    
+    @property
+    def ado_searcher(self):
+        """Provide ado_searcher property for compatibility with original EnhancedMatcher
+        
+        FIXED 2026-01-19: Creates own AzureDevOpsSearcher instance instead of 
+        receiving ado_client via injection. This eliminates AttributeError when 
+        UAT selection tried to access non-existent ado_client attribute.
+        
+        Note: UAT search requires direct ADO access, not available via microservice.
+        The searcher handles its own authentication internally.
+        """
+        if not hasattr(self, '_ado_searcher_proxy'):
+            # Create a proxy object that searches ADO directly
+            class ADOSearcherProxy:
+                def __init__(proxy_self, matcher):
+                    proxy_self.matcher = matcher
+                    # FIXED: Create our own searcher instance (will handle authentication internally)
+                    # Previous approach tried to inject ado_client, causing AttributeError
+                    proxy_self._searcher = None
+                
+                def search_uat_items(proxy_self, title, description=''):
+                    """
+                    Search for UAT items in Azure DevOps.
+                    Creates an AzureDevOpsSearcher instance on first call.
+                    """
+                    # Lazy-load the searcher to avoid authentication prompts at init
+                    if proxy_self._searcher is None:
+                        from enhanced_matching import AzureDevOpsSearcher
+                        print("[ADO Proxy] Creating AzureDevOpsSearcher instance...", flush=True)
+                        proxy_self._searcher = AzureDevOpsSearcher()
+                        print("[ADO Proxy] AzureDevOpsSearcher created successfully!", flush=True)
+                    
+                    # Delegate to the searcher's search_uat_items method
+                    return proxy_self._searcher.search_uat_items(
+                        title=title,
+                        description=description
+                    )
+            
+            self._ado_searcher_proxy = ADOSearcherProxy(self)
+        return self._ado_searcher_proxy
 
 
 class ResourceSearchService(MicroservicesClient):
@@ -206,6 +247,32 @@ class ResourceSearchService(MicroservicesClient):
         results = ComprehensiveSearchResults()
         results.uats = [SearchResult(**item) for item in response.get("results", [])]
         results.total_results = response.get("total_results", 0)
+        return results
+    
+    def search_all(self, title: str, description: str, category: str, 
+                   intent: str, domain_entities: Dict[str, List[str]]) -> 'ComprehensiveSearchResults':
+        """Comprehensive search across all sources via microservice"""
+        debug_log(f"ResourceSearchService.search_all: Searching for '{title[:50]}...'")
+        
+        response = self._post("/api/search/", {
+            "title": title,
+            "description": description,
+            "category": category,
+            "intent": intent,
+            "domain_entities": domain_entities,
+            "deep_search": self.use_deep_search
+        })
+        
+        # Convert response to ComprehensiveSearchResults format with all fields
+        results = ComprehensiveSearchResults()
+        results.learn_docs = [SearchResult(**item) for item in response.get("learn_docs", [])]
+        results.similar_products = response.get("similar_products", [])
+        results.regional_options = response.get("regional_options", [])
+        results.capacity_guidance = response.get("capacity_guidance")
+        results.retirement_info = response.get("retirement_info")
+        results.search_metadata = response.get("search_metadata", {})
+        
+        debug_log(f"ResourceSearchService.search_all: Found {len(results.learn_docs)} learn docs")
         return results
 
 

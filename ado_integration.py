@@ -82,14 +82,14 @@ class AzureDevOpsConfig:
         try:
             from enhanced_matching import EnhancedMatchingConfig
             if EnhancedMatchingConfig._uat_credential is not None:
-                print("🔐 Reusing cached credential from UAT search...")
+                print("[AUTH] Reusing cached credential from UAT search...")
                 # Test it still works
                 EnhancedMatchingConfig._uat_credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
-                print("✅ Authentication successful (cached)")
+                print("[SUCCESS] Authentication successful (cached)")
                 AzureDevOpsConfig._cached_credential = EnhancedMatchingConfig._uat_credential
                 return EnhancedMatchingConfig._uat_credential
         except Exception as reuse_error:
-            print(f"⚠️  Could not reuse cached credential: {reuse_error}")
+            print(f"[WARNING] Could not reuse cached credential: {reuse_error}")
             pass  # Fall through to create new credential
         
         # Return our own cached credential if available
@@ -98,27 +98,27 @@ class AzureDevOpsConfig:
         
         try:
             # Use Interactive Browser first for proper permissions
-            print("🔐 Using Interactive Browser credential (one-time login)...")
+            print("[AUTH] Using Interactive Browser credential (one-time login)...")
             credential = InteractiveBrowserCredential()
             token = credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
-            print("✅ Authentication successful (cached for session)")
+            print("[SUCCESS] Authentication successful (cached for session)")
             AzureDevOpsConfig._cached_credential = credential
             
             # CRITICAL: Also cache in EnhancedMatchingConfig so search doesn't prompt again
             from enhanced_matching import EnhancedMatchingConfig
             EnhancedMatchingConfig._uat_credential = credential
             EnhancedMatchingConfig._uat_token = token.token
-            print("✅ Credential shared with search services")
+            print("[Auth] Credential shared with search services")
             
             return credential
         except Exception as e:
             # Fallback to Azure CLI credential
-            print(f"⚠️  Interactive Browser credential failed: {e}")
+            print(f"[WARNING] Interactive Browser credential failed: {e}")
             
             # DO NOT fallback to Azure CLI - it doesn't work for work item creation
             # Azure CLI tokens cause "identity not materialized" errors
-            print("❌ Interactive Browser authentication is REQUIRED for work item creation")
-            print("💡 Please complete the browser login when prompted")
+            print("[ERROR] Interactive Browser authentication is REQUIRED for work item creation")
+            print("[INFO] Please complete the browser login when prompted")
             raise Exception("Interactive Browser authentication required. Please log in through the browser.")
     
     @staticmethod
@@ -184,8 +184,8 @@ class AzureDevOpsClient:
                 'Accept': 'application/json'
             }
         except Exception as e:
-            print(f"❌ Failed to get Azure DevOps token: {e}")
-            print("📝 Run 'az login' to authenticate with Azure CLI")
+            print(f"[ERROR] Failed to get Azure DevOps token: {e}")
+            print("[INFO] Run 'az login' to authenticate with Azure CLI")
             raise
     
     def test_connection(self) -> Dict:

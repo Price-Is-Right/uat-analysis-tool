@@ -537,6 +537,38 @@ def no_match():
 @app.route('/uat_input')
 def uat_input():
     """Display UAT input form for Opportunity ID and Milestone ID"""
+    # Get eval_id from query params and store in session if provided
+    eval_id = request.args.get('eval_id')
+    if eval_id:
+        session['evaluation_id'] = eval_id
+        print(f"[UAT INPUT] Received and stored eval_id in session: {eval_id}")
+        
+        # Also populate wizard_data immediately with context and features
+        if eval_id in temp_storage:
+            eval_data = temp_storage[eval_id]
+            wizard_data = session.get('original_wizard_data', {})
+            
+            # Store the actual issue title and details
+            if 'original_issue' in eval_data:
+                wizard_data['title'] = eval_data['original_issue'].get('title', '')
+                wizard_data['description'] = eval_data['original_issue'].get('description', '')
+                wizard_data['impact'] = eval_data['original_issue'].get('impact', '')
+                session['wizard_title'] = wizard_data['title']
+                session['current_issue'] = wizard_data['title']
+                print(f"[UAT INPUT] Set title in session: {wizard_data['title'][:50]}...")
+            
+            # Store context analysis for UAT creation
+            if 'context_analysis' in eval_data:
+                wizard_data['context_analysis'] = eval_data['context_analysis']
+                print(f"[UAT INPUT] Stored context_analysis with category: {eval_data['context_analysis'].get('category')}")
+            
+            # Store selected features
+            if 'selected_tft_features' in eval_data:
+                wizard_data['selected_features'] = eval_data['selected_tft_features']
+                print(f"[UAT INPUT] Stored {len(eval_data['selected_tft_features'])} selected features")
+            
+            session['original_wizard_data'] = wizard_data
+    
     current_issue = session.get('current_issue', '')
     wizard_title = session.get('wizard_title', '')
     opportunity_id = session.get('opportunity_id', '')
@@ -657,6 +689,12 @@ def select_related_uats():
         if not filtered_uats:
             print("[UAT SELECTION] No similar UATs found - skipping selection step")
             return redirect(url_for('create_uat'))
+        
+        # Sort UATs by similarity score (highest first)
+        filtered_uats.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+        print(f"[UAT SELECTION] Sorted {len(filtered_uats)} UATs by similarity (highest first)")
+        top_matches = [(u.get('id'), f"{u.get('similarity', 0)*100:.0f}%") for u in filtered_uats[:3]]
+        print(f"[UAT SELECTION] Top matches: {top_matches}")
         
         # Store in temp_storage for the session
         selection_id = str(uuid.uuid4())
@@ -1151,7 +1189,7 @@ EXAMPLES:
 Generate ONLY the search query (3-5 words), nothing else:"""
 
         response = client.chat.completions.create(
-            model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o'),
+            model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o-02'),
             messages=[
                 {"role": "system", "content": "You are a Microsoft Learn documentation search expert. Generate concise, effective search queries."},
                 {"role": "user", "content": prompt}
@@ -1428,8 +1466,9 @@ def perform_search():
     if category == 'feature_request':
         try:
             print("[TFT Search] Searching Technical Feedback for similar Features...")
-            from ado_integration import AzureDevOpsClient
-            ado_client = AzureDevOpsClient()
+            # Use the global authenticated ADO client instead of creating a new one
+            # to avoid authentication state mismatch issues
+            global ado_client
             tft_result = ado_client.search_tft_features(
                 title=evaluation_data['original_issue']['title'],
                 description=evaluation_data['original_issue']['description'],

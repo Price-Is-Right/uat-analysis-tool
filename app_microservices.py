@@ -548,6 +548,53 @@ def no_match():
 @app.route('/uat_input')
 def uat_input():
     """Display UAT input form for Opportunity ID and Milestone ID"""
+    # Get eval_id from query params and store in session if provided
+    eval_id = request.args.get('eval_id')
+    if eval_id:
+        session['evaluation_id'] = eval_id
+        print(f"[UAT INPUT] Received and stored eval_id in session: {eval_id}")
+        
+        # Also populate wizard_data immediately with context and features
+        if eval_id in temp_storage:
+            eval_data = temp_storage[eval_id]
+            wizard_data = session.get('original_wizard_data', {})
+            
+            # Store the actual issue title and details
+            if 'original_issue' in eval_data:
+                wizard_data['title'] = eval_data['original_issue'].get('title', '')
+                wizard_data['description'] = eval_data['original_issue'].get('description', '')
+                wizard_data['impact'] = eval_data['original_issue'].get('impact', '')
+                session['wizard_title'] = wizard_data['title']
+                session['current_issue'] = wizard_data['title']
+                print(f"[UAT INPUT] Set title in session: {wizard_data['title'][:50]}...")
+            
+            # Store context analysis for UAT creation
+            if 'context_analysis' in eval_data:
+                wizard_data['context_analysis'] = eval_data['context_analysis']
+                print(f"[UAT INPUT] Stored context_analysis with category: {eval_data['context_analysis'].get('category')}")
+            
+            # Store selected features
+            if 'selected_tft_features' in eval_data:
+                wizard_data['selected_features'] = eval_data['selected_tft_features']
+                print(f"[UAT INPUT] Stored {len(eval_data['selected_tft_features'])} selected features")
+                if eval_data['selected_tft_features']:
+                    print(f"[UAT INPUT] Features: {eval_data['selected_tft_features']}")
+            
+            # Save wizard_data to session
+            session['original_wizard_data'] = wizard_data
+            session.modified = True
+            print(f"[UAT INPUT] Saved wizard_data to session with keys: {list(wizard_data.keys())}")
+        else:
+            print(f"[UAT INPUT] ERROR: eval_id {eval_id} not found in temp_storage!")
+    
+    # Debug: Log what's in session before rendering
+    print(f"[UAT INPUT] Session state before render:")
+    print(f"  - evaluation_id: {session.get('evaluation_id', 'NOT SET')}")
+    print(f"  - wizard_title: {session.get('wizard_title', 'NOT SET')}")
+    print(f"  - current_issue: {session.get('current_issue', 'NOT SET')}")
+    if 'original_wizard_data' in session:
+        print(f"  - original_wizard_data keys: {list(session['original_wizard_data'].keys())}")
+    
     current_issue = session.get('current_issue', '')
     wizard_title = session.get('wizard_title', '')
     opportunity_id = session.get('opportunity_id', '')
@@ -565,11 +612,20 @@ def uat_input():
 def process_uat_input():
     """Process UAT input form and determine next step"""
     try:
-        print("\n[PROCESS_UAT_INPUT] Processing UAT input form...")
+        print("\n" + "="*80)
+        print("[PROCESS_UAT_INPUT POST] Starting...")
+        print("="*80)
+        print(f"[PROCESS_UAT_INPUT POST] Session keys: {list(session.keys())}")
+        print(f"[PROCESS_UAT_INPUT POST] evaluation_id in session: {session.get('evaluation_id', 'NOT FOUND')}")
+        if 'original_wizard_data' in session:
+            print(f"[PROCESS_UAT_INPUT POST] wizard_data keys: {list(session['original_wizard_data'].keys())}")
+            if 'title' in session['original_wizard_data']:
+                print(f"[PROCESS_UAT_INPUT POST] Title in wizard_data: {session['original_wizard_data']['title']}")
+        
         action = request.form.get('action')
         opportunity_id = request.form.get('opportunity_id', '').strip()
         milestone_id = request.form.get('milestone_id', '').strip()
-        print(f"[PROCESS_UAT_INPUT] Opportunity ID: {opportunity_id}, Milestone ID: {milestone_id}")
+        print(f"[PROCESS_UAT_INPUT POST] Form data - Opportunity: {opportunity_id}, Milestone: {milestone_id}, Action: {action}")
         
         # Store IDs in session
         session['opportunity_id'] = opportunity_id
@@ -577,12 +633,16 @@ def process_uat_input():
         
         # Store in original_wizard_data for create_work_item_from_issue
         wizard_data = session.get('original_wizard_data', {})
+        print(f"[PROCESS_UAT_INPUT POST] Retrieved wizard_data from session with keys: {list(wizard_data.keys())}")
+        
         wizard_data['opportunity_id'] = opportunity_id
         wizard_data['milestone_id'] = milestone_id
+        print(f"[PROCESS_UAT_INPUT POST] Added opportunity/milestone to wizard_data")
         
         # Get context_analysis and selected_features from the evaluation session
         # The evaluation_id should be stored somewhere - check session or temp_storage
         evaluation_id = session.get('evaluation_id')  # Should be set during context analysis
+        print(f"[PROCESS_UAT_INPUT POST] Looking for evaluation_id: {evaluation_id}")
         
         if evaluation_id and evaluation_id in temp_storage:
             eval_data = temp_storage[evaluation_id]
@@ -595,20 +655,30 @@ def process_uat_input():
                 wizard_data['selected_features'] = eval_data['selected_tft_features']
                 print(f"[UAT INPUT] Found {len(eval_data['selected_tft_features'])} selected features")
         else:
-            print("[UAT INPUT] Warning: No evaluation_id found in session, context_analysis will be empty")
+            print("[PROCESS_UAT_INPUT POST] ⚠️ WARNING: No evaluation_id found in session, context_analysis will be empty")
         
         session['original_wizard_data'] = wizard_data
+        session.modified = True
+        print(f"[PROCESS_UAT_INPUT POST] Saved wizard_data back to session with keys: {list(wizard_data.keys())}")
+        if 'title' in wizard_data:
+            print(f"[PROCESS_UAT_INPUT POST] Title saved: {wizard_data['title']}")
+        print("="*80 + "\n")
         
         # If user clicks "Continue with IDs" or "Force Skip", proceed to UAT selection
         if action == 'continue' or action == 'force_skip':
             # Show processing overlay while searching for UATs
+            print(f"🔄 [PROCESS_UAT_INPUT] Rendering searching_uats.html (action={action})")
+            print(f"🔄 [PROCESS_UAT_INPUT] This should redirect to select_related_uats via JavaScript")
             return render_template('searching_uats.html')
         
         # If user clicks "Continue Without IDs" and both are empty, redirect back with warning
         if action == 'skip' and not opportunity_id and not milestone_id:
+            print(f"⚠️ [PROCESS_UAT_INPUT] Redirecting back to uat_input with warning")
             return redirect(url_for('uat_input', show_warning=True))
         
         # If they have at least one ID, proceed to UAT selection with loading overlay
+        print(f"🔄 [PROCESS_UAT_INPUT] Rendering searching_uats.html (fallthrough)")
+        print(f"🔄 [PROCESS_UAT_INPUT] This should redirect to select_related_uats via JavaScript")
         return render_template('searching_uats.html')
         
     except Exception as e:
@@ -621,34 +691,68 @@ def process_uat_input():
 @app.route('/select_related_uats')
 def select_related_uats():
     """Display similar UAT selection page (last 180 days)"""
+    print("\n" + "="*80)
+    print("🚨 [SELECT_RELATED_UATS] ROUTE CALLED - STARTING UAT SELECTION")
+    print("="*80)
+    print(f"[SELECT_RELATED_UATS] Session keys: {list(session.keys())}")
+    
     current_issue = session.get('current_issue', '')
+    print(f"[SELECT_RELATED_UATS] current_issue from session: {current_issue}")
     
     # Get the actual title from evaluation data, not from wizard_title
     evaluation_id = session.get('evaluation_id')
+    print(f"[SELECT_RELATED_UATS] evaluation_id from session: {evaluation_id}")
+    
     wizard_title = 'Untitled Issue'  # Default fallback
     if evaluation_id and evaluation_id in temp_storage:
         eval_data = temp_storage[evaluation_id]
         wizard_title = eval_data.get('original_issue', {}).get('title', 'Untitled Issue')
-        print(f"[UAT SELECTION] Using title from evaluation: {wizard_title[:100]}")
+        print(f"[SELECT_RELATED_UATS] ✅ Got title from temp_storage: {wizard_title}")
     else:
         # Fallback to session if evaluation data not available
         wizard_title = session.get('wizard_title', 'Untitled Issue')
-        print(f"[UAT SELECTION] Using title from session: {wizard_title[:100]}")
+        print(f"[SELECT_RELATED_UATS] ⚠️ Using fallback title from session: {wizard_title}")
+        if not evaluation_id:
+            print("[SELECT_RELATED_UATS] ❌ ERROR: No evaluation_id in session!")
+        elif evaluation_id not in temp_storage:
+            print(f"[SELECT_RELATED_UATS] ❌ ERROR: evaluation_id {evaluation_id} not in temp_storage!")
     
     wizard_data = session.get('original_wizard_data', {})
+    if 'title' in wizard_data:
+        print(f"[SELECT_RELATED_UATS] Title in wizard_data: {wizard_data['title']}")
+    else:
+        print("[SELECT_RELATED_UATS] ⚠️ WARNING: No title in wizard_data!")
     
     # Search for similar UATs from last 180 days
     # Using microservices client
     matcher = EnhancedMatcher()
     
+    # Note: The matcher's ado_searcher property now creates its own AzureDevOpsSearcher instance
+    # No need to inject ado_client anymore
+    print(f"[SELECT_RELATED_UATS] Matcher created (will create its own searcher when needed)")
+    
     try:
-        print(f"\n[UAT SELECTION] Searching for similar UATs (last 180 days): {wizard_title[:100]}...")
+        print(f"\n{'='*80}")
+        print(f"[UAT SELECTION DEBUG] Starting UAT search")
+        print(f"{'='*80}")
+        print(f"[UAT SELECTION] Wizard title: {wizard_title[:100]}...")
+        print(f"[UAT SELECTION] Current issue: {current_issue[:100] if current_issue else 'None'}...")
+        print(f"[UAT SELECTION] Matcher type: {type(matcher)}")
+        print(f"[UAT SELECTION] Matcher.ado_searcher type: {type(matcher.ado_searcher)}")
+        
+        print(f"\n[UAT SELECTION] Calling matcher.ado_searcher.search_uat_items()...")
         uat_items = matcher.ado_searcher.search_uat_items(wizard_title, current_issue)
+        print(f"[UAT SELECTION] ✓ Search completed successfully!")
+        print(f"[UAT SELECTION] Raw search returned: {len(uat_items)} UATs")
+        
+        if uat_items:
+            print(f"[UAT SELECTION] First UAT sample: ID={uat_items[0].get('id')}, Title={uat_items[0].get('title', '')[:50]}")
         
         # Filter to last 180 days
         from datetime import datetime, timedelta
         cutoff_date = datetime.now() - timedelta(days=180)
         
+        print(f"\n[UAT SELECTION] Filtering UATs to last 180 days (cutoff: {cutoff_date.strftime('%Y-%m-%d')})")
         filtered_uats = []
         for uat in uat_items:
             created_str = uat.get('created_date', '')
@@ -657,17 +761,32 @@ def select_related_uats():
                     created_date = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
                     if created_date >= cutoff_date:
                         filtered_uats.append(uat)
+                        print(f"  ✓ Included UAT {uat.get('id')} (created: {created_date.strftime('%Y-%m-%d')})")
+                    else:
+                        print(f"  ✗ Excluded UAT {uat.get('id')} (too old: {created_date.strftime('%Y-%m-%d')})")
                 except Exception as date_error:
                     # If date parsing fails, include it anyway
-                    print(f"[UAT SELECTION] Warning: Date parsing failed for UAT, including anyway: {date_error}")
+                    print(f"  ⚠ Date parsing failed for UAT {uat.get('id')}, including anyway: {date_error}")
                     filtered_uats.append(uat)
         
-        print(f"[UAT SELECTION] Found {len(filtered_uats)} UATs in last 180 days (from {len(uat_items)} total)")
+        print(f"\n[UAT SELECTION] Filter results: {len(filtered_uats)} UATs in last 180 days (from {len(uat_items)} total)")
         
         # If no UATs found, skip to create_uat
         if not filtered_uats:
-            print("[UAT SELECTION] No similar UATs found - skipping selection step")
+            print(f"[UAT SELECTION] ❌ No similar UATs found - redirecting to create_uat")
+            print(f"{'='*80}\n")
             return redirect(url_for('create_uat'))
+        
+        # FIXED 2026-01-19: Sort UATs by similarity score (highest first)
+        # User reported UATs displaying in wrong order (40%, 63%, 100% instead of 100%, 63%, 40%)
+        # Solution: Sort descending with reverse=True before displaying
+        filtered_uats.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+        print(f"[UAT SELECTION] ✓ Sorted {len(filtered_uats)} UATs by similarity (highest first)")
+        
+        # Extract list comprehension to avoid nested f-string syntax error
+        # (nested f-strings cause SyntaxError in print statements)
+        top_matches = [(u.get('id'), f"{u.get('similarity', 0)*100:.0f}%") for u in filtered_uats[:3]]
+        print(f"[UAT SELECTION] Top matches: {top_matches}")
         
         # Store in temp_storage for the session
         selection_id = str(uuid.uuid4())
@@ -677,8 +796,14 @@ def select_related_uats():
         }
         session['uat_selection_id'] = selection_id
         
+        print(f"[UAT SELECTION] Stored in temp_storage with ID: {selection_id}")
+        
         # Get already selected UATs if any
         selected_uats = wizard_data.get('selected_uats', [])
+        print(f"[UAT SELECTION] Already selected UATs: {len(selected_uats)}")
+        
+        print(f"[UAT SELECTION] ✓ Rendering select_related_uats.html template")
+        print(f"{'='*80}\n")
         
         return render_template('select_related_uats.html',
                              current_issue=current_issue,
@@ -688,9 +813,16 @@ def select_related_uats():
                              selection_id=selection_id)
     
     except Exception as e:
-        print(f"[UAT SELECTION] Error searching for UATs: {e}")
+        print(f"\n{'='*80}")
+        print(f"[UAT SELECTION] ❌ EXCEPTION occurred during UAT search!")
+        print(f"{'='*80}")
+        print(f"[UAT SELECTION] Error: {e}")
+        print(f"[UAT SELECTION] Error type: {type(e).__name__}")
         import traceback
+        print(f"[UAT SELECTION] Traceback:")
         traceback.print_exc()
+        print(f"[UAT SELECTION] Redirecting to create_uat due to error")
+        print(f"{'='*80}\n")
         # On error, skip to create_uat
         return redirect(url_for('create_uat'))
 
@@ -732,9 +864,15 @@ def save_selected_uat():
 def create_uat():
     """Create UAT ticket in Azure DevOps"""
     try:
-        print("\n[CREATE_UAT] Starting UAT creation...")
+        print("\n" + "="*80)
+        print("[CREATE_UAT] Starting UAT creation...")
+        print("="*80)
+        print(f"[CREATE_UAT] Session keys: {list(session.keys())}")
+        
         current_issue = session.get('current_issue', '')
         wizard_title = session.get('wizard_title', 'Untitled Issue')
+        print(f"[CREATE_UAT] current_issue from session: {current_issue}")
+        print(f"[CREATE_UAT] wizard_title from session: {wizard_title}")
         
         import random
         current_date = datetime.now().strftime("%Y%m%d")
@@ -743,6 +881,19 @@ def create_uat():
         
         wizard_data = session.get('original_wizard_data', {})
         print(f"[CREATE_UAT] Wizard data keys: {list(wizard_data.keys())}")
+        if 'title' in wizard_data:
+            print(f"[CREATE_UAT] Title in wizard_data: {wizard_data['title']}")
+        else:
+            print("[CREATE_UAT] ❌ ERROR: No title in wizard_data!")
+        if 'context_analysis' in wizard_data:
+            print(f"[CREATE_UAT] context_analysis with category: {wizard_data['context_analysis'].get('category')}")
+        else:
+            print("[CREATE_UAT] ⚠️ WARNING: No context_analysis in wizard_data!")
+        if 'selected_features' in wizard_data:
+            print(f"[CREATE_UAT] {len(wizard_data['selected_features'])} selected features")
+        else:
+            print("[CREATE_UAT] ⚠️ WARNING: No selected_features in wizard_data!")
+        
         print(f"[CREATE_UAT] Creating work item in Azure DevOps...")
         ado_result = ado_client.create_work_item_from_issue(wizard_data)
         
@@ -1162,7 +1313,7 @@ EXAMPLES:
 Generate ONLY the search query (3-5 words), nothing else:"""
 
         response = client.chat.completions.create(
-            model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o'),
+            model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o-02'),
             messages=[
                 {"role": "system", "content": "You are a Microsoft Learn documentation search expert. Generate concise, effective search queries."},
                 {"role": "user", "content": prompt}
@@ -1269,6 +1420,8 @@ def perform_search():
     
     # Get category for special handling
     category = context.get('category', '')
+    print(f"[DEBUG CATEGORY] Detected category: '{category}'")
+    print(f"[DEBUG CATEGORY] Context keys: {list(context.keys())}")
     
     # Categories that need special guidance
     special_categories = ['technical_support', 'feature_request', 'cost_billing', 'aoai_capacity', 'capacity']
@@ -1276,15 +1429,14 @@ def perform_search():
     # Perform comprehensive search (skip similar products, regional, capacity for special categories)
     if category in special_categories:
         # Skip ResourceSearchService for these categories, only search Learn docs
-        # Using microservices client - ComprehensiveSearchResults already imported
-        search_results = ComprehensiveSearchResults(
-            learn_docs=[],
-            similar_products=[],
-            regional_options=[],
-            capacity_guidance=None,
-            retirement_info=None,
-            search_metadata={'searches_performed': []}
-        )
+        # Microservices version: Create empty search results object
+        search_results = ComprehensiveSearchResults()
+        search_results.learn_docs = []
+        search_results.similar_products = []
+        search_results.regional_options = []
+        search_results.capacity_guidance = None
+        search_results.retirement_info = None
+        search_results.search_metadata = {'searches_performed': []}
     else:
         search_results = search_service.search_all(
             title=evaluation_data['original_issue']['title'],
@@ -1436,11 +1588,13 @@ def perform_search():
     # Search for TFT Features if feature_request category
     tft_features = []
     tft_error = None
+    print(f"[DEBUG TFT] Checking if category '{category}' == 'feature_request': {category == 'feature_request'}")
     if category == 'feature_request':
         try:
             print("[TFT Search] Searching Technical Feedback for similar Features...")
-            from ado_integration import AzureDevOpsClient
-            ado_client = AzureDevOpsClient()
+            # Use the global authenticated ADO client instead of creating a new one
+            # to avoid authentication state mismatch issues
+            global ado_client
             tft_result = ado_client.search_tft_features(
                 title=evaluation_data['original_issue']['title'],
                 description=evaluation_data['original_issue']['description'],
@@ -1463,6 +1617,13 @@ def perform_search():
     
     # Generate category-specific guidance
     category_guidance = _get_category_guidance(category)
+    
+    # DEBUG: Log TFT features before storing
+    print(f"[DEBUG] tft_features type: {type(tft_features)}, length: {len(tft_features) if isinstance(tft_features, list) else 'N/A'}")
+    if isinstance(tft_features, list) and len(tft_features) > 0:
+        print(f"[DEBUG] First feature: {tft_features[0]}")
+    else:
+        print(f"[DEBUG] tft_features is empty or not a list: {tft_features}")
     
     # Store search results in temp storage
     evaluation_data['search_results'] = {
@@ -1551,6 +1712,16 @@ def search_results():
     if 'search_results' not in evaluation_data:
         # Redirect to perform search first
         return redirect(url_for('search_resources', eval_id=evaluation_id))
+    
+    # DEBUG: Log what's being passed to template
+    search_data = evaluation_data['search_results']
+    print(f"[DEBUG] Passing to template - tft_features type: {type(search_data.get('tft_features'))}")
+    if 'tft_features' in search_data:
+        print(f"[DEBUG] tft_features length: {len(search_data['tft_features']) if isinstance(search_data['tft_features'], list) else 'N/A'}")
+        if isinstance(search_data['tft_features'], list) and len(search_data['tft_features']) > 0:
+            print(f"[DEBUG] First feature in template data: {search_data['tft_features'][0]}")
+    else:
+        print(f"[DEBUG] tft_features not in search_data!")
     
     return render_template('search_results.html',
                          evaluation_id=evaluation_id,
@@ -2088,7 +2259,7 @@ if __name__ == '__main__':
             print(f"ℹ️ Services: {len(service_info.get('routes', []))} routes available")
     else:
         print("⚠️ WARNING: Microservices may not be running!")
-        print("🔧 Make sure to run: .\start_all_services.ps1")
+        print(r"🔧 Make sure to run: .\start_all_services.ps1")
         print("")
     
     print("="*80)

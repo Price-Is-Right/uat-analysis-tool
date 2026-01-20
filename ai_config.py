@@ -25,7 +25,7 @@ class AzureOpenAIConfig:
     
     # Deployment names (Azure-specific)
     embedding_deployment: str = field(default_factory=lambda: os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"))
-    classification_deployment: str = field(default_factory=lambda: os.environ.get("AZURE_OPENAI_CLASSIFICATION_DEPLOYMENT", "gpt-4o"))
+    classification_deployment: str = field(default_factory=lambda: os.environ.get("AZURE_OPENAI_CLASSIFICATION_DEPLOYMENT", "gpt-4o-02"))
     
     # Model parameters
     temperature: float = 0.1  # Low temperature for consistency
