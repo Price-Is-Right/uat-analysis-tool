@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Callable
+from contextlib import asynccontextmanager
 import sys
 import os
 from datetime import datetime
@@ -31,10 +32,43 @@ from enhanced_matching import EnhancedMatcher, ProgressTracker, AIAnalyzer, Enha
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Global matcher instance (initialized with None, will be set on startup)
+matcher = None
+issue_tracker = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize and cleanup the enhanced matcher"""
+    global matcher, issue_tracker
+    
+    # Startup
+    logger.info("🚀 Enhanced Matching Service starting up...")
+    logger.info("📋 Loading knowledge bases and initializing components...")
+    
+    # Note: IssueTracker is not available in search_service, setting to None
+    issue_tracker = None
+    
+    # Initialize matcher
+    try:
+        matcher = EnhancedMatcher(issue_tracker)
+        logger.info("✅ Enhanced Matcher initialized successfully")
+        logger.info("🔐 Azure DevOps authentication ready")
+        logger.info("🧠 AI analysis components loaded")
+        logger.info("🎯 Context analyzer ready")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Enhanced Matcher: {e}")
+        raise
+    
+    yield
+    
+    # Shutdown (if needed)
+    logger.info("🔚 Enhanced Matching Service shutting down...")
+
 app = FastAPI(
     title="Enhanced Matching Service",
     description="AI-powered issue matching and similarity analysis",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Enable CORS for API Gateway
@@ -115,39 +149,6 @@ class IntelligentSearchResponse(BaseModel):
     """Response with intelligent search results"""
     progress: Optional[Dict[str, Any]]
     results: SearchResults
-
-# Global matcher instance (initialized with None, will be set on startup)
-matcher = None
-issue_tracker = None
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the enhanced matcher on startup"""
-    global matcher, issue_tracker
-    
-    logger.info("🚀 Enhanced Matching Service starting up...")
-    logger.info("📋 Loading knowledge bases and initializing components...")
-    
-    # Import issue tracker (needed by EnhancedMatcher)
-    try:
-        from search_service import IssueTracker
-        issue_tracker = IssueTracker()
-        logger.info("✅ Issue tracker initialized")
-    except Exception as e:
-        logger.warning(f"⚠️  Issue tracker initialization failed: {e}")
-        logger.info("   Continuing without local issue tracking...")
-        issue_tracker = None
-    
-    # Initialize matcher
-    try:
-        matcher = EnhancedMatcher(issue_tracker)
-        logger.info("✅ Enhanced Matcher initialized successfully")
-        logger.info("🔐 Azure DevOps authentication ready")
-        logger.info("🧠 AI analysis components loaded")
-        logger.info("🎯 Context analyzer ready")
-    except Exception as e:
-        logger.error(f"❌ Failed to initialize Enhanced Matcher: {e}")
-        raise
 
 @app.get("/health")
 async def health_check():
@@ -257,6 +258,10 @@ async def analyze_context(request: ContextAnalysisRequest):
         intent = evaluation_data['context_analysis']['intent']
         confidence = evaluation_data['context_analysis']['confidence']
         
+        logger.info(f"[ENHANCED-MATCHING DEBUG] Full evaluation_data keys: {list(evaluation_data.keys())}")
+        logger.info(f"[ENHANCED-MATCHING DEBUG] Context analysis keys: {list(evaluation_data['context_analysis'].keys())}")
+        logger.info(f"[ENHANCED-MATCHING DEBUG] Category type: {type(category)}, Value: '{category}'")
+        logger.info(f"[ENHANCED-MATCHING DEBUG] Category display: '{evaluation_data['context_analysis'].get('category_display', 'N/A')}'")
         logger.info(f"✅ Context: Category={category}, Intent={intent}, Confidence={confidence:.2f}")
         
         return ContextAnalysisResponse(**evaluation_data)
@@ -343,7 +348,7 @@ if __name__ == "__main__":
     import uvicorn
     
     print("="*80)
-    print("🚀 Enhanced Matching Service - Starting")
+    print("Enhanced Matching Service - Starting")
     print("="*80)
     print(f"Port: 8003")
     print(f"Features: AI Analysis, Context Evaluation, Intelligent Search")

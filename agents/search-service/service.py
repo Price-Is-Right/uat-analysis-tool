@@ -40,11 +40,11 @@ try:
     connection_string = os.getenv('APPLICATIONINSIGHTS_CONNECTION_STRING')
     if connection_string:
         configure_azure_monitor(connection_string=connection_string)
-        logger.info("✅ Application Insights enabled")
+        logger.info("[OK] Application Insights enabled")
     else:
-        logger.warning("⚠️ Application Insights connection string not found")
+        logger.warning("[WARN] Application Insights connection string not found")
 except ImportError:
-    logger.warning("⚠️ Azure Monitor OpenTelemetry not installed")
+    logger.warning("[WARN] Azure Monitor OpenTelemetry not installed")
 
 # Initialize search service
 search_service = ResourceSearchService(use_deep_search=False)

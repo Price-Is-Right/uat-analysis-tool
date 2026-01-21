@@ -17,6 +17,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
+from contextlib import asynccontextmanager
 import sys
 import os
 import logging
@@ -32,10 +33,34 @@ from embedding_service import EmbeddingService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Global service (initialized on startup)
+embedding_service = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize and cleanup the embedding service"""
+    global embedding_service
+    
+    # Startup
+    logger.info("Embedding Service starting up...")
+    try:
+        embedding_service = EmbeddingService()
+        logger.info("Embedding Service initialized")
+        logger.info("Azure OpenAI integration ready")
+    except Exception as e:
+        logger.error(f"Failed to initialize Embedding Service: {e}")
+        raise
+    
+    yield
+    
+    # Shutdown
+    logger.info("Embedding Service shutting down...")
+
 app = FastAPI(
     title="Embedding Service",
     description="Text embedding generation using Azure OpenAI with smart caching",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -94,25 +119,19 @@ class SimilarityResponse(BaseModel):
     """Response for similarity calculation"""
     similarity: float
 
-# Global service (initialized on startup)
-embedding_service = None
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the embedding service on startup"""
-    global embedding_service
-    
-    logger.info("Embedding Service starting up...")
-    
-    try:
-        embedding_service = EmbeddingService()
-        logger.info("Embedding Service initialized")
-        logger.info("Azure OpenAI integration ready")
-    except Exception as e:
-        logger.error(f"Failed to initialize Embedding Service: {e}")
-        raise
-
 @app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    if embedding_service is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+    
+    return {
+        "status": "healthy",
+        "service": "embedding",
+        "model": "text-embedding-3-large"
+    }
+
+@app.get("/info")
 async def health_check():
     """Health check endpoint"""
     if embedding_service is None:
@@ -362,7 +381,7 @@ if __name__ == "__main__":
     import uvicorn
     
     print("="*80)
-    print("🚀 Embedding Service - Starting")
+    print("Embedding Service - Starting")
     print("="*80)
     print(f"Port: 8006")
     print(f"Features: Azure OpenAI Embeddings, Smart Caching, Batch Processing")

@@ -1157,8 +1157,25 @@ def submit_evaluation_summary():
     evaluation_data = temp_storage[evaluation_id]
     
     if action == 'agree':
-        # User agrees with classification - proceed to resource search
-        # Show search results before UAT creation
+        # User agrees with classification - save evaluation data for analysis
+        print(f"[EVALUATION] User agreed with classification, saving evaluation data...")
+        
+        feedback_data = {
+            "evaluation_result": "approve",
+            "action": "user_approved_and_continued",
+            "original_issue": evaluation_data['original_issue'],
+            "context_analysis": evaluation_data['context_analysis'],
+            "user_corrections": None,
+            "comments": "User approved AI classification and continued to search"
+        }
+        
+        try:
+            saved_id = tracker.save_evaluation(feedback_data)
+            print(f"[EVALUATION] Saved evaluation {saved_id} to context_evaluations.json")
+        except Exception as e:
+            print(f"[EVALUATION] Warning: Failed to save evaluation: {e}")
+        
+        # Proceed to resource search
         return redirect(url_for('search_resources', eval_id=evaluation_id))
     
     elif action == 'modify':

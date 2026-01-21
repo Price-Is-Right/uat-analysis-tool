@@ -184,14 +184,14 @@ async def create_uat(request: CreateUATRequest):
                 assigned_to=result.get('assigned_to')
             )
         else:
-            logger.error(f"❌ UAT creation failed: {result.get('error')}")
+            logger.error(f"[ERROR] UAT creation failed: {result.get('error')}")
             return UATResponse(
                 success=False,
                 error=result.get('error', 'Failed to create work item')
             )
         
     except Exception as e:
-        logger.error(f"❌ Error creating UAT: {e}")
+        logger.error(f"[ERROR] Error creating UAT: {e}")
         raise HTTPException(status_code=500, detail=f"UAT creation failed: {str(e)}")
 
 @app.get("/list", response_model=UATListResponse)
@@ -240,7 +240,7 @@ async def list_uats(
         )
         
     except Exception as e:
-        logger.error(f"❌ Error listing UATs: {e}")
+        logger.error(f"[ERROR] Error listing UATs: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list UATs: {str(e)}")
 
 @app.get("/{work_item_id}")
@@ -264,13 +264,13 @@ async def get_uat(work_item_id: int):
             logger.info(f"Retrieved UAT #{work_item_id}")
             return work_item
         else:
-            logger.warning(f"⚠️  UAT #{work_item_id} not found")
+            logger.warning(f"[WARN] UAT #{work_item_id} not found")
             raise HTTPException(status_code=404, detail=f"Work item {work_item_id} not found")
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ Error retrieving UAT: {e}")
+        logger.error(f"[ERROR] Error retrieving UAT: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve UAT: {str(e)}")
 
 @app.put("/{work_item_id}")
@@ -298,21 +298,21 @@ async def update_uat(work_item_id: int, updates: Dict[str, Any]):
                 "updated_fields": list(updates.keys())
             }
         else:
-            logger.error(f"❌ UAT update failed: {result.get('error')}")
+            logger.error(f"[ERROR] UAT update failed: {result.get('error')}")
             return {
                 "success": False,
                 "error": result.get('error', 'Failed to update work item')
             }
         
     except Exception as e:
-        logger.error(f"❌ Error updating UAT: {e}")
+        logger.error(f"[ERROR] Error updating UAT: {e}")
         raise HTTPException(status_code=500, detail=f"UAT update failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
     
     print("="*80)
-    print("🚀 UAT Management Service - Starting")
+    print("UAT Management Service - Starting")
     print("="*80)
     print(f"Port: 8004")
     print(f"Features: UAT CRUD, Azure DevOps Integration")

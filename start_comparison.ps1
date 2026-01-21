@@ -70,4 +70,6 @@ Start-Process "http://localhost:5002"  # Original
 Start-Sleep -Seconds 1
 Start-Process "http://localhost:5003"  # Microservices
 
-Write-Host "`n✅ Setup complete! Both UIs are ready for testing.`n" -ForegroundColor Green
+Write-Host ""
+Write-Host "Setup complete! Both UIs are ready for testing." -ForegroundColor Green
+Write-Host ""

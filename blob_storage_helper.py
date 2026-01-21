@@ -1,7 +1,7 @@
 """
 Azure Blob Storage Helper
 Provides functions to read/write JSON data to Azure Blob Storage
-Uses Azure AD authentication (organization policy requirement)
+Supports both connection string (dev) and managed identity (prod) authentication
 """
 
 import json
@@ -9,6 +9,8 @@ import os
 from typing import Any, Dict, List
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceNotFoundError
+from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+from keyvault_config import get_keyvault_config
 
 class BlobStorageManager:
     """Manages JSON data in Azure Blob Storage"""
@@ -16,19 +18,35 @@ class BlobStorageManager:
     def __init__(self, storage_account_name: str, container_name: str = 'gcs-data'):
         """
         Initialize Blob Storage Manager
-        Uses Azure AD authentication via portal/VS Code credentials
+        
+        Authentication priority:
+        1. Managed Identity (if AZURE_CLIENT_ID is set)
+        2. Connection String from Key Vault
+        3. DefaultAzureCredential (local development)
         """
         self.container_name = container_name
         self.account_url = f"https://{storage_account_name}.blob.core.windows.net"
         
-        # Note: Since org policy blocks key-based auth,
-        # we rely on portal/browser authentication
-        # For now, use connection string which works in portal context
-        connection_string = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
-        if connection_string:
-            self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        # Check for managed identity first
+        managed_identity_client_id = os.environ.get('AZURE_CLIENT_ID')
+        
+        if managed_identity_client_id:
+            # Production: Use managed identity for storage access
+            print(f"  Using Managed Identity for storage: {managed_identity_client_id[:8]}...")
+            credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
+            self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
         else:
-            raise ValueError("AZURE_STORAGE_CONNECTION_STRING not found in environment")
+            # Development: Try connection string from Key Vault, then DefaultAzureCredential
+            kv_config = get_keyvault_config()
+            connection_string = kv_config.get_secret('AZURE_STORAGE_CONNECTION_STRING')
+            
+            if connection_string:
+                self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            else:
+                # Fallback to DefaultAzureCredential
+                print("  Using DefaultAzureCredential for storage")
+                credential = DefaultAzureCredential()
+                self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
         
         self.container_client = self.blob_service_client.get_container_client(container_name)
     
@@ -90,48 +108,53 @@ class BlobStorageManager:
 
 # Convenience functions for backward compatibility with existing code
 
+def _get_storage_account_name() -> str:
+    """Get storage account name from Key Vault or environment"""
+    kv_config = get_keyvault_config()
+    return kv_config.get_secret('AZURE_STORAGE_ACCOUNT_NAME')
+
 def load_context_evaluations() -> List[Dict]:
     """Load context evaluations from blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     data = manager.read_json('context_evaluations.json')
     return data if data is not None else []
 
 def save_context_evaluations(data: List[Dict]) -> bool:
     """Save context evaluations to blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     return manager.write_json('context_evaluations.json', data)
 
 def load_corrections() -> Dict:
     """Load corrections from blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     data = manager.read_json('corrections.json')
     return data if data is not None else {}
 
 def save_corrections(data: Dict) -> bool:
     """Save corrections to blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     return manager.write_json('corrections.json', data)
 
 def load_retirements() -> Dict:
     """Load retirements from blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     data = manager.read_json('retirements.json')
     return data if data is not None else {}
 
 def save_retirements(data: Dict) -> bool:
     """Save retirements to blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     return manager.write_json('retirements.json', data)
 
 def load_issues_actions() -> Dict:
     """Load issues/actions from blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     data = manager.read_json('issues_actions.json')
     return data if data is not None else {}
 
 def save_issues_actions(data: Dict) -> bool:
     """Save issues/actions to blob storage"""
-    manager = BlobStorageManager(os.getenv('AZURE_STORAGE_ACCOUNT_NAME'))
+    manager = BlobStorageManager(_get_storage_account_name())
     return manager.write_json('issues_actions.json', data)
 
 

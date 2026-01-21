@@ -13,12 +13,14 @@ import logging
 import os
 import uuid
 from dotenv import load_dotenv
+from keyvault_config import get_keyvault_config
 
-# Load environment variables
+# Load environment variables (non-secrets)
 load_dotenv('.env.azure')
 
-# Application Insights setup using Azure Monitor OpenTelemetry
-APP_INSIGHTS_CONNECTION_STRING = os.getenv('AZURE_APP_INSIGHTS_CONNECTION_STRING')
+# Get secrets from Key Vault
+kv_config = get_keyvault_config()
+APP_INSIGHTS_CONNECTION_STRING = kv_config.get_secret('AZURE_APP_INSIGHTS_CONNECTION_STRING')
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -170,23 +172,125 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # Import route modules
-from gateway.routes import search, analyze, uat, context, quality, ado
-from gateway.routes import matching
-from gateway.routes import classify
-from gateway.routes import embedding
-from gateway.routes import vector_search
+print("[DEBUG] Starting route imports...")
+try:
+    print("[DEBUG] Importing search, analyze, uat, context, quality, ado...")
+    from gateway.routes import search, analyze, uat, context, quality, ado
+    print("[DEBUG] ✅ First group imported successfully")
+except Exception as e:
+    print(f"[DEBUG] ❌ First group import failed: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
+    print("[DEBUG] Importing matching...")
+    from gateway.routes import matching
+    print("[DEBUG] ✅ matching imported successfully")
+except Exception as e:
+    print(f"[DEBUG] ❌ matching import failed: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
+    print("[DEBUG] Importing classify...")
+    from gateway.routes import classify
+    print("[DEBUG] ✅ classify imported successfully")
+except Exception as e:
+    print(f"[DEBUG] ❌ classify import failed: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
+    print("[DEBUG] Importing embedding...")
+    from gateway.routes import embedding
+    print("[DEBUG] ✅ embedding imported successfully")
+except Exception as e:
+    print(f"[DEBUG] ❌ embedding import failed: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
+    print("[DEBUG] Importing vector_search...")
+    from gateway.routes import vector_search
+    print("[DEBUG] ✅ vector_search imported successfully")
+except Exception as e:
+    print(f"[DEBUG] ❌ vector_search import failed: {e}")
+    import traceback
+    traceback.print_exc()
 
 # Register route blueprints
-app.include_router(search.router, prefix="/api/search", tags=["Search"])
-app.include_router(analyze.router, prefix="/api/analyze", tags=["Analysis"])
-app.include_router(uat.router, prefix="/api/uat", tags=["UAT Management"])
-app.include_router(context.router, prefix="/api/context", tags=["Context"])
-app.include_router(quality.router, prefix="/api/quality", tags=["Quality"])
-app.include_router(ado.router, prefix="/api/ado", tags=["Azure DevOps"])
-app.include_router(matching.router, prefix="/api/matching", tags=["Enhanced Matching"])
-app.include_router(classify.router, prefix="/api/classify", tags=["LLM Classification"])
-app.include_router(embedding.router, prefix="/api/embedding", tags=["Embeddings"])
-app.include_router(vector_search.router, prefix="/api/vector", tags=["Vector Search"])
+print("[DEBUG] Starting route registrations...")
+try:
+    print("[DEBUG] Registering search router...")
+    app.include_router(search.router, prefix="/api/search", tags=["Search"])
+    print("[DEBUG] ✅ search registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ search registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering analyze router...")
+    app.include_router(analyze.router, prefix="/api/analyze", tags=["Analysis"])
+    print("[DEBUG] ✅ analyze registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ analyze registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering uat router...")
+    app.include_router(uat.router, prefix="/api/uat", tags=["UAT Management"])
+    print("[DEBUG] ✅ uat registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ uat registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering context router...")
+    app.include_router(context.router, prefix="/api/context", tags=["Context"])
+    print("[DEBUG] ✅ context registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ context registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering quality router...")
+    app.include_router(quality.router, prefix="/api/quality", tags=["Quality"])
+    print("[DEBUG] ✅ quality registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ quality registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering ado router...")
+    app.include_router(ado.router, prefix="/api/ado", tags=["Azure DevOps"])
+    print("[DEBUG] ✅ ado registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ ado registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering matching router...")
+    app.include_router(matching.router, prefix="/api/matching", tags=["Enhanced Matching"])
+    print("[DEBUG] ✅ matching registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ matching registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering classify router...")
+    app.include_router(classify.router, prefix="/api/classify", tags=["LLM Classification"])
+    print("[DEBUG] ✅ classify registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ classify registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering embedding router...")
+    app.include_router(embedding.router, prefix="/api/embedding", tags=["Embeddings"])
+    print("[DEBUG] ✅ embedding registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ embedding registration failed: {e}")
+
+try:
+    print("[DEBUG] Registering vector_search router...")
+    app.include_router(vector_search.router, prefix="/api/vector", tags=["Vector Search"])
+    print("[DEBUG] ✅ vector_search registered")
+except Exception as e:
+    print(f"[DEBUG] ❌ vector_search registration failed: {e}")
+
+print("[DEBUG] Route registration complete!")
 
 if __name__ == "__main__":
     import uvicorn

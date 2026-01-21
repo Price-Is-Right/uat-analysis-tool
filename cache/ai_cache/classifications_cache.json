@@ -135,13 +135,13 @@
     "data": {
       "category": "feature_request",
       "intent": "requesting_feature",
-      "business_impact": "high",
-      "confidence": 0.95,
-      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with a feature request. The stated impact is significant but not critical, as it affects their ability to scale and migrate workloads, but does not indicate an immediate outage or failure."
+      "business_impact": "critical",
+      "confidence": 0.98,
+      "reasoning": "The customer is explicitly requesting support for 32-bit ASNs in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This is a feature request rather than a roadmap inquiry because they are asking for the implementation of a specific capability, not about timelines or planned features. The stated impact indicates critical business importance as it affects their ability to migrate workloads to Azure."
     },
-    "created_at": "2026-01-16T13:56:59.946300",
+    "created_at": "2026-01-18T22:45:57.914231",
     "ttl_days": 7,
-    "hits": 0
+    "hits": 2
   },
   "3a19cbd0faebc49abf8573a271d09eb61f259b9b6427db239d2c08b821200f63": {
     "data": {

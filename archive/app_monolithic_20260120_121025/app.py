@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """
-INTELLIGENT CONTEXT ANALYSIS (ICA) SYSTEM - MICROSERVICES VERSION
+INTELLIGENT CONTEXT ANALYSIS (ICA) SYSTEM - FLASK WEB APPLICATION
 
 =============================================================================
 COMPREHENSIVE AI-POWERED ISSUE ANALYSIS AND MATCHING PLATFORM
 =============================================================================
 
-🔄 MICROSERVICES ARCHITECTURE VERSION
-This Flask web application connects to microservices via HTTP API calls
-instead of using direct library imports. This version demonstrates the
-microservices architecture and allows side-by-side comparison with the
-monolithic version.
+This Flask web application serves as the primary user interface for the
+Intelligent Context Analysis system, providing comprehensive AI-powered
+analysis of IT support issues with complete transparency and reasoning.
 
 KEY FEATURES:
 ✅ AI-Powered Context Analysis: 10-step systematic analysis with full transparency
@@ -21,19 +19,18 @@ KEY FEATURES:
 ✅ Real-Time Progress Tracking: Live updates during analysis operations
 ✅ Quality Assessment: Input completeness scoring and recommendations
 
-MICROSERVICES ARCHITECTURE:
+WEB APPLICATION ARCHITECTURE:
 
-1. MAIN APPLICATION (app_microservices.py):
+1. MAIN APPLICATION (app.py):
    - Flask web server with session management
    - Route handlers for all user interfaces
    - Progress tracking and real-time updates
    - Template rendering with context data
 
-2. AI ANALYSIS VIA MICROSERVICES:
-   - API Gateway (port 8000): Central routing
-   - Context Analyzer (port 8001): AI reasoning engine
-   - Search Service (port 8002): UAT search
-   - Enhanced Matching (port 8003): Multi-source orchestration
+2. AI ANALYSIS INTEGRATION:
+   - IntelligentContextAnalyzer: Core AI reasoning engine
+   - EnhancedMatching: Multi-source search orchestrator
+   - Quality analysis and input validation
 
 3. USER INTERFACES:
    - Quick ICA: Rapid analysis for immediate insights
@@ -65,10 +62,6 @@ Last Updated: December 2025
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file before any other imports that use env vars
 
-# Load Azure Key Vault configuration for secure secret management
-from keyvault_config import get_keyvault_config
-kv_config = get_keyvault_config()
-
 # Core Flask framework imports
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 
@@ -88,15 +81,7 @@ import time                                             # Time operations and de
 from ado_integration import AzureDevOpsClient           # Azure DevOps API integration
 from markupsafe import Markup                          # HTML safety for templates
 from bs4 import BeautifulSoup                          # HTML parsing and cleaning
-
-# 🔄 MICROSERVICES CLIENT - HTTP API calls instead of direct imports
-from microservices_client import (
-    AIAnalyzer, EnhancedMatcher, ResourceSearchService,
-    ComprehensiveSearchResults, SearchResult,
-    IntelligentContextAnalyzer, LLMClassifier,
-    EmbeddingService, VectorSearchService,
-    check_microservices_health, get_service_info
-)
+from search_service import ResourceSearchService, ComprehensiveSearchResults, SearchResult  # Resource search orchestrator
 
 # =============================================================================
 # FLASK APPLICATION INITIALIZATION AND CONFIGURATION
@@ -279,9 +264,36 @@ class IssueTracker:
         return {"issues_actions": []}
     
     def load_evaluations(self) -> Dict:
-        """Load context evaluation data for machine learning"""
+        """Load context evaluation data for machine learning (from Azure Storage or local file)"""
         default_structure = {"evaluations": [], "statistics": {"total": 0, "approved": 0, "rejected": 0}}
         
+        # Try to load from Azure Blob Storage first
+        try:
+            from blob_storage_helper import BlobStorageManager
+            storage_account = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
+            if storage_account:
+                blob_manager = BlobStorageManager(storage_account)
+                data = blob_manager.read_json(self.evaluation_file)
+                if data:
+                    # Ensure statistics key exists and has proper structure
+                    if "statistics" not in data:
+                        data["statistics"] = {"total": 0, "approved": 0, "rejected": 0}
+                    elif not isinstance(data["statistics"], dict):
+                        data["statistics"] = {"total": 0, "approved": 0, "rejected": 0}
+                    else:
+                        # Ensure all required statistics fields exist
+                        for key in ["total", "approved", "rejected"]:
+                            if key not in data["statistics"]:
+                                data["statistics"][key] = 0
+                    # Ensure evaluations key exists
+                    if "evaluations" not in data:
+                        data["evaluations"] = []
+                    print(f"✅ Loaded evaluations from Azure Blob Storage")
+                    return data
+        except Exception as e:
+            print(f"⚠️ Could not load from Azure Blob Storage, falling back to local file: {e}")
+        
+        # Fallback to local file
         if os.path.exists(self.evaluation_file):
             try:
                 with open(self.evaluation_file, 'r', encoding='utf-8') as f:
@@ -299,13 +311,16 @@ class IssueTracker:
                     # Ensure evaluations key exists
                     if "evaluations" not in data:
                         data["evaluations"] = []
+                    print(f"✅ Loaded evaluations from local file")
                     return data
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
+        
+        print(f"⚠️ No existing evaluations found, starting with empty dataset")
         return default_structure
     
     def save_evaluation(self, evaluation_data: Dict) -> str:
-        """Save context evaluation feedback for learning"""
+        """Save context evaluation feedback for learning (local file and Azure Storage)"""
         evaluation_id = str(uuid.uuid4())
         evaluation_entry = {
             "id": evaluation_id,
@@ -327,13 +342,29 @@ class IssueTracker:
         elif evaluation_data.get("evaluation_result") == "reject":
             self.evaluations["statistics"]["rejected"] += 1
         
-        # Save to file
+        # Save to local file (for local development/backup)
         try:
             with open(self.evaluation_file, 'w', encoding='utf-8') as f:
                 json.dump(self.evaluations, f, indent=2, ensure_ascii=False)
-            print(f"✅ Evaluation {evaluation_id} saved successfully")
+            print(f"✅ Evaluation {evaluation_id} saved to local file")
         except Exception as e:
-            print(f"[ERROR] Error saving evaluation: {e}")
+            print(f"[ERROR] Error saving evaluation to local file: {e}")
+        
+        # Save to Azure Blob Storage
+        try:
+            from blob_storage_helper import BlobStorageManager
+            storage_account = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
+            if storage_account:
+                blob_manager = BlobStorageManager(storage_account)
+                success = blob_manager.write_json(self.evaluation_file, self.evaluations)
+                if success:
+                    print(f"✅ Evaluation {evaluation_id} saved to Azure Blob Storage")
+                else:
+                    print(f"⚠️ Failed to save evaluation {evaluation_id} to Azure Blob Storage")
+            else:
+                print(f"⚠️ Azure Storage not configured - evaluation saved locally only")
+        except Exception as e:
+            print(f"[ERROR] Error saving evaluation to Azure Blob Storage: {e}")
         
         return evaluation_id
     
@@ -343,6 +374,73 @@ class IssueTracker:
             if evaluation["id"] == evaluation_id:
                 return evaluation
         return None
+    
+    def save_analysis_result(self, analysis_data: Dict) -> str:
+        """
+        Save complete analysis results to Azure Blob Storage
+        
+        This saves the full analysis details including context analysis,
+        recommended strategies, and all AI reasoning to a dedicated file
+        for each submission. This is separate from evaluations which track
+        user feedback.
+        
+        Args:
+            analysis_data: Complete analysis results dictionary containing:
+                - original_issue: Title, description, impact
+                - context_analysis: Full AI analysis results
+                - recommended_strategy: Search strategy recommendations
+                - timestamp: When analysis was performed
+        
+        Returns:
+            str: Analysis ID for reference
+        """
+        analysis_id = str(uuid.uuid4())
+        analysis_entry = {
+            "analysis_id": analysis_id,
+            "timestamp": datetime.now().isoformat(),
+            **analysis_data
+        }
+        
+        # Save individual analysis to blob storage
+        try:
+            from blob_storage_helper import BlobStorageManager
+            storage_account = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
+            if storage_account:
+                blob_manager = BlobStorageManager(storage_account)
+                # Save to a unique file per analysis
+                filename = f"analysis_{analysis_id}.json"
+                success = blob_manager.write_json(filename, analysis_entry)
+                if success:
+                    print(f"✅ Analysis {analysis_id} saved to Azure Blob Storage: {filename}")
+                else:
+                    print(f"⚠️ Failed to save analysis {analysis_id} to Azure Blob Storage")
+                
+                # Also append to master analysis log
+                try:
+                    analyses_log = blob_manager.read_json('analyses_log.json')
+                    if not analyses_log:
+                        analyses_log = {"analyses": [], "count": 0}
+                    
+                    # Add summary to log (not full details to keep log manageable)
+                    analyses_log["analyses"].append({
+                        "analysis_id": analysis_id,
+                        "timestamp": analysis_entry["timestamp"],
+                        "title": analysis_data.get("original_issue", {}).get("title", ""),
+                        "category": analysis_data.get("context_analysis", {}).get("category", ""),
+                        "intent": analysis_data.get("context_analysis", {}).get("intent", ""),
+                    })
+                    analyses_log["count"] = len(analyses_log["analyses"])
+                    
+                    blob_manager.write_json('analyses_log.json', analyses_log)
+                    print(f"✅ Analysis {analysis_id} added to master log")
+                except Exception as e:
+                    print(f"⚠️ Could not update master analyses log: {e}")
+            else:
+                print(f"⚠️ Azure Storage not configured - analysis not saved")
+        except Exception as e:
+            print(f"[ERROR] Error saving analysis to Azure Blob Storage: {e}")
+        
+        return analysis_id
     
     def get_learning_statistics(self) -> Dict:
         """Get statistics for the learning system"""
@@ -475,7 +573,7 @@ def submit_issue():
         
         # Otherwise, perform quality analysis and show review page
         try:
-            # Call microservice for quality analysis
+            from enhanced_matching import AIAnalyzer
             quality_analysis = AIAnalyzer.analyze_completeness(title, description, impact)
             
             # Always show quality review to give user the 3 options
@@ -581,23 +679,8 @@ def uat_input():
             if 'selected_tft_features' in eval_data:
                 wizard_data['selected_features'] = eval_data['selected_tft_features']
                 print(f"[UAT INPUT] Stored {len(eval_data['selected_tft_features'])} selected features")
-                if eval_data['selected_tft_features']:
-                    print(f"[UAT INPUT] Features: {eval_data['selected_tft_features']}")
             
-            # Save wizard_data to session
             session['original_wizard_data'] = wizard_data
-            session.modified = True
-            print(f"[UAT INPUT] Saved wizard_data to session with keys: {list(wizard_data.keys())}")
-        else:
-            print(f"[UAT INPUT] ERROR: eval_id {eval_id} not found in temp_storage!")
-    
-    # Debug: Log what's in session before rendering
-    print(f"[UAT INPUT] Session state before render:")
-    print(f"  - evaluation_id: {session.get('evaluation_id', 'NOT SET')}")
-    print(f"  - wizard_title: {session.get('wizard_title', 'NOT SET')}")
-    print(f"  - current_issue: {session.get('current_issue', 'NOT SET')}")
-    if 'original_wizard_data' in session:
-        print(f"  - original_wizard_data keys: {list(session['original_wizard_data'].keys())}")
     
     current_issue = session.get('current_issue', '')
     wizard_title = session.get('wizard_title', '')
@@ -616,20 +699,11 @@ def uat_input():
 def process_uat_input():
     """Process UAT input form and determine next step"""
     try:
-        print("\n" + "="*80)
-        print("[PROCESS_UAT_INPUT POST] Starting...")
-        print("="*80)
-        print(f"[PROCESS_UAT_INPUT POST] Session keys: {list(session.keys())}")
-        print(f"[PROCESS_UAT_INPUT POST] evaluation_id in session: {session.get('evaluation_id', 'NOT FOUND')}")
-        if 'original_wizard_data' in session:
-            print(f"[PROCESS_UAT_INPUT POST] wizard_data keys: {list(session['original_wizard_data'].keys())}")
-            if 'title' in session['original_wizard_data']:
-                print(f"[PROCESS_UAT_INPUT POST] Title in wizard_data: {session['original_wizard_data']['title']}")
-        
+        print("\n[PROCESS_UAT_INPUT] Processing UAT input form...")
         action = request.form.get('action')
         opportunity_id = request.form.get('opportunity_id', '').strip()
         milestone_id = request.form.get('milestone_id', '').strip()
-        print(f"[PROCESS_UAT_INPUT POST] Form data - Opportunity: {opportunity_id}, Milestone: {milestone_id}, Action: {action}")
+        print(f"[PROCESS_UAT_INPUT] Opportunity ID: {opportunity_id}, Milestone ID: {milestone_id}")
         
         # Store IDs in session
         session['opportunity_id'] = opportunity_id
@@ -637,16 +711,12 @@ def process_uat_input():
         
         # Store in original_wizard_data for create_work_item_from_issue
         wizard_data = session.get('original_wizard_data', {})
-        print(f"[PROCESS_UAT_INPUT POST] Retrieved wizard_data from session with keys: {list(wizard_data.keys())}")
-        
         wizard_data['opportunity_id'] = opportunity_id
         wizard_data['milestone_id'] = milestone_id
-        print(f"[PROCESS_UAT_INPUT POST] Added opportunity/milestone to wizard_data")
         
         # Get context_analysis and selected_features from the evaluation session
         # The evaluation_id should be stored somewhere - check session or temp_storage
         evaluation_id = session.get('evaluation_id')  # Should be set during context analysis
-        print(f"[PROCESS_UAT_INPUT POST] Looking for evaluation_id: {evaluation_id}")
         
         if evaluation_id and evaluation_id in temp_storage:
             eval_data = temp_storage[evaluation_id]
@@ -659,30 +729,20 @@ def process_uat_input():
                 wizard_data['selected_features'] = eval_data['selected_tft_features']
                 print(f"[UAT INPUT] Found {len(eval_data['selected_tft_features'])} selected features")
         else:
-            print("[PROCESS_UAT_INPUT POST] ⚠️ WARNING: No evaluation_id found in session, context_analysis will be empty")
+            print("[UAT INPUT] Warning: No evaluation_id found in session, context_analysis will be empty")
         
         session['original_wizard_data'] = wizard_data
-        session.modified = True
-        print(f"[PROCESS_UAT_INPUT POST] Saved wizard_data back to session with keys: {list(wizard_data.keys())}")
-        if 'title' in wizard_data:
-            print(f"[PROCESS_UAT_INPUT POST] Title saved: {wizard_data['title']}")
-        print("="*80 + "\n")
         
         # If user clicks "Continue with IDs" or "Force Skip", proceed to UAT selection
         if action == 'continue' or action == 'force_skip':
             # Show processing overlay while searching for UATs
-            print(f"🔄 [PROCESS_UAT_INPUT] Rendering searching_uats.html (action={action})")
-            print(f"🔄 [PROCESS_UAT_INPUT] This should redirect to select_related_uats via JavaScript")
             return render_template('searching_uats.html')
         
         # If user clicks "Continue Without IDs" and both are empty, redirect back with warning
         if action == 'skip' and not opportunity_id and not milestone_id:
-            print(f"⚠️ [PROCESS_UAT_INPUT] Redirecting back to uat_input with warning")
             return redirect(url_for('uat_input', show_warning=True))
         
         # If they have at least one ID, proceed to UAT selection with loading overlay
-        print(f"🔄 [PROCESS_UAT_INPUT] Rendering searching_uats.html (fallthrough)")
-        print(f"🔄 [PROCESS_UAT_INPUT] This should redirect to select_related_uats via JavaScript")
         return render_template('searching_uats.html')
         
     except Exception as e:
@@ -695,68 +755,34 @@ def process_uat_input():
 @app.route('/select_related_uats')
 def select_related_uats():
     """Display similar UAT selection page (last 180 days)"""
-    print("\n" + "="*80)
-    print("🚨 [SELECT_RELATED_UATS] ROUTE CALLED - STARTING UAT SELECTION")
-    print("="*80)
-    print(f"[SELECT_RELATED_UATS] Session keys: {list(session.keys())}")
-    
     current_issue = session.get('current_issue', '')
-    print(f"[SELECT_RELATED_UATS] current_issue from session: {current_issue}")
     
     # Get the actual title from evaluation data, not from wizard_title
     evaluation_id = session.get('evaluation_id')
-    print(f"[SELECT_RELATED_UATS] evaluation_id from session: {evaluation_id}")
-    
     wizard_title = 'Untitled Issue'  # Default fallback
     if evaluation_id and evaluation_id in temp_storage:
         eval_data = temp_storage[evaluation_id]
         wizard_title = eval_data.get('original_issue', {}).get('title', 'Untitled Issue')
-        print(f"[SELECT_RELATED_UATS] ✅ Got title from temp_storage: {wizard_title}")
+        print(f"[UAT SELECTION] Using title from evaluation: {wizard_title[:100]}")
     else:
         # Fallback to session if evaluation data not available
         wizard_title = session.get('wizard_title', 'Untitled Issue')
-        print(f"[SELECT_RELATED_UATS] ⚠️ Using fallback title from session: {wizard_title}")
-        if not evaluation_id:
-            print("[SELECT_RELATED_UATS] ❌ ERROR: No evaluation_id in session!")
-        elif evaluation_id not in temp_storage:
-            print(f"[SELECT_RELATED_UATS] ❌ ERROR: evaluation_id {evaluation_id} not in temp_storage!")
+        print(f"[UAT SELECTION] Using title from session: {wizard_title[:100]}")
     
     wizard_data = session.get('original_wizard_data', {})
-    if 'title' in wizard_data:
-        print(f"[SELECT_RELATED_UATS] Title in wizard_data: {wizard_data['title']}")
-    else:
-        print("[SELECT_RELATED_UATS] ⚠️ WARNING: No title in wizard_data!")
     
     # Search for similar UATs from last 180 days
-    # Using microservices client
-    matcher = EnhancedMatcher()
-    
-    # Note: The matcher's ado_searcher property now creates its own AzureDevOpsSearcher instance
-    # No need to inject ado_client anymore
-    print(f"[SELECT_RELATED_UATS] Matcher created (will create its own searcher when needed)")
+    from enhanced_matching import EnhancedMatcher
+    matcher = EnhancedMatcher(tracker)
     
     try:
-        print(f"\n{'='*80}")
-        print(f"[UAT SELECTION DEBUG] Starting UAT search")
-        print(f"{'='*80}")
-        print(f"[UAT SELECTION] Wizard title: {wizard_title[:100]}...")
-        print(f"[UAT SELECTION] Current issue: {current_issue[:100] if current_issue else 'None'}...")
-        print(f"[UAT SELECTION] Matcher type: {type(matcher)}")
-        print(f"[UAT SELECTION] Matcher.ado_searcher type: {type(matcher.ado_searcher)}")
-        
-        print(f"\n[UAT SELECTION] Calling matcher.ado_searcher.search_uat_items()...")
+        print(f"\n[UAT SELECTION] Searching for similar UATs (last 180 days): {wizard_title[:100]}...")
         uat_items = matcher.ado_searcher.search_uat_items(wizard_title, current_issue)
-        print(f"[UAT SELECTION] ✓ Search completed successfully!")
-        print(f"[UAT SELECTION] Raw search returned: {len(uat_items)} UATs")
-        
-        if uat_items:
-            print(f"[UAT SELECTION] First UAT sample: ID={uat_items[0].get('id')}, Title={uat_items[0].get('title', '')[:50]}")
         
         # Filter to last 180 days
         from datetime import datetime, timedelta
         cutoff_date = datetime.now() - timedelta(days=180)
         
-        print(f"\n[UAT SELECTION] Filtering UATs to last 180 days (cutoff: {cutoff_date.strftime('%Y-%m-%d')})")
         filtered_uats = []
         for uat in uat_items:
             created_str = uat.get('created_date', '')
@@ -765,30 +791,21 @@ def select_related_uats():
                     created_date = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
                     if created_date >= cutoff_date:
                         filtered_uats.append(uat)
-                        print(f"  ✓ Included UAT {uat.get('id')} (created: {created_date.strftime('%Y-%m-%d')})")
-                    else:
-                        print(f"  ✗ Excluded UAT {uat.get('id')} (too old: {created_date.strftime('%Y-%m-%d')})")
                 except Exception as date_error:
                     # If date parsing fails, include it anyway
-                    print(f"  ⚠ Date parsing failed for UAT {uat.get('id')}, including anyway: {date_error}")
+                    print(f"[UAT SELECTION] Warning: Date parsing failed for UAT, including anyway: {date_error}")
                     filtered_uats.append(uat)
         
-        print(f"\n[UAT SELECTION] Filter results: {len(filtered_uats)} UATs in last 180 days (from {len(uat_items)} total)")
+        print(f"[UAT SELECTION] Found {len(filtered_uats)} UATs in last 180 days (from {len(uat_items)} total)")
         
         # If no UATs found, skip to create_uat
         if not filtered_uats:
-            print(f"[UAT SELECTION] ❌ No similar UATs found - redirecting to create_uat")
-            print(f"{'='*80}\n")
+            print("[UAT SELECTION] No similar UATs found - skipping selection step")
             return redirect(url_for('create_uat'))
         
-        # FIXED 2026-01-19: Sort UATs by similarity score (highest first)
-        # User reported UATs displaying in wrong order (40%, 63%, 100% instead of 100%, 63%, 40%)
-        # Solution: Sort descending with reverse=True before displaying
+        # Sort UATs by similarity score (highest first)
         filtered_uats.sort(key=lambda x: x.get('similarity', 0), reverse=True)
-        print(f"[UAT SELECTION] ✓ Sorted {len(filtered_uats)} UATs by similarity (highest first)")
-        
-        # Extract list comprehension to avoid nested f-string syntax error
-        # (nested f-strings cause SyntaxError in print statements)
+        print(f"[UAT SELECTION] Sorted {len(filtered_uats)} UATs by similarity (highest first)")
         top_matches = [(u.get('id'), f"{u.get('similarity', 0)*100:.0f}%") for u in filtered_uats[:3]]
         print(f"[UAT SELECTION] Top matches: {top_matches}")
         
@@ -800,14 +817,8 @@ def select_related_uats():
         }
         session['uat_selection_id'] = selection_id
         
-        print(f"[UAT SELECTION] Stored in temp_storage with ID: {selection_id}")
-        
         # Get already selected UATs if any
         selected_uats = wizard_data.get('selected_uats', [])
-        print(f"[UAT SELECTION] Already selected UATs: {len(selected_uats)}")
-        
-        print(f"[UAT SELECTION] ✓ Rendering select_related_uats.html template")
-        print(f"{'='*80}\n")
         
         return render_template('select_related_uats.html',
                              current_issue=current_issue,
@@ -817,16 +828,9 @@ def select_related_uats():
                              selection_id=selection_id)
     
     except Exception as e:
-        print(f"\n{'='*80}")
-        print(f"[UAT SELECTION] ❌ EXCEPTION occurred during UAT search!")
-        print(f"{'='*80}")
-        print(f"[UAT SELECTION] Error: {e}")
-        print(f"[UAT SELECTION] Error type: {type(e).__name__}")
+        print(f"[UAT SELECTION] Error searching for UATs: {e}")
         import traceback
-        print(f"[UAT SELECTION] Traceback:")
         traceback.print_exc()
-        print(f"[UAT SELECTION] Redirecting to create_uat due to error")
-        print(f"{'='*80}\n")
         # On error, skip to create_uat
         return redirect(url_for('create_uat'))
 
@@ -868,15 +872,9 @@ def save_selected_uat():
 def create_uat():
     """Create UAT ticket in Azure DevOps"""
     try:
-        print("\n" + "="*80)
-        print("[CREATE_UAT] Starting UAT creation...")
-        print("="*80)
-        print(f"[CREATE_UAT] Session keys: {list(session.keys())}")
-        
+        print("\n[CREATE_UAT] Starting UAT creation...")
         current_issue = session.get('current_issue', '')
         wizard_title = session.get('wizard_title', 'Untitled Issue')
-        print(f"[CREATE_UAT] current_issue from session: {current_issue}")
-        print(f"[CREATE_UAT] wizard_title from session: {wizard_title}")
         
         import random
         current_date = datetime.now().strftime("%Y%m%d")
@@ -885,19 +883,6 @@ def create_uat():
         
         wizard_data = session.get('original_wizard_data', {})
         print(f"[CREATE_UAT] Wizard data keys: {list(wizard_data.keys())}")
-        if 'title' in wizard_data:
-            print(f"[CREATE_UAT] Title in wizard_data: {wizard_data['title']}")
-        else:
-            print("[CREATE_UAT] ❌ ERROR: No title in wizard_data!")
-        if 'context_analysis' in wizard_data:
-            print(f"[CREATE_UAT] context_analysis with category: {wizard_data['context_analysis'].get('category')}")
-        else:
-            print("[CREATE_UAT] ⚠️ WARNING: No context_analysis in wizard_data!")
-        if 'selected_features' in wizard_data:
-            print(f"[CREATE_UAT] {len(wizard_data['selected_features'])} selected features")
-        else:
-            print("[CREATE_UAT] ⚠️ WARNING: No selected_features in wizard_data!")
-        
         print(f"[CREATE_UAT] Creating work item in Azure DevOps...")
         ado_result = ado_client.create_work_item_from_issue(wizard_data)
         
@@ -1023,9 +1008,9 @@ def start_processing():
         print(f"DEBUG: Starting context evaluation with title='{title}', description='{description}', impact='{impact}'")
         
         # Perform context analysis for evaluation
-        # Using microservices client
+        from enhanced_matching import EnhancedMatcher
         print("[DEBUG WEB 1] About to create EnhancedMatcher...", flush=True)
-        matcher = EnhancedMatcher()
+        matcher = EnhancedMatcher(tracker)
         print("[DEBUG WEB 2] EnhancedMatcher created. Starting analysis...", flush=True)
         
         evaluation_data = matcher.analyze_context_for_evaluation(title, description, impact)
@@ -1441,8 +1426,6 @@ def perform_search():
     
     # Get category for special handling
     category = context.get('category', '')
-    print(f"[DEBUG CATEGORY] Detected category: '{category}'")
-    print(f"[DEBUG CATEGORY] Context keys: {list(context.keys())}")
     
     # Categories that need special guidance
     special_categories = ['technical_support', 'feature_request', 'cost_billing', 'aoai_capacity', 'capacity']
@@ -1450,14 +1433,15 @@ def perform_search():
     # Perform comprehensive search (skip similar products, regional, capacity for special categories)
     if category in special_categories:
         # Skip ResourceSearchService for these categories, only search Learn docs
-        # Microservices version: Create empty search results object
-        search_results = ComprehensiveSearchResults()
-        search_results.learn_docs = []
-        search_results.similar_products = []
-        search_results.regional_options = []
-        search_results.capacity_guidance = None
-        search_results.retirement_info = None
-        search_results.search_metadata = {'searches_performed': []}
+        from search_service import ComprehensiveSearchResults
+        search_results = ComprehensiveSearchResults(
+            learn_docs=[],
+            similar_products=[],
+            regional_options=[],
+            capacity_guidance=None,
+            retirement_info=None,
+            search_metadata={'searches_performed': []}
+        )
     else:
         search_results = search_service.search_all(
             title=evaluation_data['original_issue']['title'],
@@ -1609,7 +1593,6 @@ def perform_search():
     # Search for TFT Features if feature_request category
     tft_features = []
     tft_error = None
-    print(f"[DEBUG TFT] Checking if category '{category}' == 'feature_request': {category == 'feature_request'}")
     if category == 'feature_request':
         try:
             print("[TFT Search] Searching Technical Feedback for similar Features...")
@@ -1638,13 +1621,6 @@ def perform_search():
     
     # Generate category-specific guidance
     category_guidance = _get_category_guidance(category)
-    
-    # DEBUG: Log TFT features before storing
-    print(f"[DEBUG] tft_features type: {type(tft_features)}, length: {len(tft_features) if isinstance(tft_features, list) else 'N/A'}")
-    if isinstance(tft_features, list) and len(tft_features) > 0:
-        print(f"[DEBUG] First feature: {tft_features[0]}")
-    else:
-        print(f"[DEBUG] tft_features is empty or not a list: {tft_features}")
     
     # Store search results in temp storage
     evaluation_data['search_results'] = {
@@ -1733,16 +1709,6 @@ def search_results():
     if 'search_results' not in evaluation_data:
         # Redirect to perform search first
         return redirect(url_for('search_resources', eval_id=evaluation_id))
-    
-    # DEBUG: Log what's being passed to template
-    search_data = evaluation_data['search_results']
-    print(f"[DEBUG] Passing to template - tft_features type: {type(search_data.get('tft_features'))}")
-    if 'tft_features' in search_data:
-        print(f"[DEBUG] tft_features length: {len(search_data['tft_features']) if isinstance(search_data['tft_features'], list) else 'N/A'}")
-        if isinstance(search_data['tft_features'], list) and len(search_data['tft_features']) > 0:
-            print(f"[DEBUG] First feature in template data: {search_data['tft_features'][0]}")
-    else:
-        print(f"[DEBUG] tft_features not in search_data!")
     
     return render_template('search_results.html',
                          evaluation_id=evaluation_id,
@@ -1883,9 +1849,9 @@ def evaluate_context():
             
             print(f"🔄 REANALYSIS: Starting with corrections - Category: {corrections['correct_category']}, Intent: {corrections['correct_intent']}")
             
-            # Import and use the enhanced matching system via microservices
-            # Using microservices client
-            matcher = EnhancedMatcher()  # Microservices client
+            # Import and use the enhanced matching system
+            from enhanced_matching import EnhancedMatcher
+            matcher = EnhancedMatcher(tracker)  # Pass the tracker instance
             
             # Create a simple progress callback for logging
             def progress_callback(current_step, total_steps, percentage, message):
@@ -2077,7 +2043,7 @@ def evaluate_context():
             # Start background processing with approved context
             def process_approved_search():
                 try:
-                    # Using microservices client
+                    from enhanced_matching import EnhancedMatcher
                     
                     def progress_update(step, total, percent, task):
                         app.config['processing_sessions'][process_id].update({
@@ -2149,10 +2115,10 @@ def quick_ica():
             flash('Title and description are required for ICA analysis', 'error')
             return redirect(url_for('index'))
         
-        # Perform context analysis for evaluation via microservice
-        # Using microservices client
-        matcher = EnhancedMatcher()
-        evaluation_data = matcher.evaluate_context(title, description, impact)
+        # Perform context analysis for evaluation
+        from enhanced_matching import EnhancedMatcher
+        matcher = EnhancedMatcher(tracker)
+        evaluation_data = matcher.analyze_context_for_evaluation(title, description, impact)
         
         # Store evaluation data temporarily
         evaluation_id = str(uuid.uuid4())
@@ -2179,14 +2145,26 @@ def start_evaluation():
             flash('Title and description are required for context evaluation', 'error')
             return redirect(url_for('index'))
         
-        # Perform context analysis for evaluation via microservice
-        # Using microservices client
-        matcher = EnhancedMatcher()
-        evaluation_data = matcher.evaluate_context(title, description, impact)
+        # Perform context analysis for evaluation
+        from enhanced_matching import EnhancedMatcher
+        matcher = EnhancedMatcher(tracker)
+        evaluation_data = matcher.analyze_context_for_evaluation(title, description, impact)
         
-        # Store evaluation data temporarily
+        # Store evaluation data temporarily (for session)
         evaluation_id = str(uuid.uuid4())
         temp_storage[evaluation_id] = evaluation_data
+        
+        # Save complete analysis results to Azure Blob Storage
+        try:
+            analysis_id = tracker.save_analysis_result({
+                'original_issue': evaluation_data['original_issue'],
+                'context_analysis': evaluation_data['context_analysis'],
+                'recommended_strategy': evaluation_data.get('recommended_strategy', {}),
+                'source': 'start_evaluation'
+            })
+            print(f"✅ Analysis saved to Azure Storage with ID: {analysis_id}")
+        except Exception as e:
+            print(f"⚠️ Could not save analysis to Azure Storage: {e}")
         
         # Redirect to summary page for user review
         return redirect(url_for('context_summary', eval_id=evaluation_id))
@@ -2267,26 +2245,13 @@ if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
     
     print("="*80)
-    print("🔄 Issue Tracker System (MICROSERVICES VERSION) starting...")
+    print("Issue Tracker System starting...")
     print("="*80)
     
-    # Check microservices health
-    print("\n🔍 Checking microservices health...")
-    if check_microservices_health():
-        print("✅ Microservices are healthy!")
-        service_info = get_service_info()
-        if service_info:
-            print(f"ℹ️ Gateway: {service_info.get('name', 'API Gateway')}")
-            print(f"ℹ️ Services: {len(service_info.get('routes', []))} routes available")
-    else:
-        print("⚠️ WARNING: Microservices may not be running!")
-        print(r"🔧 Make sure to run: .\start_all_services.ps1")
-        print("")
-    
+    # Health check for AI services - TEMPORARILY DISABLED FOR TESTING
     print("="*80)
-    port = 5003  # Different port from original app (5002)
-    print(f"\n🌐 Navigate to http://127.0.0.1:{port} to access the microservices UI\n")
-    print(f"🔄 Original app runs on http://127.0.0.1:5002 for comparison\n")
+    port = 5002
+    print(f"\nNavigate to http://127.0.0.1:{port} to access the application\n")
     
     # VS Code debugging compatibility
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1' or os.environ.get('FLASK_ENV') == 'development'

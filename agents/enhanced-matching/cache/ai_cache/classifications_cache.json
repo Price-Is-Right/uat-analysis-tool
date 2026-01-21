@@ -1,0 +1,50 @@
+{
+  "78136d52da0700034873c516af675d2966aa42b744c6b114cc5ae6a98501d0e6": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is explicitly requesting the implementation of 32-bit ASN support in Azure Route Server, which is a missing capability they need for their new network topology and SDWAN integration. This aligns with the feature_request category and requesting_feature intent. The stated impact indicates a high business impact as it affects their migration plans and scalability."
+    },
+    "created_at": "2026-01-19T16:03:46.862186",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "3476ccfc9d8e64950df5d1a09d30fb0124f8838635bba9b9bfae5598219c1a54": {
+    "data": {
+      "category": "capacity",
+      "intent": "capacity_request",
+      "business_impact": "high",
+      "confidence": 0.95,
+      "reasoning": "The customer is requesting an increase in capacity for an App Service Plan in the UK South region, which was rejected. This aligns with the 'capacity' category and 'capacity_request' intent. The stated impact and the involvement of support tickets indicate a high business impact."
+    },
+    "created_at": "2026-01-19T16:07:55.980990",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "4073687a8a7f791c9ae2811d79139e92494e73f86f68795d930dfa517597bb39": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.9,
+      "reasoning": "The customer is requesting a specific capability (support for invoking MCP tools through a private network) that is currently not supported. This aligns with a feature request. The stated impact is high due to strict security requirements in the financial industry."
+    },
+    "created_at": "2026-01-19T18:10:18.202296",
+    "ttl_days": 7,
+    "hits": 0
+  },
+  "e88c4311c1d7c08097f9a45c374ec0dc076be86a0f2a70f5dc82421373521e66": {
+    "data": {
+      "category": "feature_request",
+      "intent": "requesting_feature",
+      "business_impact": "high",
+      "confidence": 0.9,
+      "reasoning": "The customer is requesting the ability to invoke MCP tools through a private network, which is a specific capability they need to meet their strict security requirements. This aligns with a feature request rather than a roadmap inquiry, as they are not asking about timelines or planned features but rather expressing a gap in functionality they want addressed."
+    },
+    "created_at": "2026-01-19T18:18:44.422754",
+    "ttl_days": 7,
+    "hits": 0
+  }
+}

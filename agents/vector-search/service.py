@@ -428,7 +428,7 @@ if __name__ == "__main__":
     import uvicorn
     
     print("="*80)
-    print("🚀 Vector Search Service - Starting")
+    print("Vector Search Service - Starting")
     print("="*80)
     print(f"Port: 8007")
     print(f"Features: Semantic Search, Duplicate Detection, Collection Management")

@@ -23,7 +23,11 @@
 
 <script>
     // Auto-redirect to UAT selection after showing overlay
+    console.log("🔍 [SEARCHING_UATS] Template loaded - starting redirect timer");
+    console.log("🔍 [SEARCHING_UATS] Will redirect to: {{ url_for('select_related_uats') }}");
+    
     setTimeout(function() {
+        console.log("🔍 [SEARCHING_UATS] Timer expired - redirecting NOW");
         window.location.href = "{{ url_for('select_related_uats') }}";
     }, 500);  // Small delay to show the overlay
 </script>
