@@ -8,10 +8,15 @@ Write-Host "====================================================================
 
 # Set Azure OpenAI environment variables (East endpoint)
 Write-Host "`n[1/4] Setting Azure OpenAI environment variables..." -ForegroundColor Yellow
-$env:AZURE_OPENAI_ENDPOINT = 'https://bp-azure-openai-east.openai.azure.com'
-$env:AZURE_OPENAI_API_KEY = 'YOUR_AZURE_OPENAI_KEY_HERE'
-$env:AZURE_OPENAI_CLASSIFICATION_DEPLOYMENT = 'gpt-4o-02'
-$env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT = 'text-embedding-3-large'
+
+# Load from Key Vault via keyvault_config.py
+Write-Host "   Loading secrets from Azure Key Vault..." -ForegroundColor Gray
+$kvConfig = python -c "from keyvault_config import get_keyvault_config; kv = get_keyvault_config(); print(f'{kv.azure_openai_endpoint}|{kv.azure_openai_api_key}|{kv.azure_openai_classification_deployment}|{kv.azure_openai_embedding_deployment}')"
+$parts = $kvConfig -split '\|'
+$env:AZURE_OPENAI_ENDPOINT = $parts[0]
+$env:AZURE_OPENAI_API_KEY = $parts[1]
+$env:AZURE_OPENAI_CLASSIFICATION_DEPLOYMENT = $parts[2]
+$env:AZURE_OPENAI_EMBEDDING_DEPLOYMENT = $parts[3]
 
 Write-Host "   Endpoint: $env:AZURE_OPENAI_ENDPOINT" -ForegroundColor Gray
 Write-Host "   Classification Model: $env:AZURE_OPENAI_CLASSIFICATION_DEPLOYMENT" -ForegroundColor Gray

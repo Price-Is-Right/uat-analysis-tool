@@ -54,3 +54,13 @@ test_*.py
 *_backup.*
 *_old.*
 app_backup.py
+
+# Azure secrets - use .env.azure.clean template instead
+.env.azure
+
+# Backups
+backup_*/
+
+# Logs
+*.log
+flask_*.log
