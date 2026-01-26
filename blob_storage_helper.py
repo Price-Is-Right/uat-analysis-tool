@@ -9,7 +9,7 @@ import os
 from typing import Any, Dict, List
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceNotFoundError
-from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+from azure.identity import DefaultAzureCredential, ManagedIdentityCredential, InteractiveBrowserCredential
 from keyvault_config import get_keyvault_config
 
 class BlobStorageManager:
@@ -20,9 +20,8 @@ class BlobStorageManager:
         Initialize Blob Storage Manager
         
         Authentication priority:
-        1. Managed Identity (if AZURE_CLIENT_ID is set)
-        2. Connection String from Key Vault
-        3. DefaultAzureCredential (local development)
+        1. Managed Identity (if AZURE_CLIENT_ID is set AND running in Azure)
+        2. InteractiveBrowserCredential (local development)
         """
         self.container_name = container_name
         self.account_url = f"https://{storage_account_name}.blob.core.windows.net"
@@ -31,22 +30,29 @@ class BlobStorageManager:
         managed_identity_client_id = os.environ.get('AZURE_CLIENT_ID')
         
         if managed_identity_client_id:
-            # Production: Use managed identity for storage access
-            print(f"  Using Managed Identity for storage: {managed_identity_client_id[:8]}...")
-            credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
-            self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
-        else:
-            # Development: Try connection string from Key Vault, then DefaultAzureCredential
-            kv_config = get_keyvault_config()
-            connection_string = kv_config.get_secret('AZURE_STORAGE_CONNECTION_STRING')
-            
-            if connection_string:
-                self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-            else:
-                # Fallback to DefaultAzureCredential
-                print("  Using DefaultAzureCredential for storage")
-                credential = DefaultAzureCredential()
+            # Try managed identity, but fall back to interactive if IMDS not available
+            try:
+                print(f"  Using Managed Identity for storage: {managed_identity_client_id[:8]}...")
+                credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
+                # Test the credential
                 self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
+                # Try to list containers to validate auth
+                try:
+                    next(self.blob_service_client.list_containers(), None)
+                except Exception:
+                    # Managed identity not available (local development)
+                    print("  Managed Identity not available, using InteractiveBrowserCredential...")
+                    credential = InteractiveBrowserCredential()
+                    self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
+            except Exception as e:
+                print(f"  Managed Identity failed: {e}, using InteractiveBrowserCredential...")
+                credential = InteractiveBrowserCredential()
+                self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
+        else:
+            # Local development: Use InteractiveBrowserCredential
+            print("  Using InteractiveBrowserCredential for storage (local development)")
+            credential = InteractiveBrowserCredential()
+            self.blob_service_client = BlobServiceClient(account_url=self.account_url, credential=credential)
         
         self.container_client = self.blob_service_client.get_container_client(container_name)
     
@@ -114,15 +120,72 @@ def _get_storage_account_name() -> str:
     return kv_config.get_secret('AZURE_STORAGE_ACCOUNT_NAME')
 
 def load_context_evaluations() -> List[Dict]:
-    """Load context evaluations from blob storage"""
-    manager = BlobStorageManager(_get_storage_account_name())
-    data = manager.read_json('context_evaluations.json')
-    return data if data is not None else []
+    """Load context evaluations from blob storage, fallback to local file"""
+    try:
+        storage_account = _get_storage_account_name()
+        if storage_account:
+            manager = BlobStorageManager(storage_account)
+            data = manager.read_json('context_evaluations.json')
+            if data is not None:
+                return data
+    except Exception as e:
+        print(f"⚠️ Blob storage unavailable, using local file: {e}")
+    
+    # Fallback to local file
+    import os
+    import json
+    local_file = 'context_evaluations.json'
+    if os.path.exists(local_file):
+        try:
+            with open(local_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Handle both old format (list) and new format (dict with evaluations key)
+                if isinstance(data, dict) and 'evaluations' in data:
+                    return data['evaluations']
+                elif isinstance(data, list):
+                    return data
+        except Exception as e:
+            print(f"⚠️ Could not read local file: {e}")
+    
+    return []
 
 def save_context_evaluations(data: List[Dict]) -> bool:
     """Save context evaluations to blob storage"""
     manager = BlobStorageManager(_get_storage_account_name())
     return manager.write_json('context_evaluations.json', data)
+
+def delete_context_evaluation(evaluation_id: str) -> bool:
+    """
+    Delete a specific evaluation by ID from blob storage
+    
+    Args:
+        evaluation_id: The ID of the evaluation to delete
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # Load all evaluations
+        evaluations = load_context_evaluations()
+        
+        # Filter out the evaluation to delete
+        initial_count = len(evaluations)
+        evaluations = [e for e in evaluations if e.get('id') != evaluation_id and e.get('evaluation_id') != evaluation_id]
+        
+        # Check if anything was deleted
+        if len(evaluations) == initial_count:
+            print(f"⚠️ Evaluation {evaluation_id} not found")
+            return False
+        
+        # Save back to blob storage
+        success = save_context_evaluations(evaluations)
+        if success:
+            print(f"✅ Deleted evaluation {evaluation_id}")
+        return success
+    except Exception as e:
+        print(f"❌ Error deleting evaluation: {e}")
+        return False
+
 
 def load_corrections() -> Dict:
     """Load corrections from blob storage"""

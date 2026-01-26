@@ -61,8 +61,14 @@ class AzureDevOpsConfig:
     # Azure DevOps scope for authentication
     ADO_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"  # Azure DevOps scope
     
-    # Cached credential to reuse across operations
-    _cached_credential = None
+    # Cached credentials to reuse across operations
+    # Two separate credentials are needed because:
+    # 1. Main org (unifiedactiontrackertest) - for work item creation
+    # 2. TFT org (unifiedactiontracker/Technical Feedback) - for feature search
+    # Both use browser-based authentication but are cached separately to avoid
+    # repeated authentication prompts within the same session
+    _cached_credential = None  # Main organization credential
+    _cached_tft_credential = None  # Technical Feedback organization credential
     
     @staticmethod
     def get_credential():
@@ -96,45 +102,78 @@ class AzureDevOpsConfig:
         if AzureDevOpsConfig._cached_credential is not None:
             return AzureDevOpsConfig._cached_credential
         
+        # Try Azure CLI first (works if user ran 'az login', no prompts)
+        print("[AUTH] Trying Azure CLI credential...")
         try:
-            # Use Interactive Browser first for proper permissions
-            print("[AUTH] Using Interactive Browser credential (one-time login)...")
-            credential = InteractiveBrowserCredential()
+            credential = AzureCliCredential()
             token = credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
-            print("[SUCCESS] Authentication successful (cached for session)")
+            print("[SUCCESS] Azure CLI authentication successful")
             AzureDevOpsConfig._cached_credential = credential
             
-            # CRITICAL: Also cache in EnhancedMatchingConfig so search doesn't prompt again
+            # Cache in EnhancedMatchingConfig for search services
             from enhanced_matching import EnhancedMatchingConfig
             EnhancedMatchingConfig._uat_credential = credential
             EnhancedMatchingConfig._uat_token = token.token
             print("[Auth] Credential shared with search services")
             
             return credential
-        except Exception as e:
-            # Fallback to Azure CLI credential
-            print(f"[WARNING] Interactive Browser credential failed: {e}")
+        except Exception as cli_error:
+            print(f"[WARNING] Azure CLI credential failed: {cli_error}")
+            print("[INFO] Falling back to Interactive Browser authentication...")
+        
+        # Fallback to Interactive Browser (one-time prompt)
+        try:
+            print("[AUTH] Using Interactive Browser credential (one-time login)...")
+            credential = InteractiveBrowserCredential()
+            token = credential.get_token(AzureDevOpsConfig.ADO_SCOPE)
+            print("[SUCCESS] Interactive Browser authentication successful")
+            AzureDevOpsConfig._cached_credential = credential
             
-            # DO NOT fallback to Azure CLI - it doesn't work for work item creation
-            # Azure CLI tokens cause "identity not materialized" errors
-            print("[ERROR] Interactive Browser authentication is REQUIRED for work item creation")
-            print("[INFO] Please complete the browser login when prompted")
-            raise Exception("Interactive Browser authentication required. Please log in through the browser.")
+            # Cache in EnhancedMatchingConfig for search services
+            from enhanced_matching import EnhancedMatchingConfig
+            EnhancedMatchingConfig._uat_credential = credential
+            EnhancedMatchingConfig._uat_token = token.token
+            print("[Auth] Credential shared with search services")
+            
+            return credential
+        except Exception as browser_error:
+            print(f"[ERROR] Interactive Browser authentication failed: {browser_error}")
+            print("[INFO] Please run 'az login' in PowerShell, or complete browser authentication")
+            raise Exception("Authentication failed. Please run 'az login' or complete browser authentication.")
     
     @staticmethod
     def get_tft_credential():
         """
         Get Azure credential for Technical Feedback organization access.
         
-        Uses InteractiveBrowserCredential for cross-org access which requires
-        browser-based authentication to materialize identity.
+        IMPORTANT: This is separate from the main credential because:
+        - Different Azure DevOps organization (unifiedactiontracker vs unifiedactiontrackertest)
+        - Requires cross-organization access via InteractiveBrowserCredential
+        - Browser authentication materializes the user's identity for the TFT org
+        
+        Caching Strategy:
+        - First call: Prompts for browser authentication (expected)
+        - Subsequent calls: Reuses cached credential (no prompt)
+        - Cache persists for the application session
         
         Returns:
             Azure credential object configured for browser authentication
         """
-        # Use tenant ID for Microsoft
-        tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47"
-        return InteractiveBrowserCredential(tenant_id=tenant_id)
+        # Return cached credential if available (avoids repeat authentication)
+        if AzureDevOpsConfig._cached_tft_credential is not None:
+            print("[AUTH] Reusing cached TFT credential...")
+            return AzureDevOpsConfig._cached_tft_credential
+            
+        # First-time setup: Create new credential with Microsoft tenant ID
+        print("[AUTH] Creating new TFT credential (first time)...")
+        tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47"  # Microsoft tenant
+        credential = InteractiveBrowserCredential(tenant_id=tenant_id)
+        
+        # Cache for future use within this session
+        AzureDevOpsConfig._cached_tft_credential = credential
+        print("[AUTH] TFT credential cached for reuse")
+        
+        return credential
 
 
 class AzureDevOpsClient:
@@ -328,23 +367,32 @@ class AzureDevOpsClient:
         Returns:
             Dict with success status and work item details or error
         """
+        print("\n" + "="*80)
+        print("[ADO] CREATE_WORK_ITEM_FROM_ISSUE - STARTING")
+        print("="*80)
         try:
+            print("[ADO] STEP 1: Extracting data from issue_data...")
             # Extract data from issue
             title = issue_data.get('title', 'Untitled Issue')
             description = issue_data.get('description', '')
             impact = issue_data.get('impact', '')
             opportunity_id = issue_data.get('opportunity_id', '')
             milestone_id = issue_data.get('milestone_id', '')
+            print(f"[ADO] Title: {title[:50]}..." if len(title) > 50 else f"[ADO] Title: {title}")
+            print(f"[ADO] Opportunity ID: {opportunity_id}")
+            print(f"[ADO] Milestone ID: {milestone_id}")
             
             # Build a comprehensive description including impact
             full_description = description
             if impact:
                 full_description += f"\n\n**Customer Impact:**\n{impact}"
             
+            print("[ADO] STEP 2: Building JSON patch operations...")
             # Build the JSON patch operations for work item creation with custom fields
             operations = []
             
             # Standard fields
+            print("[ADO]   - Adding System.Title")
             operations.append({
                 "op": "add",
                 "path": "/fields/System.Title",
@@ -519,14 +567,38 @@ class AzureDevOpsClient:
                     "value": issue_data['priority']
                 })
             
+            print(f"[ADO] STEP 3: Total operations built: {len(operations)}")
+            
             # API endpoint for creating work items
             url = f"{self.config.BASE_URL}/{quote(self.config.PROJECT)}/_apis/wit/workitems/${self.config.WORK_ITEM_TYPE}?api-version={self.config.API_VERSION}"
             
+            print(f"[ADO] STEP 4: Getting fresh authentication headers...")
+            # Get fresh headers with new token (tokens expire after 1 hour)
+            try:
+                headers = self._get_headers()
+                print(f"[ADO]   ✓ Headers obtained successfully")
+            except Exception as header_error:
+                print(f"[ADO]   ❌ FAILED to get headers: {header_error}")
+                raise
+            
+            print(f"[ADO] STEP 5: Making POST request to Azure DevOps...")
+            print(f"[ADO]   URL: {url}")
+            print(f"[ADO]   Operations: {len(operations)} items")
+            print(f"[ADO]   Headers: Content-Type={headers.get('Content-Type')}, Auth=Bearer ***")
+            
             # Make the API call
-            response = requests.post(url, json=operations, headers=self.headers)
+            response = requests.post(url, json=operations, headers=headers)
+            
+            print(f"[ADO] STEP 6: Response received")
+            print(f"[ADO]   Status Code: {response.status_code}")
+            print(f"[ADO]   Status Text: {response.reason}")
+            print(f"[ADO]   Response Headers: {dict(response.headers)}")
             
             if response.status_code == 200:
+                print(f"[ADO] STEP 7: Success! Parsing response JSON...")
                 work_item = response.json()
+                print(f"[ADO]   ✓ Work item created: ID {work_item['id']}")
+                print("="*80)
                 return {
                     'success': True,
                     'work_item_id': work_item['id'],
@@ -541,13 +613,42 @@ class AzureDevOpsClient:
                     'original_issue': issue_data
                 }
             else:
+                print(f"[ADO] STEP 7: ❌ ERROR - Non-200 status code")
+                print(f"[ADO]   Status: {response.status_code} ({response.reason})")
+                print(f"[ADO]   Response content type: {response.headers.get('Content-Type')}")
+                print(f"[ADO]   Response length: {len(response.text)} bytes")
+                print(f"[ADO]   First 500 chars of response: {response.text[:500]}")
+                
+                # Try to parse JSON error for better message
+                error_msg = f"Status {response.status_code}"
+                try:
+                    print(f"[ADO]   Attempting to parse JSON error response...")
+                    error_json = response.json()
+                    print(f"[ADO]   JSON keys: {list(error_json.keys())}")
+                    if 'message' in error_json:
+                        error_msg = error_json['message']
+                        print(f"[ADO]   Found 'message': {error_msg}")
+                    elif 'value' in error_json and isinstance(error_json['value'], dict):
+                        error_msg = error_json['value'].get('Message', error_msg)
+                        print(f"[ADO]   Found 'value.Message': {error_msg}")
+                except Exception as parse_error:
+                    print(f"[ADO]   ⚠️ Could not parse as JSON: {parse_error}")
+                    error_msg = response.text[:200]  # First 200 chars of raw response
+                
+                print("="*80)
                 return {
                     'success': False,
-                    'error': f"ADO API Error: {response.status_code} - {response.text}",
+                    'error': f"Azure DevOps API Error ({response.status_code}): {error_msg}",
                     'url': url
                 }
                 
         except Exception as e:
+            print(f"[ADO] ❌ EXCEPTION in create_work_item_from_issue: {type(e).__name__}")
+            print(f"[ADO] Exception message: {str(e)}")
+            import traceback
+            print(f"[ADO] Traceback:")
+            traceback.print_exc()
+            print("="*80)
             return {
                 'success': False,
                 'error': f"Failed to create work item from issue data: {str(e)}"

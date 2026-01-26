@@ -12,6 +12,7 @@ from datetime import datetime
 import logging
 import os
 import uuid
+import httpx
 from dotenv import load_dotenv
 from keyvault_config import get_keyvault_config
 
@@ -142,6 +143,45 @@ async def api_info():
         },
         "status": "Phase 6 - Enhanced Matching Microservice"
     }
+
+# Context Analysis endpoint - proxy to Context Analyzer service
+@app.post("/api/context/analyze")
+async def analyze_context(request: Request):
+    """
+    Analyze issue context via Context Analyzer microservice
+    Proxies to: http://localhost:8001/analyze
+    """
+    try:
+        # Get request body
+        body = await request.json()
+        
+        # Forward to Context Analyzer service
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "http://localhost:8001/analyze",
+                json=body
+            )
+            response.raise_for_status()
+            return response.json()
+            
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Context Analyzer returned error: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Context Analyzer error: {e.response.text}"
+        )
+    except httpx.RequestError as e:
+        logger.error(f"Failed to connect to Context Analyzer: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Context Analyzer service unavailable"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in context analysis: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 # Error handler
 @app.exception_handler(Exception)

@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Service Health{% endblock %}
+
+{% block extra_css %}
+<style>
+    .service-card {
+        transition: all 0.3s;
+    }
+    .service-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-up {
+        background-color: #28a745;
+        box-shadow: 0 0 10px #28a745;
+    }
+    .status-down {
+        background-color: #dc3545;
+        box-shadow: 0 0 10px #dc3545;
+    }
+    .status-warning {
+        background-color: #ffc107;
+        box-shadow: 0 0 10px #ffc107;
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <a href="/" class="btn btn-outline-secondary mb-3">
+            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="fas fa-heartbeat me-2"></i>Service Health Dashboard</h2>
+                <p class="text-muted">Real-time monitoring of microservices</p>
+            </div>
+            <button class="btn btn-primary" onclick="refreshHealth()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Overall Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h3 class="text-success" id="services-up">-</h3>
+                        <p class="text-muted">Services Up</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-danger" id="services-down">-</h3>
+                        <p class="text-muted">Services Down</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-info" id="avg-response">-</h3>
+                        <p class="text-muted">Avg Response Time</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-primary" id="last-check">-</h3>
+                        <p class="text-muted">Last Check</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service Cards -->
+<div class="row g-4" id="services-container">
+    <!-- Main Application -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card service-card h-100" data-service="main">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="status-indicator" id="status-main"></span>
+                        Main App
+                    </h5>
+                    <span class="badge bg-secondary">5003</span>
+                </div>
+                <div class="service-metrics">
+                    <p class="mb-1"><small class="text-muted">Response Time:</small></p>
+                    <p class="metric-value text-primary" id="response-main">-</p>
+                    <p class="mb-0"><small class="text-muted" id="status-text-main">Checking...</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Gateway -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card service-card h-100" data-service="gateway">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="status-indicator" id="status-gateway"></span>
+                        API Gateway
+                    </h5>
+                    <span class="badge bg-secondary">8000</span>
+                </div>
+                <div class="service-metrics">
+                    <p class="mb-1"><small class="text-muted">Response Time:</small></p>
+                    <p class="metric-value text-primary" id="response-gateway">-</p>
+                    <p class="mb-0"><small class="text-muted" id="status-text-gateway">Checking...</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Analyzer -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card service-card h-100" data-service="context">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="status-indicator" id="status-context"></span>
+                        Context Analyzer
+                    </h5>
+                    <span class="badge bg-secondary">8001</span>
+                </div>
+                <div class="service-metrics">
+                    <p class="mb-1"><small class="text-muted">Response Time:</small></p>
+                    <p class="metric-value text-primary" id="response-context">-</p>
+                    <p class="mb-0"><small class="text-muted" id="status-text-context">Checking...</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Service -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card service-card h-100" data-service="search">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="status-indicator" id="status-search"></span>
+                        Search Service
+                    </h5>
+                    <span class="badge bg-secondary">8002</span>
+                </div>
+                <div class="service-metrics">
+                    <p class="mb-1"><small class="text-muted">Response Time:</small></p>
+                    <p class="metric-value text-primary" id="response-search">-</p>
+                    <p class="mb-0"><small class="text-muted" id="status-text-search">Checking...</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Matching -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card service-card h-100" data-service="matching">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="status-indicator" id="status-matching"></span>
+                        Enhanced Matching
+                    </h5>
+                    <span class="badge bg-secondary">8003</span>
+                </div>
+                <div class="service-metrics">
+                    <p class="mb-1"><small class="text-muted">Response Time:</small></p>
+                    <p class="metric-value text-primary" id="response-matching">-</p>
+                    <p class="mb-0"><small class="text-muted" id="status-text-matching">Checking...</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Service -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card service-card h-100" data-service="admin">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <span class="status-indicator status-up" id="status-admin"></span>
+                        Admin Service
+                    </h5>
+                    <span class="badge bg-success">8004</span>
+                </div>
+                <div class="service-metrics">
+                    <p class="mb-1"><small class="text-muted">Response Time:</small></p>
+                    <p class="metric-value text-primary" id="response-admin">Active</p>
+                    <p class="mb-0"><small class="text-success">Running (current)</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const SERVICES = {
+    main: { url: 'http://localhost:5003/health', name: 'Main App' },
+    gateway: { url: 'http://localhost:8000/health', name: 'API Gateway' },
+    context: { url: 'http://localhost:8001/health', name: 'Context Analyzer' },
+    search: { url: 'http://localhost:8002/health', name: 'Search Service' },
+    matching: { url: 'http://localhost:8003/health', name: 'Enhanced Matching' }
+};
+
+async function checkServiceHealth(serviceName, serviceConfig) {
+    const startTime = performance.now();
+    try {
+        const response = await fetch(serviceConfig.url, {
+            method: 'GET',
+            mode: 'cors',
+            timeout: 5000
+        });
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+        
+        if (response.ok) {
+            updateServiceStatus(serviceName, 'up', responseTime);
+        } else {
+            updateServiceStatus(serviceName, 'down', 0, `HTTP ${response.status}`);
+        }
+    } catch (error) {
+        updateServiceStatus(serviceName, 'down', 0, error.message);
+    }
+}
+
+function updateServiceStatus(service, status, responseTime, errorMsg = '') {
+    const statusIndicator = document.getElementById(`status-${service}`);
+    const responseElement = document.getElementById(`response-${service}`);
+    const statusText = document.getElementById(`status-text-${service}`);
+    
+    // Update status indicator
+    statusIndicator.className = 'status-indicator';
+    if (status === 'up') {
+        statusIndicator.classList.add('status-up');
+        responseElement.textContent = responseTime + 'ms';
+        responseElement.className = 'metric-value text-success';
+        statusText.textContent = 'Online';
+        statusText.className = 'text-success';
+    } else {
+        statusIndicator.classList.add('status-down');
+        responseElement.textContent = 'Down';
+        responseElement.className = 'metric-value text-danger';
+        statusText.textContent = errorMsg || 'Offline';
+        statusText.className = 'text-danger';
+    }
+}
+
+async function refreshHealth() {
+    // Update last check time
+    document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+    
+    // Check all services
+    let upCount = 1; // Admin service is always up (we're running on it)
+    let downCount = 0;
+    let totalResponse = 0;
+    let responseCount = 0;
+    
+    for (const [name, config] of Object.entries(SERVICES)) {
+        await checkServiceHealth(name, config);
+        
+        // Calculate stats
+        const statusIndicator = document.getElementById(`status-${name}`);
+        if (statusIndicator.classList.contains('status-up')) {
+            upCount++;
+            const responseText = document.getElementById(`response-${name}`).textContent;
+            if (responseText.endsWith('ms')) {
+                totalResponse += parseInt(responseText);
+                responseCount++;
+            }
+        } else {
+            downCount++;
+        }
+    }
+    
+    // Update summary
+    document.getElementById('services-up').textContent = upCount;
+    document.getElementById('services-down').textContent = downCount;
+    if (responseCount > 0) {
+        const avgResponse = Math.round(totalResponse / responseCount);
+        document.getElementById('avg-response').textContent = avgResponse + 'ms';
+    } else {
+        document.getElementById('avg-response').textContent = 'N/A';
+    }
+}
+
+// Initial check
+refreshHealth();
+
+// Auto-refresh every 30 seconds
+setInterval(refreshHealth, 30000);
+</script>
+
+{% endblock %}

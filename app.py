@@ -254,13 +254,20 @@ def nl2br(s):
     return Markup(str(s).replace('\n', '<br>\n'))
 
 # =============================================================================
-# INITIALIZE AZURE DEVOPS CLIENTS AT STARTUP (ONE-TIME AUTHENTICATION)
+# AZURE DEVOPS CLIENT - LAZY INITIALIZATION
 # =============================================================================
 
-# Initialize Azure DevOps client for work item creation
-# This will authenticate once and share the credential with search services
-ado_client = AzureDevOpsClient()
-print("✅ All Azure DevOps services authenticated and ready")
+# ADO client will be initialized on-demand when creating work items
+# This prevents authentication prompts at startup
+ado_client = None
+
+def get_ado_client():
+    """Get or create Azure DevOps client (lazy initialization)"""
+    global ado_client
+    if ado_client is None:
+        ado_client = AzureDevOpsClient()
+        print("✅ Azure DevOps client authenticated")
+    return ado_client
 
 class IssueTracker:
     def __init__(self, data_file: str = "issues_actions.json"):
@@ -898,8 +905,16 @@ def create_uat():
         else:
             print("[CREATE_UAT] ⚠️ WARNING: No selected_features in wizard_data!")
         
-        print(f"[CREATE_UAT] Creating work item in Azure DevOps...")
-        ado_result = ado_client.create_work_item_from_issue(wizard_data)
+        print(f"[CREATE_UAT] ========================================")
+        print(f"[CREATE_UAT] STEP 1: Calling ADO client to create work item...")
+        print(f"[CREATE_UAT] ========================================")
+        ado_result = get_ado_client().create_work_item_from_issue(wizard_data)
+        print(f"[CREATE_UAT] ========================================")
+        print(f"[CREATE_UAT] STEP 2: ADO client returned result")
+        print(f"[CREATE_UAT] Success: {ado_result.get('success')}")
+        if not ado_result.get('success'):
+            print(f"[CREATE_UAT] ❌ ERROR: {ado_result.get('error')}")
+        print(f"[CREATE_UAT] ========================================")
         
         # Get selected feature IDs
         selected_feature_ids = wizard_data.get('selected_features', [])
@@ -1613,10 +1628,12 @@ def perform_search():
     if category == 'feature_request':
         try:
             print("[TFT Search] Searching Technical Feedback for similar Features...")
-            # Use the global authenticated ADO client instead of creating a new one
-            # to avoid authentication state mismatch issues
-            global ado_client
-            tft_result = ado_client.search_tft_features(
+            # CRITICAL FIX: Use get_ado_client() instead of global ado_client
+            # Previously used 'ado_client' directly which was None, causing:
+            # "'NoneType' object has no attribute 'search_tft_features'"
+            # get_ado_client() properly initializes and authenticates the client
+            client = get_ado_client()
+            tft_result = client.search_tft_features(
                 title=evaluation_data['original_issue']['title'],
                 description=evaluation_data['original_issue']['description'],
                 threshold=0.6  # Higher threshold to ensure accurate matches
@@ -1851,7 +1868,14 @@ def evaluate_context():
         }
         
         # Handle different actions
+        print(f"🔍 DEBUG: Action received = '{action}'")
+        print(f"🔍 DEBUG: Evaluation ID = '{evaluation_id}'")
+        
         if action == 'reanalyze':
+            print("=" * 80)
+            print("🔄 REANALYZE ACTION TRIGGERED")
+            print("=" * 80)
+            
             # Reanalyze with corrections
             corrections = {
                 'correct_category': request.form.get('correct_category'),
@@ -1862,13 +1886,25 @@ def evaluate_context():
                 'correction_notes': request.form.get('correction_notes', '')
             }
             
+            print(f"📝 DEBUG: Corrections received:")
+            for key, value in corrections.items():
+                print(f"   {key}: {value}")
+            
             feedback_data['corrections'] = corrections
+            print(f"✅ DEBUG: Corrections added to feedback_data")
             
             # Save feedback for learning
-            tracker.save_evaluation(feedback_data)
+            print(f"💾 DEBUG: Attempting to save evaluation feedback...")
+            try:
+                tracker.save_evaluation(feedback_data)
+                print(f"✅ DEBUG: Feedback saved successfully")
+            except Exception as e:
+                print(f"⚠️ DEBUG: Failed to save feedback: {e}")
             
             # Perform reanalysis with corrected parameters
+            print(f"🔄 DEBUG: Extracting original issue data...")
             original_issue = evaluation_data['original_issue']
+            print(f"✅ DEBUG: Original issue title: {original_issue.get('title', 'N/A')[:50]}...")
             
             # Create corrected issue data for reanalysis
             corrected_issue = {
@@ -1880,30 +1916,16 @@ def evaluate_context():
                 'corrected_intent': corrections['correct_intent'],
                 'corrected_business_impact': corrections['correct_business_impact']
             }
+            print(f"✅ DEBUG: Corrected issue data prepared")
             
             print(f"🔄 REANALYSIS: Starting with corrections - Category: {corrections['correct_category']}, Intent: {corrections['correct_intent']}")
             
-            # Import and use the enhanced matching system via microservices
-            # Using microservices client
-            matcher = EnhancedMatcher()  # Microservices client
+            # Use context analyzer via microservices for reanalysis
+            print(f"🌐 DEBUG: Creating IntelligentContextAnalyzer client...")
+            analyzer = IntelligentContextAnalyzer()  # Microservices client
+            print(f"✅ DEBUG: Analyzer client created")
             
-            # Create a simple progress callback for logging
-            def progress_callback(current_step, total_steps, percentage, message):
-                print(f"🔄 REANALYSIS PROGRESS: Step {current_step}/{total_steps} ({percentage}%) - {message}")
-            
-            # Run reanalysis with corrected parameters
-            results = matcher.intelligent_search_all_sources(
-                title=corrected_issue['title'],
-                description=corrected_issue['description'],
-                impact=corrected_issue['impact'],
-                progress_callback=progress_callback,
-                skip_evaluation=True  # Skip evaluation since we already have corrections
-            )
-            
-            # Create new analysis data for re-evaluation
-            new_context_analysis = results.get('context_analysis', {})
-            
-            # Perform a fresh context analysis with corrected parameters as guidance
+            # Perform context analysis with correction guidance
             corrected_title = corrected_issue['title']
             corrected_description = corrected_issue['description'] 
             corrected_impact = corrected_issue['impact']
@@ -1911,80 +1933,65 @@ def evaluate_context():
             # Add correction context to the description for reanalysis
             enhanced_description = f"{corrected_description}\n\n[Correction Context: User indicated this should be categorized as '{corrections['correct_category']}' with intent '{corrections['correct_intent']}' and business impact '{corrections['correct_business_impact']}']"
             
-            # Run fresh context analysis with enhanced description
-            fresh_analysis = matcher.context_analyzer.analyze(
+            # Run context analysis with enhanced description via microservices
+            print(f"🌐 DEBUG: Calling analyzer.analyze() via microservices...")
+            print(f"   Title: {corrected_title[:50]}...")
+            print(f"   Description length: {len(enhanced_description)} chars")
+            
+            analysis_result = analyzer.analyze(
                 corrected_title, 
                 enhanced_description, 
                 corrected_impact
             )
             
-            # Convert fresh analysis to dictionary format
-            # Handle both enum and string values for category/intent
-            category_value = fresh_analysis.category.value if hasattr(fresh_analysis.category, 'value') else fresh_analysis.category
-            intent_value = fresh_analysis.intent.value if hasattr(fresh_analysis.intent, 'value') else fresh_analysis.intent
+            print(f"✅ DEBUG: Context analysis complete - received result type: {type(analysis_result)}")
+            print(f"   Result keys: {list(analysis_result.keys()) if isinstance(analysis_result, dict) else 'Not a dict'}")
             
+            # Build new context analysis from result
+            print(f"🔨 DEBUG: Building new_context_analysis dict...")
             new_context_analysis = {
-                'category': category_value,
-                'intent': intent_value,
-                'confidence': fresh_analysis.confidence,
-                'business_impact': fresh_analysis.business_impact,
-                'technical_complexity': fresh_analysis.technical_complexity,
-                'urgency_level': fresh_analysis.urgency_level,
-                'context_summary': fresh_analysis.context_summary,
-                'key_concepts': fresh_analysis.key_concepts,
-                'semantic_keywords': fresh_analysis.semantic_keywords,
-                'domain_entities': fresh_analysis.domain_entities,
-                'recommended_search_strategy': fresh_analysis.recommended_search_strategy,
-                
-                # Analysis details
-                'reasoning': fresh_analysis.reasoning,
-                'pattern_features': fresh_analysis.pattern_features,
-                'pattern_reasoning': fresh_analysis.pattern_reasoning if hasattr(fresh_analysis, 'pattern_reasoning') else None,
-                'source': fresh_analysis.source,
-                
-                # AI status tracking
-                'ai_available': fresh_analysis.ai_available,
-                'ai_error': fresh_analysis.ai_error,
-                
-                # Display-friendly field mappings
-                'category_display': category_value.replace('_', ' ').title(),
-                'intent_display': intent_value.replace('_', ' ').title(),
-                'business_impact_display': fresh_analysis.business_impact.replace('_', ' ').title() if fresh_analysis.business_impact else 'Not Assessed'
+                'category': corrections['correct_category'],  # Use user corrections
+                'intent': corrections['correct_intent'],
+                'business_impact': corrections['correct_business_impact'],
+                'technical_complexity': corrections.get('correct_technical_complexity') or analysis_result.get('technical_complexity', 'medium'),
+                'urgency_level': corrections.get('correct_urgency_level') or analysis_result.get('urgency_level', 'medium'),
+                'confidence': analysis_result.get('confidence', 0.85),
+                'context_summary': analysis_result.get('context_summary', ''),
+                'key_concepts': analysis_result.get('key_concepts', []),
+                'semantic_keywords': analysis_result.get('semantic_keywords', []),
+                'domain_entities': analysis_result.get('domain_entities', {}),
+                'reasoning': analysis_result.get('reasoning', 'Reanalyzed with user corrections'),
+                'source': 'reanalysis_with_corrections',
+                'reanalyzed': True,
+                'corrections_applied': corrections,
+                'category_display': corrections['correct_category'].replace('_', ' ').title(),
+                'intent_display': corrections['correct_intent'].replace('_', ' ').title(),
+                'business_impact_display': corrections['correct_business_impact'].replace('_', ' ').title()
             }
-            
-            # Override with user corrections to ensure they take precedence
-            if corrections['correct_category']:
-                new_context_analysis['category'] = corrections['correct_category']
-            if corrections['correct_intent']:
-                new_context_analysis['intent'] = corrections['correct_intent'] 
-            if corrections['correct_business_impact']:
-                new_context_analysis['business_impact'] = corrections['correct_business_impact']
-                
-            # Update context summary to reflect corrections
-            original_summary = new_context_analysis['context_summary']
-            new_context_analysis['context_summary'] = f"{original_summary} [Updated with user corrections: Category={corrections['correct_category']}, Intent={corrections['correct_intent']}, Impact={corrections['correct_business_impact']}]"
-            
-            # Mark as reanalyzed
-            new_context_analysis['reanalyzed'] = True
-            new_context_analysis['corrections_applied'] = corrections
+            print(f"✅ DEBUG: new_context_analysis built successfully")
             
             # Create new evaluation data for the updated analysis
+            print(f"📦 DEBUG: Creating new evaluation data...")
             new_evaluation_data = {
                 'original_issue': original_issue,
                 'context_analysis': new_context_analysis,
-                'recommended_strategy': results.get('search_strategy_used', {}),
-                'reanalysis_results': results,  # Store full results for later use
+                'recommended_strategy': {},
                 'timestamp': datetime.now().isoformat()
             }
+            print(f"✅ DEBUG: Evaluation data created")
             
             # Store the new evaluation for review
             new_eval_id = str(uuid.uuid4())
+            print(f"🔑 DEBUG: Generated new eval_id: {new_eval_id}")
             temp_storage[new_eval_id] = new_evaluation_data
+            print(f"💾 DEBUG: Stored in temp_storage")
             
             print(f"🔄 REANALYSIS COMPLETE: New analysis ready for review")
+            print("=" * 80)
             flash('Reanalysis complete! Please review the updated analysis below.', 'success')
             
             # Redirect back to summary page to show updated classification
+            print(f"🔀 DEBUG: Redirecting to context_summary with eval_id={new_eval_id}")
             return redirect(url_for('context_summary', eval_id=new_eval_id))
         
         elif action == 'save_corrections':

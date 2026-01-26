@@ -15,29 +15,29 @@ The GCS system is an AI-powered platform for managing Unified Action Tracker (UA
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        WEB APPLICATIONS LAYER                        │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │
-│  │  User Submission │  │  Triage Mgmt     │  │  Analytics       │ │
-│  │  Web App         │  │  Web App         │  │  Dashboard       │ │
-│  │  (Flask/React)   │  │  (Flask/React)   │  │  (Future)        │ │
-│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘ │
+│                        WEB APPLICATIONS LAYER                       │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
+│  │  User Submission │  │  Triage Mgmt     │  │  Analytics       │   │
+│  │  Web App         │  │  Web App         │  │  Dashboard       │   │
+│  │  (Flask/React)   │  │  (Flask/React)   │  │  (Future)        │   │
+│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘   │
 └───────────┼──────────────────────┼──────────────────────┼───────────┘
             │                      │                      │
             └──────────────────────┼──────────────────────┘
                                    │
-┌──────────────────────────────────▼────────────────────────────────────┐
-│                         API GATEWAY LAYER                              │
-│           Routes requests, manages auth, handles data access           │
+┌──────────────────────────────────▼──────────────────────────────────┐
+│                         API GATEWAY LAYER                           │
+│           Routes requests, manages auth, handles data access        │
 │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐         │
 │  │  Request       │  │  Agent         │  │  Data Access   │         │
 │  │  Router        │  │  Orchestrator  │  │  Manager       │         │
 │  └────────────────┘  └────────────────┘  └────────────────┘         │
-└──────────────────────────────────┬────────────────────────────────────┘
+└──────────────────────────────────┬──────────────────────────────────┘
                                    │
-┌──────────────────────────────────▼────────────────────────────────────┐
-│                      MICROSERVICES (AGENT) LAYER                       │
-│                    Each agent = independent container                  │
-│                                                                         │
+┌──────────────────────────────────▼──────────────────────────────────┐
+│                      MICROSERVICES (AGENT) LAYER                    │
+│                    Each agent = independent container               │
+│                                                                     │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │ Context         │  │ Search          │  │ Routing         │      │
 │  │ Analyzer        │  │ Agent           │  │ Agent           │      │
@@ -47,7 +47,7 @@ The GCS system is an AI-powered platform for managing Unified Action Tracker (UA
 │  │ - Product Det.  │  │ - Embeddings    │  │ - Priority      │      │
 │  │ - Category ID   │  │                 │  │ - SLA Calc      │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
-│                                                                         │
+│                                                                     │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │ Rules           │  │ Analytics       │  │ Communications  │      │
 │  │ Agent           │  │ Agent           │  │ Agent           │      │
@@ -57,16 +57,16 @@ The GCS system is an AI-powered platform for managing Unified Action Tracker (UA
 │  │ - Validation    │  │ - Reporting     │  │ - Alerts        │      │
 │  │ - Policy Enf.   │  │ - Trends        │  │ - Updates       │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
-│                                                                         │
+│                                                                     │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │ ADO Integration │  │ LLM Classifier  │  │ Vector Service  │      │
 │  │ Agent           │  │ Agent           │  │ Agent           │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
-└──────────────────────────────────┬────────────────────────────────────┘
+└──────────────────────────────────┬──────────────────────────────────┘
                                    │
-┌──────────────────────────────────▼────────────────────────────────────┐
-│                        SHARED DATA & SERVICES LAYER                    │
-│                                                                         │
+┌──────────────────────────────────▼──────────────────────────────────┐
+│                        SHARED DATA & SERVICES LAYER                 │
+│                                                                     │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │ Azure Blob      │  │ Application     │  │ Azure OpenAI    │      │
 │  │ Storage         │  │ Insights        │  │                 │      │
@@ -76,7 +76,7 @@ The GCS system is an AI-powered platform for managing Unified Action Tracker (UA
 │  │ - Analysis      │  │ - Dashboards    │  │                 │      │
 │  │ - System Data   │  │ - Alerts        │  │                 │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
-│                                                                         │
+│                                                                     │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │ Azure DevOps    │  │ Key Vault       │  │ Container       │      │
 │  │ Integration     │  │                 │  │ Registry        │      │
@@ -84,7 +84,7 @@ The GCS system is an AI-powered platform for managing Unified Action Tracker (UA
 │  │ - Work Items    │  │ - API Keys      │  │ - Agent Images  │      │
 │  │ - Queries       │  │ - Connections   │  │ - Web App Images│      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
-└───────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---

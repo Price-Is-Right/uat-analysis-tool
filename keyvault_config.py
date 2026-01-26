@@ -54,10 +54,10 @@ class KeyVaultConfig:
                     auth_method = "DefaultAzureCredential (user/service principal)"
                 
                 self._client = SecretClient(vault_url=KEY_VAULT_URI, credential=self._credential)
-                print(f"✓ Connected to Key Vault: {KEY_VAULT_URI}")
+                print(f"[OK] Connected to Key Vault: {KEY_VAULT_URI}")
                 print(f"  Authentication: {auth_method}")
             except Exception as e:
-                print(f"⚠ Warning: Could not connect to Key Vault: {e}")
+                print(f"[WARNING] Could not connect to Key Vault: {e}")
                 print("  Falling back to environment variables from .env.azure")
         return self._client
     
@@ -87,7 +87,7 @@ class KeyVaultConfig:
                     self._cache[env_var_name] = value
                     return value
             except Exception as e:
-                print(f"⚠ Could not retrieve '{secret_name}' from Key Vault: {e}")
+                print(f"[WARNING] Could not retrieve '{secret_name}' from Key Vault: {e}")
         
         # Fallback to environment variable
         if fallback_to_env:
@@ -196,10 +196,10 @@ if __name__ == "__main__":
     # Validate configuration
     is_valid, missing = config.validate_config()
     if is_valid:
-        print("\n✓ All required secrets are available")
+        print("\n[OK] All required secrets are available")
     else:
-        print(f"\n⚠ Missing required secrets: {', '.join(missing)}")
+        print(f"\n[WARNING] Missing required secrets: {', '.join(missing)}")
     
     # Get full configuration
     full_config = config.get_config()
-    print(f"\n✓ Loaded {len([v for v in full_config.values() if v])} configuration values")
+    print(f"\n[OK] Loaded {len([v for v in full_config.values() if v])} configuration values")

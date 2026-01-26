@@ -85,30 +85,27 @@ class UATListResponse(BaseModel):
     total: int
     filters: Dict[str, Any]
 
-# Global ADO client (initialized on startup)
+# Global ADO client (lazy initialization)
 ado_client = None
+
+def get_ado_client():
+    """Get or create Azure DevOps client (lazy initialization)"""
+    global ado_client
+    if ado_client is None:
+        logger.info("Initializing Azure DevOps client...")
+        ado_client = AzureDevOpsClient()
+        logger.info("Azure DevOps client authenticated")
+    return ado_client
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize the UAT management service on startup"""
-    global ado_client
-    
     logger.info("UAT Management Service starting up...")
-    
-    try:
-        ado_client = AzureDevOpsClient()
-        logger.info("Azure DevOps client initialized")
-        logger.info("Authentication ready")
-    except Exception as e:
-        logger.error(f"Failed to initialize Azure DevOps client: {e}")
-        raise
+    logger.info("Service initialized (authentication will occur on first API call)")
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    if ado_client is None:
-        raise HTTPException(status_code=503, detail="Service not initialized")
-    
     return {
         "status": "healthy",
         "service": "uat-management",
@@ -171,7 +168,7 @@ async def create_uat(request: CreateUATRequest):
         }
         
         # Create work item via ADO client
-        result = ado_client.create_work_item_from_issue(full_issue_data)
+        result = get_ado_client().create_work_item_from_issue(full_issue_data)
         
         if result.get('success'):
             logger.info(f"UAT created: #{result.get('work_item_id')} - {result.get('title')[:50]}")
@@ -213,7 +210,7 @@ async def list_uats(
         logger.info(f"Listing UATs (state={state}, assigned_to={assigned_to}, limit={limit})...")
         
         # Query work items via ADO client
-        work_items = ado_client.query_work_items(
+        work_items = get_ado_client().query_work_items(
             work_item_type="Actions",
             state=state,
             assigned_to=assigned_to,
@@ -258,7 +255,7 @@ async def get_uat(work_item_id: int):
         logger.info(f"Retrieving UAT #{work_item_id}...")
         
         # Get work item details via ADO client
-        work_item = ado_client.get_work_item(work_item_id)
+        work_item = get_ado_client().get_work_item(work_item_id)
         
         if work_item and not work_item.get('error'):
             logger.info(f"Retrieved UAT #{work_item_id}")
@@ -288,7 +285,7 @@ async def update_uat(work_item_id: int, updates: Dict[str, Any]):
         logger.info(f"Updating UAT #{work_item_id}...")
         
         # Update work item via ADO client
-        result = ado_client.update_work_item(work_item_id, updates)
+        result = get_ado_client().update_work_item(work_item_id, updates)
         
         if result.get('success'):
             logger.info(f"UAT #{work_item_id} updated successfully")

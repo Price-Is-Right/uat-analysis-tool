@@ -29,11 +29,15 @@ class EmbeddingService:
         self.azure_config = self.config.azure_openai
         self.caching_config = self.config.caching
         
-        # Initialize Azure OpenAI client
+        # Initialize Azure OpenAI client with timeout
+        # CRITICAL FIX: Added 10-second timeout to prevent indefinite hanging
+        # when network issues occur. Previously, connection errors would cause
+        # the application to hang indefinitely during TFT feature search.
         self.client = AzureOpenAI(
             azure_endpoint=self.azure_config.endpoint,
             api_key=self.azure_config.api_key,
-            api_version=self.azure_config.api_version
+            api_version=self.azure_config.api_version,
+            timeout=10.0  # 10 second timeout prevents hanging on connection errors
         )
         
         # Get service-specific configuration
@@ -62,11 +66,21 @@ class EmbeddingService:
     
     def _call_embedding_api(self, text: str) -> List[float]:
         """Call Azure OpenAI embedding API"""
-        response = self.client.embeddings.create(
-            input=text,
-            model=self.deployment  # Use deployment name for Azure
-        )
-        return response.data[0].embedding
+        try:
+            print(f"[EmbeddingService] Calling API - Endpoint: {self.azure_config.endpoint}")
+            print(f"[EmbeddingService] Deployment: {self.deployment}")
+            response = self.client.embeddings.create(
+                input=text,
+                model=self.deployment  # Use deployment name for Azure
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"[EmbeddingService] ❌ API call failed!")
+            print(f"[EmbeddingService] Error type: {type(e).__name__}")
+            print(f"[EmbeddingService] Error message: {str(e)}")
+            import traceback
+            print(f"[EmbeddingService] Traceback: {traceback.format_exc()}")
+            raise
     
     def embed(self, text: str, use_cache: bool = True) -> np.ndarray:
         """

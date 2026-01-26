@@ -171,43 +171,9 @@ class CacheManager:
         cached = self.get(key)
         
         if cached is not None and self._cache[key].age_days() < self.ttl_days:
-            # Cache is valid, but try API first if configured
-            if self.api_first:
-                retry_count = 0
-                while retry_count <= self.max_retries:
-                    try:
-                        start_time = time.time()
-                        
-                        # Show progress message if taking longer than expected
-                        if retry_count > 0:
-                            print(f"[CacheManager] Retrying API call (attempt {retry_count + 1}/{self.max_retries + 1})...")
-                        
-                        value = api_fn()
-                        elapsed = time.time() - start_time
-                        
-                        if elapsed > 7.0:
-                            print(f"[CacheManager] ⏱️  AI analysis taking longer than expected ({elapsed:.1f}s)...")
-                        
-                        if elapsed > self.slow_threshold:
-                            print(f"[CacheManager] API slow ({elapsed:.2f}s), using cache as fallback")
-                            return cached, "cache_fallback"
-                        else:
-                            # API was fast enough, update cache
-                            print(f"[CacheManager] API success ({elapsed:.2f}s)")
-                            self.set(key, value)
-                            return value, "api"
-                            
-                    except Exception as e:
-                        retry_count += 1
-                        if retry_count > self.max_retries:
-                            print(f"[CacheManager] API failed after {self.max_retries + 1} attempts: {e}, using cache as fallback")
-                            return cached, "cache_fallback"
-                        else:
-                            print(f"[CacheManager] API error: {e}, retrying...")
-                            time.sleep(1)  # Brief pause before retry
-            else:
-                # Not API-first, just use cache
-                return cached, "cache"
+            # Cache is valid, return it directly (embeddings for features should NOT be cached anyway)
+            # This path is for cached service/region/availability lookups only
+            return cached, "cache"
         
         # No valid cache or cache expired, must use API
         try:

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h2>
+        <p class="text-muted">System overview and recent activity</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="fas fa-clipboard-check fa-3x text-primary mb-3"></i>
+                <h3 class="mb-0">{{ stats.total }}</h3>
+                <p class="text-muted mb-0">Total Evaluations</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-alt fa-3x text-info mb-3"></i>
+                <h3 class="mb-0">{{ stats.recent_count }}</h3>
+                <p class="text-muted mb-0">Last 7 Days</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h3 class="mb-0">{{ stats.category_breakdown|length if stats.category_breakdown else 0 }}</h3>
+                <p class="text-muted mb-0">Categories</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Activity -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Evaluations (Last 10)</h5>
+            </div>
+            <div class="card-body">
+                {% if stats.recent_evaluations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Category</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eval in stats.recent_evaluations %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ eval.timestamp[:19] if eval.timestamp else 'N/A' }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        {{ eval.detected_category or 'Unknown' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="/evaluations/viewer?id={{ eval.evaluation_id }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No evaluations found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category Breakdown -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Category Breakdown</h5>
+            </div>
+            <div class="card-body">
+                {% if stats.category_breakdown %}
+                <ul class="list-group list-group-flush">
+                    {% for category, count in stats.category_breakdown.items() %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ category }}
+                        <span class="badge badge-admin rounded-pill">{{ count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-4">No data available</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Last 7 Days</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-primary">{{ stats.recent_count }}</h2>
+                <p class="text-muted mb-0">New Evaluations</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                <div class="btn-group" role="group">
+                    <a href="/evaluations" class="btn btn-primary">
+                        <i class="fas fa-list me-2"></i>View All Evaluations
+                    </a>
+                    <a href="/evaluations/viewer" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-2"></i>Search Evaluations
+                    </a>
+                    <a href="/api/evaluations/export" class="btn btn-outline-secondary" download="evaluations.json">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
